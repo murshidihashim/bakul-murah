@@ -1,0 +1,305 @@
+{
+ "when": "2026-10-31T03:42:21.886Z",
+ "results": [
+  {
+   "name": "page loads from file:// and reads meta",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "sample-data banner matches the data (real)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "source attribution in footer",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "licence shown",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "basket built (starter + search)",
+   "ok": true,
+   "detail": "11 items"
+  },
+  {
+   "name": "ranking renders",
+   "ok": true,
+   "detail": "8 rows"
+  },
+  {
+   "name": "summary visible",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "split suggestion visible",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "top shop matches independent calculation",
+   "ok": true,
+   "detail": "MYDIN MART SEKSYEN 18 RM 125.44 vs MYDIN MART SEKSYEN 18 125.44"
+  },
+  {
+   "name": "no horizontal scroll (mobile)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "mobile result bar shows best shop",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "quantity change updates totals",
+   "ok": true,
+   "detail": "RM 125.44 -> RM 129.24"
+  },
+  {
+   "name": "price history chart draws 2 lines",
+   "ok": true,
+   "detail": "2 lines"
+  },
+  {
+   "name": "chart readout appears on tap",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "price rises feed renders",
+   "ok": true,
+   "detail": "19 rows"
+  },
+  {
+   "name": "rises feed shows positive %",
+   "ok": true,
+   "detail": "+30.2%"
+  },
+  {
+   "name": "falls toggle shows negative %",
+   "ok": true,
+   "detail": "−21.9%"
+  },
+  {
+   "name": "Malaysia scope renders",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "BM toggle changes labels",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "dark mode toggle",
+   "ok": true,
+   "detail": "dark rgb(17, 19, 18)"
+  },
+  {
+   "name": "basket, district and language persist on this device",
+   "ok": true,
+   "detail": "{\"n\":11,\"d\":\"Petaling\",\"lang\":\"ms\"}"
+  },
+  {
+   "name": "pasted list splits into 9 lines",
+   "ok": true,
+   "detail": "9 lines"
+  },
+  {
+   "name": "unknown item is marked not found",
+   "ok": true,
+   "detail": "1 not found"
+  },
+  {
+   "name": "vague line ('ikan') is marked as a guess",
+   "ok": true,
+   "detail": "1 guesses"
+  },
+  {
+   "name": "'telur 2 papan' reads as 2 trays of 30",
+   "ok": true,
+   "detail": "qty 2"
+  },
+  {
+   "name": "'ayam 2 ekor' reads as 3 kg",
+   "ok": true,
+   "detail": "qty 3"
+  },
+  {
+   "name": "matched items added to the list",
+   "ok": true,
+   "detail": "8 items"
+  },
+  {
+   "name": "rice line has an 'any brand' switch, on",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "'any brand' rice accepts many brands",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "plan offers 1, 2 and 3 stops",
+   "ok": true,
+   "detail": "3 options"
+  },
+  {
+   "name": "2-stop plan shows 2 shops",
+   "ok": true,
+   "detail": "2 columns"
+  },
+  {
+   "name": "2-stop total matches a brute-force check of every pair",
+   "ok": true,
+   "detail": "{\"ok\":true,\"shown\":125.46,\"best\":125.46}"
+  },
+  {
+   "name": "a high value per extra stop recommends 1 stop",
+   "ok": true,
+   "detail": "picked 1"
+  },
+  {
+   "name": "'cheapest on average' card shows when monthly shop data exists",
+   "ok": true,
+   "detail": "data present"
+  },
+  {
+   "name": "list saved",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "share link holds the list",
+   "ok": true,
+   "detail": "42~1_1~3_1440-129-1441-1931~0.5_1559~1_883-1953-884~2_2045~1"
+  },
+  {
+   "name": "saved list loads back",
+   "ok": true,
+   "detail": "8 items"
+  },
+  {
+   "name": "shared link shows a 'load it' bar",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "shared list loads with the same items",
+   "ok": true,
+   "detail": "8 items"
+  },
+  {
+   "name": "no horizontal scroll (list tools)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "'Near me' switch shows when shop locations exist",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "near mode asks for location or postcode first",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "location finds shops within the radius",
+   "ok": true,
+   "detail": "{\"shops\":24,\"maxKm\":4.9,\"r\":5,\"districts\":1,\"note\":\"24 shops within 5 km of you, in Petaling. Your location is not saved or sent.\"}"
+  },
+  {
+   "name": "near note says the location is not saved",
+   "ok": true,
+   "detail": "24 shops within 5 km of you, in Petaling. Your location is not saved or sent."
+  },
+  {
+   "name": "ranked shops show distance",
+   "ok": true,
+   "detail": "0.5 km | 2.0 km | 4.0 km"
+  },
+  {
+   "name": "summary talks about shops near you",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "location is not stored on the device",
+   "ok": true,
+   "detail": "{\"bakul.slug\":\"\\\"johor--johor-bahru\\\"\",\"bakul.basket\":\"[{\\\"code\\\":2068,\\\"qty\\\":1,\\\"opts\\\":[2066,1583,904,1582,992,1832,1"
+  },
+  {
+   "name": "a wider radius includes more shops",
+   "ok": true,
+   "detail": "24 -> 42"
+  },
+  {
+   "name": "postcode works instead of GPS",
+   "ok": true,
+   "detail": "postcode 11000"
+  },
+  {
+   "name": "back to district mode",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "no horizontal scroll (near me)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "screenshot read on the device (OCR)",
+   "ok": true,
+   "detail": "\"barang dapur minggu ni:\\nberas 10kg\\n\\ntelur 2 papan\\n\\nminyak masak 5kg\\n\\ngula 1kg\\n\\nb\""
+  },
+  {
+   "name": "screenshot lines match items",
+   "ok": true,
+   "detail": "6 matched"
+  },
+  {
+   "name": "desktop two-column layout",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "no horizontal scroll (desktop)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "result bar hidden on desktop",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "tie or zero saving never shows 'RM 0.00 cheaper'",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "system dark mode applies without toggle",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "no horizontal scroll (360px)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "no page or console errors",
+   "ok": true,
+   "detail": ""
+  }
+ ]
+}

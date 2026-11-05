@@ -1,0 +1,9 @@
+# Built by the workflow on every deploy (from PriceCatcher), so not stored here.
+web/data/*
+!web/data/.gitkeep
+data/raw/
+data/sample/
+logs/
+__pycache__/
+node_modules/
+.DS_Store

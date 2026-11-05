@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bakul Murah</title>
+<meta name="description" content="Compare your grocery basket across shops near you. Built on PriceCatcher open data from KPDN via OpenDOSM.">
+<meta name="theme-color" content="#f6f3ec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141614" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230e6b4c'/%3E%3Cpath d='M7 13h18l-2.2 10.2a2 2 0 0 1-2 1.8h-9.6a2 2 0 0 1-2-1.8z' fill='%23fff'/%3E%3Cpath d='M11 13l4-6M21 13l-4-6' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+<header class="top">
+  <div class="wrap top-row">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M7 13h18l-2.2 10.2a2 2 0 0 1-2 1.8h-9.6a2 2 0 0 1-2-1.8z" fill="#fff"/><path d="M11 13l4-6M21 13l-4-6" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      <div>
+        <div class="brand-name">Bakul Murah</div>
+        <div class="brand-tag" data-i18n="tagline">Your basket, cheapest shop nearby</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="seg" role="group" aria-label="Language / Bahasa">
+        <button type="button" data-lang="ms" aria-pressed="false">BM</button>
+        <button type="button" data-lang="en" aria-pressed="true">EN</button>
+      </div>
+      <button type="button" class="icon-btn" id="themeBtn" aria-label="Toggle dark mode">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/><g class="i-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div id="importBar" class="banner info" hidden>
+  <div class="wrap import-row"><span id="importMsg"></span>
+    <span class="import-btns"><button type="button" class="btn small" id="importYes" data-i18n="importYes">Load it</button>
+    <button type="button" class="link-btn" id="importNo" data-i18n="importNo">Ignore</button></span></div>
+</div>
+
+<div id="synthBanner" class="banner" hidden>
+  <div class="wrap"><strong data-i18n="synthTitle">Sample data.</strong> <span data-i18n="synthBody">Shops and prices here are made up for testing. Run the fetch script to load real PriceCatcher data.</span></div>
+</div>
+
+<main id="main" class="wrap">
+  <section class="card where" aria-labelledby="whereH">
+    <h2 id="whereH" class="sr-only" data-i18n="where">Where do you shop?</h2>
+    <div class="seg mode" role="group" aria-label="Where" id="modeSeg" hidden>
+      <button type="button" data-mode="near" aria-pressed="false" data-i18n="modeNear">Near me</button>
+      <button type="button" data-mode="district" aria-pressed="true" data-i18n="modeDistrict">Choose a district</button>
+    </div>
+    <div class="near-box" id="nearBox" hidden>
+      <button type="button" class="btn" id="locBtn" data-i18n="locBtn">Use my location</button>
+      <form class="pc-form" id="pcForm">
+        <label class="sr-only" for="pcIn" data-i18n="pcLabel">Postcode</label>
+        <input id="pcIn" type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" autocomplete="postal-code" data-i18n-ph="pcPh" placeholder="or postcode">
+        <button type="submit" class="btn ghost" data-i18n="pcGo">Go</button>
+      </form>
+      <label class="radius"><span data-i18n="radius">Within</span>
+        <select id="radiusSel"><option value="3">3 km</option><option value="5" selected>5 km</option><option value="10">10 km</option><option value="20">20 km</option></select>
+      </label>
+    </div>
+    <label class="field district-field">
+      <span data-i18n="state">State</span>
+      <select id="stateSel"></select>
+    </label>
+    <label class="field district-field">
+      <span data-i18n="district">District</span>
+      <select id="districtSel"></select>
+    </label>
+    <p class="where-note" id="whereNote"></p>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" id="tab-basket" aria-controls="panel-basket" aria-selected="true" data-tab="basket" data-i18n="tabBasket">Basket</button>
+    <button role="tab" id="tab-trends" aria-controls="panel-trends" aria-selected="false" data-tab="trends" data-i18n="tabTrends">Price rises</button>
+  </nav>
+
+  <!-- BASKET -->
+  <section id="panel-basket" role="tabpanel" aria-labelledby="tab-basket" class="panel">
+    <div class="grid">
+      <div class="col">
+        <div class="card">
+          <div class="card-head">
+            <h2 data-i18n="yourList">Your list</h2>
+            <button type="button" class="link-btn" id="clearBtn" data-i18n="clear">Clear</button>
+          </div>
+          <div class="list-actions">
+            <button type="button" class="chip-btn primary" id="pasteBtn" data-i18n="pasteBtn">Paste or upload a list</button>
+            <button type="button" class="chip-btn" id="listsBtn" data-i18n="listsBtn">My lists</button>
+            <button type="button" class="chip-btn" id="shareBtn" data-i18n="shareBtn">Share list</button>
+          </div>
+          <div class="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input id="searchIn" type="search" autocomplete="off" spellcheck="false" aria-label="Search items" data-i18n-ph="searchPh" placeholder="Search: ayam, telur, beras...">
+          </div>
+          <ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul>
+          <ul id="basketList" class="basket"></ul>
+          <div id="basketEmpty" class="empty">
+            <p data-i18n="emptyBasket">Add the items you buy each week. We rank shops in your district by the total.</p>
+            <div class="empty-btns">
+              <button type="button" class="btn" id="pasteBtn2" data-i18n="pasteBtn">Paste or upload a list</button>
+              <button type="button" class="btn ghost" id="starterBtn" data-i18n="starter">Add a starter list</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div id="summary" class="card summary" hidden></div>
+        <div id="splitCard" class="card split plan" hidden></div>
+        <div id="avgCard" class="card avg" hidden></div>
+        <div class="card" id="rankCard" hidden>
+          <div class="card-head">
+            <h2 data-i18n="ranked">Shops ranked by basket total</h2>
+          </div>
+          <ol id="rankList" class="rank"></ol>
+          <button type="button" class="link-btn more" id="moreBtn" hidden></button>
+          <p class="fine" data-i18n="rankNote">Shops with every item come first. Prices are the latest seen in the last two months. Prices older than 14 days are marked.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRENDS -->
+  <section id="panel-trends" role="tabpanel" aria-labelledby="tab-trends" class="panel" hidden>
+    <div class="card">
+      <div class="card-head wrap-row">
+        <h2 id="feedTitle" data-i18n="feedTitle">Biggest price changes this month</h2>
+        <div class="controls">
+          <div class="seg" role="group" aria-label="Direction">
+            <button type="button" data-dir="rises" aria-pressed="true" data-i18n="rises">Rises</button>
+            <button type="button" data-dir="falls" aria-pressed="false" data-i18n="falls">Falls</button>
+          </div>
+          <div class="seg" role="group" aria-label="Area">
+            <button type="button" data-scope="district" aria-pressed="true" data-i18n="scopeDistrict">District</button>
+            <button type="button" data-scope="national" aria-pressed="false" data-i18n="scopeNational">Malaysia</button>
+          </div>
+        </div>
+      </div>
+      <p class="fine" id="feedNote"></p>
+      <ol id="feedList" class="feed"></ol>
+    </div>
+  </section>
+</main>
+
+<dialog id="itemDlg" class="sheet" aria-labelledby="dlgTitle">
+  <div class="sheet-inner">
+    <div class="sheet-head">
+      <div>
+        <h2 id="dlgTitle"></h2>
+        <div class="muted" id="dlgSub"></div>
+      </div>
+      <button type="button" class="icon-btn" id="dlgClose" aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="stats" id="dlgStats"></div>
+    <figure class="chart-fig">
+      <figcaption class="legend" id="dlgLegend"></figcaption>
+      <div id="dlgChart" class="chart"></div>
+    </figure>
+    <h3 data-i18n="cheapestHere">Cheapest in this district now</h3>
+    <ol id="dlgShops" class="mini"></ol>
+    <button type="button" class="btn wide" id="dlgAdd"></button>
+  </div>
+</dialog>
+
+<dialog id="pasteDlg" class="sheet" aria-labelledby="pasteTitle">
+  <div class="sheet-inner">
+    <div class="sheet-head">
+      <div>
+        <h2 id="pasteTitle" data-i18n="pasteTitle">Paste or upload your list</h2>
+        <div class="muted" id="pasteSub" data-i18n="pasteSub">Write it the way you would in WhatsApp, in BM or English. One item per line, or separate with commas.</div>
+      </div>
+      <button type="button" class="icon-btn" id="pasteClose" aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div id="pasteStep">
+      <label class="sr-only" for="pasteIn" data-i18n="pasteLabel">Your shopping list</label>
+      <textarea id="pasteIn" rows="8" spellcheck="false" placeholder="beras 10kg&#10;telur 2 papan&#10;minyak masak 5kg&#10;ayam 2 ekor&#10;bawang 500g, kangkung, susu pekat 2 tin"></textarea>
+      <div class="upload-row">
+        <label class="chip-btn file-btn"><input type="file" id="imgIn" accept="image/*"><span data-i18n="readShot">Read a screenshot</span></label>
+        <label class="chip-btn file-btn"><input type="file" id="txtIn" accept=".txt,.csv,text/plain"><span data-i18n="openTxt">Open a text file</span></label>
+      </div>
+      <p class="fine" id="ocrStatus" role="status" aria-live="polite"></p>
+      <p class="fine" data-i18n="ocrPrivacy">Screenshots are read on your phone. Nothing is uploaded.</p>
+      <button type="button" class="btn wide" id="matchBtn" data-i18n="matchBtn">Find these items</button>
+    </div>
+    <div id="reviewStep" hidden>
+      <p class="muted" id="reviewNote"></p>
+      <ol id="matchList" class="matches"></ol>
+      <div class="review-btns">
+        <button type="button" class="btn ghost" id="backBtn" data-i18n="backBtn">Edit text</button>
+        <button type="button" class="btn" id="addMatchesBtn"></button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="listsDlg" class="sheet" aria-labelledby="listsTitle">
+  <div class="sheet-inner">
+    <div class="sheet-head">
+      <h2 id="listsTitle" data-i18n="listsTitle">My lists</h2>
+      <button type="button" class="icon-btn" id="listsClose" aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <form id="saveForm" class="save-row">
+      <label class="sr-only" for="listName" data-i18n="listNameLabel">List name</label>
+      <input id="listName" type="text" maxlength="40" autocomplete="off" data-i18n-ph="listNamePh" placeholder="e.g. Weekly shop">
+      <button type="submit" class="btn" id="saveListBtn" data-i18n="saveList">Save current list</button>
+    </form>
+    <ul id="savedLists" class="saved"></ul>
+    <h3 data-i18n="shareHead">Share your list</h3>
+    <p class="fine" data-i18n="shareNote">The link holds only the items and amounts. No name, no location.</p>
+    <div class="share-row">
+      <label class="sr-only" for="shareOut" data-i18n="shareBtn">Share list</label>
+      <input id="shareOut" type="text" readonly>
+      <button type="button" class="btn" id="copyBtn" data-i18n="copy">Copy</button>
+    </div>
+    <button type="button" class="btn ghost wide" id="nativeShareBtn" data-i18n="shareApp" hidden>Share with an app</button>
+  </div>
+</dialog>
+
+<footer class="foot">
+  <div class="wrap">
+    <p id="dataLine"></p>
+    <p><span data-i18n="source">Source</span>: <a id="srcLink" href="https://open.dosm.gov.my/data-catalogue/pricecatcher" rel="noopener">PriceCatcher, KPDN via OpenDOSM</a>. <span data-i18n="licence">Licence</span>: <a id="licLink" href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>. <span data-i18n="notAffiliated">Independent prototype. Not affiliated with KPDN or DOSM.</span></p>
+    <p id="geoLine" hidden><span data-i18n="geoCredit">Shop locations</span>: <a id="geoLink" href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap contributors</a> (ODbL).</p>
+    <p data-i18n="privacy">No accounts. No tracking. Your list stays on this device.</p>
+    <p data-i18n="caveat">Prices are collected by enforcement officers for price monitoring. Shelf prices can differ. Check in store.</p>
+  </div>
+</footer>
+
+<a id="resultBar" class="resbar" href="#summary" hidden>
+  <span><small id="rbLabel"></small><b id="rbShop"></b></span><strong id="rbTotal"></strong>
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+</a>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<noscript><p class="wrap">This app needs JavaScript.</p></noscript>
+<script src="js/i18n.js"></script>
+<script src="js/basket.js"></script>
+<script src="js/listparse.js"></script>
+<script src="js/near.js"></script>
+<script src="js/chart.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

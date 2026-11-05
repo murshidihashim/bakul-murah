@@ -1,0 +1,2155 @@
+premise_code,lat,lon,precision,query,district,state,postcode
+2,4.565104,101.046906,name,PASAR BESAR IPOH,Kinta,Perak,30300
+3,2.249743,102.303137,postcode,75450,Melaka Tengah,Melaka,75450
+6,2.932494,101.676912,postcode,62250,Wp Putrajaya,W.P. Putrajaya,62250
+15,6.438383,100.200009,postcode,01000,Kangar,Perlis,01000
+16,6.438383,100.200009,postcode,01000,Kangar,Perlis,01000
+115,2.466857,102.231439,address,"JALAN BESAR, TAMPIN, NEGERI SEMBILAN, Tampin",Tampin,Negeri Sembilan,73000
+136,3.145593,101.697390,district,"Cheras, W.P. Kuala Lumpur",Cheras,W.P. Kuala Lumpur,
+176,3.099272,101.734629,name,LOTUS'S CHERAS,Cheras,W.P. Kuala Lumpur,
+183,3.105452,101.600141,name,GIANT SUPERMARKET KELANA JAYA,Petaling Jaya,Selangor,47301
+234,6.194175,116.244479,postcode,89208,Tuaran,Sabah,89208
+239,2.682239,101.942371,address,"JALAN RJ 6/12 TAMAN RASAH JAYA, SEREMBAN, NEGERI SEMBILAN, Seremban",Seremban,Negeri Sembilan,70300
+261,2.712590,101.914732,name,TESCO SEREMBAN 2,Seremban,Negeri Sembilan,70300
+322,4.851344,100.740680,postcode,34000,"Larut, Matang & Selama",Perak,34000
+330,3.071940,101.538663,name,TESCO SEKSYEN 13,Petaling,Selangor,40100
+333,2.907176,101.679086,name,"PASAR TANI, PRESINT 4",Wp Putrajaya,W.P. Putrajaya,
+342,6.395055,100.170065,address,"KUALA PERLIS, KUALA PERLIS, PERLIS, Kangar",Kangar,Perlis,02000
+343,5.283502,115.244571,postcode,87000,Kawasan Luar Bandar,W.P. Labuan,87000
+351,6.114454,102.231730,name,TESCO KOTA BHARU,Kota Bharu,Kelantan,
+354,6.103744,100.350447,name,PASAR BESAR ALOR STAR,Kota Setar,Kedah,05050
+361,3.170439,113.040453,name,PASAR UTAMA BINTULU,Bintulu,Sarawak,97000
+364,6.135809,116.268957,district,"Tamparuli, Sabah",Tamparuli,Sabah,89250
+365,5.283502,115.244571,postcode,87000,Kawasan Luar Bandar,W.P. Labuan,87000
+368,5.531158,102.199367,district,"Kuala Krai, Kelantan",Kuala Krai,Kelantan,
+371,1.428833,110.154236,address,"PEKAN BAU, BAU, SARAWAK, Bau",Bau,Sarawak,94000
+380,2.941044,101.711248,name,AEON BIG ALAMANDA,Wp Putrajaya,W.P. Putrajaya,62000
+382,6.065255,102.261347,address,"KEDAI PASIR TUMBOH, Kota Bharu",Kota Bharu,Kelantan,
+387,2.941852,101.705960,postcode,62000,Wp Putrajaya,W.P. Putrajaya,62000
+394,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+398,6.115530,102.218678,address,"KG. BARU PASIR PEKAN, WAKAF BHARU, KELANTAN, Tumpat",Tumpat,Kelantan,16250
+424,3.092439,101.675103,name,PASAR JALAN KLANG LAMA,Seputeh,W.P. Kuala Lumpur,
+429,3.196773,101.742362,name,AEON BIG ( WANGSA MAJU ),Setiawangsa,W.P. Kuala Lumpur,
+431,4.668698,101.155512,name,PASAR TANJUNG RAMBUTAN,Kinta,Perak,31250
+433,4.474676,101.166588,name,PASAR GOPENG,Kinta,Perak,31600
+434,4.469552,101.040353,name,PASAR BATU GAJAH,Kinta,Perak,30200
+435,3.116647,101.676688,name,AEON BIG ( MID VALLEY ),Lembah Pantai,W.P. Kuala Lumpur,
+438,5.019814,102.038266,district,"Gua Musang, Kelantan",Gua Musang,Kelantan,
+439,5.834270,102.404031,name,PASARAYA ECONJAYA PASIR PUTEH,Pasir Puteh,Kelantan,
+480,5.995119,102.386741,district,"Bachok, Kelantan",Bachok,Kelantan,
+494,3.145593,101.697390,district,"Batu, W.P. Kuala Lumpur",Batu,W.P. Kuala Lumpur,
+506,3.145593,101.697390,district,"Batu, W.P. Kuala Lumpur",Batu,W.P. Kuala Lumpur,
+524,5.807567,102.147926,name,PASAR BESAR TANAH MERAH,Tanah Merah,Kelantan,
+527,5.810246,102.135064,address,"JALAN ISMAIL PETRA, TANAH MERAH, KELANTAN, Tanah Merah",Tanah Merah,Kelantan,
+529,5.810246,102.135064,address,"JALAN ISMAIL PETRA, TANAH MERAH, KELANTAN, Tanah Merah",Tanah Merah,Kelantan,
+569,5.823141,102.098099,postcode,17500,Tanah Merah,Kelantan,17500
+585,1.476704,103.392950,name,PASAR AWAM PONTIAN,Pontian,Johor,82000
+587,2.437827,103.836329,postcode,86800,Mersing,Johor,86800
+588,1.518028,103.379064,postcode,82000,Pontian,Johor,82000
+589,1.506760,103.512715,address,"PEKAN NANAS, PONTIAN, Pontian",Pontian,Johor,81500
+591,1.497121,103.869620,name,LOTUS`S SERI ALAM,Johor Bahru,Johor,
+600,5.827787,102.401696,name,PASAR SITI HAJAR PASIR PUTEH,Pasir Puteh,Kelantan,16800
+604,5.766305,102.034148,district,"Tanah Merah, Kelantan",Tanah Merah,Kelantan,
+633,5.282210,115.239187,name,PASAR SENTRAL LABUAN,Kawasan Bandar,W.P. Labuan,87000
+638,5.807934,102.148401,address,"28-29 JALAN HILIR PASAR, TANAH MERAH, KELANTAN, Tanah Merah",Tanah Merah,Kelantan,
+656,2.732750,101.971111,postcode,70400,Seremban,Negeri Sembilan,70400
+660,6.008094,102.092513,district,"Pasir Mas, Kelantan",Pasir Mas,Kelantan,
+688,5.823141,102.098099,postcode,17500,Tanah Merah,Kelantan,17500
+693,5.996523,102.295846,postcode,16400,Pasir Puteh,Kelantan,16400
+720,6.130208,102.241666,address,"JALAN PINTU PONG, KOTA BHARU, Kota Bharu",Kota Bharu,Kelantan,
+725,6.129516,102.211468,name,PANTAI TIMUR HYPERMARKET,Kota Bharu,Kelantan,
+729,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+739,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+754,1.100861,110.710374,district,"Serian, Sarawak",Serian,Sarawak,
+758,1.493522,110.320882,postcode,93250,Kuching,Sarawak,93250
+766,6.153673,102.157097,name,PASAR CHABANG EMPAT,Tumpat,Kelantan,16210
+777,6.122078,102.201017,name,PASAR BESAR WAKAF BHARU,Tumpat,Kelantan,16250
+803,6.008094,102.092513,district,"Pasir Mas, Kelantan",Pasir Mas,Kelantan,
+805,6.008094,102.092513,district,"Pasir Mas, Kelantan",Pasir Mas,Kelantan,
+811,6.008094,102.092513,district,"Pasir Mas, Kelantan",Pasir Mas,Kelantan,
+834,5.336914,116.154144,name,SERVAY JAYA SUPERMARKET,Keningau,Sabah,89000
+864,1.528188,103.814818,name,GIANT HYPERMARKET PLENTONG,Johor Bahru,Johor,81750
+890,5.440192,115.494931,district,"Kuala Penyu, Sabah",Kuala Penyu,Sabah,89747
+907,2.811507,102.399089,address,"JALAN DATO ½ BESAR, BAHAU, N. SEMBILAN, Bahau",Bahau,Negeri Sembilan,72100
+930,2.044180,102.588698,postcode,84000,Muar,Johor,84000
+942,2.143797,102.766532,name,PASAR AWAM PAGOH,Muar,Johor,84600
+955,1.847973,102.924919,name,PASAR AWAM BATU PAHAT,Batu Pahat,Johor,83000
+962,2.234929,102.535578,address,"TAMAN TANGKAK JAYA, TANGKAK, JOHOR, Muar",Muar,Johor,84900
+1000,1.124403,111.373907,postcode,95000,Sri Aman,Sarawak,95000
+1028,7.231645,117.171156,district,"Kudat, Sabah",Kudat,Sabah,89057
+1032,4.818553,101.072284,name,PASAR AWAM (KUALA KANGSAR),Kuala Kangsar,Perak,33000
+1043,4.775870,100.843157,name,PASAR AWAM (PADANG RENGAS),Kuala Kangsar,Perak,33700
+1046,4.591028,100.881623,address,"MANONG, PERAK, Kuala Kangsar",Kuala Kangsar,Perak,33800
+1053,1.485566,103.884173,name,PASAR AWAM MASAI,Johor Bahru,Johor,81750
+1054,1.518028,103.379064,postcode,82000,Pontian,Johor,82000
+1107,1.856596,103.089017,postcode,86400,Batu Pahat,Johor,86400
+1117,1.865510,102.948625,address,"JALAN PERSIARAN FLORA UTAMA, TAMAN FLORA UTAMA, BATU PAHAT, JOHOR, Batu Pahat",Batu Pahat,Johor,83000
+1121,1.845423,102.950725,postcode,83000,Batu Pahat,Johor,83000
+1133,4.213104,101.257192,name,PASAR AWAM TAPAH,Batang Padang,Perak,
+1134,2.249477,103.041576,name,PASAR  AWAM SEGAMAT,Segamat,Johor,85000
+1135,2.668776,102.886451,address,"LEBUHRAYA SEGAMAT-KUANTAN, SEGAMAT, JOHOR, Segamat",Segamat,Johor,85000
+1137,2.503895,102.839441,postcode,85000,Segamat,Johor,85000
+1139,2.404107,103.014033,postcode,85300,Segamat,Johor,85300
+1143,6.120225,100.380597,address,"BATU 2 JALAN LANGGAR, ALOR STAR, KEDAH, Kota Setar",Kota Setar,Kedah,05460
+1146,6.089997,100.318327,postcode,06600,Kota Setar,Kedah,06600
+1148,6.122603,100.369032,district,"Kota Setar, Kedah",Kota Setar,Kedah,06660
+1152,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+1164,6.104923,100.293230,address,"JALAN KUALA KEDAH, KUALA KEDAH, KEDAH, Kota Setar",Kota Setar,Kedah,06600
+1165,6.153253,100.505700,postcode,06400,Pokok Sena,Kedah,06400
+1168,5.428714,101.128833,address,"JALAN TUN SABAN, GERIK, PERAK, Hulu Perak",Hulu Perak,Perak,33300
+1170,6.165500,100.508031,address,"TAMAN BANDAR BARU, POKOK SENA, KEDAH, Pokok Sena",Pokok Sena,Kedah,06400
+1204,5.426312,101.128351,name,PASAR AWAM GERIK,Hulu Perak,Perak,33300
+1209,5.447973,101.297149,district,"Hulu Perak, Perak",Hulu Perak,Perak,33400
+1211,5.447973,101.297149,district,"Hulu Perak, Perak",Hulu Perak,Perak,33100
+1259,5.108455,100.489789,name,ECONSAVE PARIT BUNTAR,Kerian,Perak,34200
+1263,5.117534,100.485728,name,BILLION PARIT BUNTAR,Kerian,Perak,34200
+1267,5.034575,100.498458,district,"Kerian, Perak",Kerian,Perak,
+1282,5.060732,100.431651,postcode,34350,Kerian,Perak,34350
+1284,5.120266,100.487265,name,PASAR AWAM PARIT BUNTAR,Kerian,Perak,34200
+1288,2.017770,112.940115,address,"JALAN TEMENGGONG KOH, KAPIT, SARAWAK, Kapit",Kapit,Sarawak,96800
+1291,2.013903,112.935677,district,"Kapit, Sarawak",Kapit,Sarawak,
+1295,2.014740,112.933483,postcode,96800,Kapit,Sarawak,96800
+1299,2.016621,112.939307,address,"JALAN PENGHULU GERINANG, KAPIT, SARAWAK, Kapit",Kapit,Sarawak,
+1300,2.016270,112.939286,address,"JALAN TIONG UNG HONG, KAPIT, SARAWAK, Kapit",Kapit,Sarawak,
+1302,2.660919,114.381651,district,"Belaga, Sarawak",Belaga,Sarawak,96900
+1324,1.633300,103.610702,postcode,81000,Kota Tinggi,Johor,81000
+1325,1.860577,103.626819,postcode,81440,Kota Tinggi,Johor,81440
+1326,5.009535,100.534881,postcode,34300,Kerian,Perak,34300
+1361,2.503895,102.839441,postcode,85000,Segamat,Johor,85000
+1407,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+1440,6.008094,102.092513,district,"Pasir Mas, Kelantan",Pasir Mas,Kelantan,
+1446,5.707153,101.733334,address,"KG.BATU MELINTANG, JELI, KELANTAN, Jeli",Jeli,Kelantan,
+1449,5.590019,101.817168,district,"Jeli, Kelantan",Jeli,Kelantan,
+1452,5.590019,101.817168,district,"Jeli, Kelantan",Jeli,Kelantan,
+1455,6.008094,102.092513,district,"Pasir Mas, Kelantan",Pasir Mas,Kelantan,
+1517,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+1527,2.335844,102.096621,postcode,78300,Alor Gajah,Melaka,78300
+1584,5.835793,102.226026,address,"KEDAI LABOK, MACHANG, Machang",Machang,Kelantan,
+1607,5.865446,102.201758,address,"KEDAI PULAI CHONDONG, PULAI CHONDONG, Machang",Machang,Kelantan,
+1609,5.871589,102.231406,name,SRI GADING MINI MARKET,Machang,Kelantan,
+1634,4.861685,101.958455,name,PASAR BESAR GUA MUSANG,Gua Musang,Kelantan,
+1649,5.767670,102.238082,district,"Machang, Kelantan",Machang,Kelantan,
+1652,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+1660,6.144578,102.218685,name,HOME-U SDN BHD,Tumpat,Kelantan,
+1665,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+1713,4.012061,101.018440,postcode,36000,Hilir Perak,Perak,36000
+1714,4.073425,101.147057,name,PASAR AWAM LANGKAP,Hilir Perak,Perak,36700
+1718,4.025039,101.021693,name,THE STORE TELUK INTAN,Hilir Perak,Perak,36000
+1734,2.167632,111.677988,district,"Meradong, Sarawak",Meradong,Sarawak,
+1737,4.865842,100.729233,address,"JLN ISTANA LARUT, TAIPING, PERAK, Larut, Matang & Selama","Larut, Matang & Selama",Perak,
+1742,6.436140,100.272856,postcode,02600,Arau,Perlis,02600
+1756,4.877039,100.727846,name,THE STORE KAMUNTING,"Larut, Matang & Selama",Perak,34600
+1761,1.819804,111.899002,district,"Julau, Sarawak",Julau,Sarawak,
+1766,6.438383,100.200009,postcode,01000,Kangar,Perlis,01000
+1769,6.431838,100.428131,name,PASARAYA EKONOMI A-WANG,Arau,Perlis,02700
+1771,6.430728,100.271879,district,"Arau, Perlis",Arau,Perlis,02700
+1775,4.975395,100.797787,postcode,34500,"Larut, Matang & Selama",Perak,34500
+1779,6.431911,100.268318,address,"ARAU, PERLIS, Arau",Arau,Perlis,02600
+1783,4.894308,100.726122,name,PASAR AWAM MATANG,"Larut, Matang & Selama",Perak,34750
+1789,6.434065,100.201679,address,"JALAN KAMPUNG BAKAU - PADANG BEHOR, KANGAR, PERLIS, Kangar",Kangar,Perlis,01000
+1803,6.430728,100.271879,district,"Arau, Perlis",Arau,Perlis,02700
+1811,6.640302,100.208592,postcode,02200,Padang Besar,Perlis,02200
+1814,6.654244,100.310250,postcode,02100,Padang Besar,Perlis,02100
+1815,5.838964,118.120953,name,PASAR UMUM BANDAR SANDAKAN,Sandakan,Sabah,
+1826,4.818553,101.072284,name,PASAR AWAM (SG SIPUT),Kuala Kangsar,Perak,31100
+1844,2.050771,111.417600,district,"Sarikei, Sarawak",Sarikei,Sarawak,
+1869,6.368334,116.476283,postcode,89157,Kota Belud,Sabah,89157
+1959,5.330489,100.268099,address,"ARA 1, SUNGAI ARA, BAYAN LEPAS, PULAU PINANG, Barat Daya",Barat Daya,Pulau Pinang,11900
+1960,5.391605,100.318327,name,PASAR JELUTONG,Timur Laut,Pulau Pinang,
+1961,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+1962,5.326099,100.287147,name,SUNSHINE SQUARE,Barat Daya,Pulau Pinang,11950
+1972,5.323940,100.287087,address,"JALAN MAYANG PASIR, BAYAN BARU, PULAU PINANG, Barat Daya",Barat Daya,Pulau Pinang,11950
+1980,5.320876,100.283881,name,GIANT HYPERMARKET BAYAN BARU,Barat Daya,Pulau Pinang,11900
+2007,5.348474,100.237766,postcode,11000,Barat Daya,Pulau Pinang,11000
+2028,1.499206,103.700354,name,GIANT HYPERMARKET TAMPOI,Johor Bahru,Johor,81200
+2034,5.366891,100.306424,postcode,11700,Barat Daya,Pulau Pinang,11700
+2039,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+2048,1.501598,103.741976,postcode,80350,Johor Bahru,Johor,80350
+2062,5.335659,100.238950,district,"Barat Daya, Pulau Pinang",Barat Daya,Pulau Pinang,
+2109,4.243521,117.885331,district,"Tawau, Sabah",Tawau,Sabah,91027
+2158,1.478428,103.775832,postcode,80400,Johor Bahru,Johor,80400
+2161,5.417820,100.331842,name,PASAR CHOWRASTA,Timur Laut,Pulau Pinang,
+2179,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+2190,5.430585,100.311953,name,PASAR PULAU TIKUS,Timur Laut,Pulau Pinang,
+2213,5.457192,100.213210,name,PASAR TELUK BAHANG,Timur Laut,Pulau Pinang,
+2214,5.019814,102.038266,district,"Gua Musang, Kelantan",Gua Musang,Kelantan,
+2216,4.864486,101.953964,address,"BANDAR BARU GUA MUSANG, GUA MUSANG, Gua Musang",Gua Musang,Kelantan,
+2221,5.431291,100.311308,name,BANDAR BARU PULAU TIKUS,Timur Laut,Pulau Pinang,
+2222,5.407827,100.323276,name,PASAR JALAN PATANI,Timur Laut,Pulau Pinang,
+2230,7.231645,117.171156,district,"Kudat, Sabah",Kudat,Sabah,89057
+2248,1.555147,110.321564,name,MEDAN NIAGA SATOK,Kuching,Sarawak,13636
+2270,1.418564,110.156020,name,MING MING (BAU),Bau,Sarawak,
+2280,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+2286,5.019814,102.038266,district,"Gua Musang, Kelantan",Gua Musang,Kelantan,
+2333,4.874688,101.961660,address,"TAMAN MESRA, GUA MUSANG, Gua Musang",Gua Musang,Kelantan,
+2450,5.992017,116.111948,name,SERVAY HYPERMARKET LIKAS,Kota Kinabalu,Sabah,89400
+2471,2.653927,103.621758,address,"JLN. PERISAI, ENDAU, JOHOR, Mersing",Mersing,Johor,86900
+2507,4.479076,118.429773,district,"Semporna, Sabah",Semporna,Sabah,
+2510,5.336641,103.135693,name,PASAR PAYANG,Kuala Terengganu,Terengganu,
+2517,5.744852,115.934078,postcode,89608,Papar,Sabah,89608
+2530,3.188248,101.691038,name,PASAR SENTUL,Batu,W.P. Kuala Lumpur,
+2554,5.862623,116.113815,district,"Penampang, Sabah",Penampang,Sabah,
+2560,2.239702,102.227513,postcode,75250,Melaka Tengah,Melaka,75250
+2573,2.828644,101.788569,postcode,71800,Seremban,Negeri Sembilan,71800
+2612,2.584113,102.089123,postcode,71300,Rembau,Negeri Sembilan,71300
+2617,6.530573,116.759405,postcode,89108,Kota Marudu,Sabah,89108
+2623,4.243025,117.884700,name,PASAR TANJUNG TAWAU,Tawau,Sabah,91000
+2626,4.244166,117.889585,address,"JALAN DUNLOP, TAWAU, SABAH, Tawau",Tawau,Sabah,91000
+2629,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+2637,4.480894,117.407133,district,"Kalabakan, Sabah",Kalabakan,Sabah,91007
+2639,4.481127,118.634008,postcode,91308,Semporna,Sabah,91308
+2641,4.724542,117.389679,postcode,91000,Kalabakan,Sabah,91000
+2645,6.329281,99.774978,postcode,07000,Langkawi,Kedah,07000
+2649,4.259319,117.906764,postcode,91007,Tawau,Sabah,91007
+2651,6.329281,99.774978,postcode,07000,Langkawi,Kedah,07000
+2657,6.427253,100.427506,address,"PEKAN BARU CHANGLUN, CHANGLUN, KEDAH DARUL AMAN, Kubang Pasu",Kubang Pasu,Kedah,06010
+2661,6.331042,99.825489,name,PASAR AWAM KUAH,Langkawi,Kedah,07000
+2665,6.258689,100.228612,name,"PASARAYA KAWANG SDN BHD,",Kubang Pasu,Kedah,06150
+2678,6.256915,100.419088,address,"PEKAN JITRA 2, JITRA, KEDAH DARUL AMAN, Kubang Pasu",Kubang Pasu,Kedah,06000
+2685,6.427253,100.427506,address,"PEKAN LAMA CHANGLUN, CHANGLUN KEDAH, Kubang Pasu",Kubang Pasu,Kedah,06010
+2689,6.237208,100.316401,postcode,06150,Kubang Pasu,Kedah,06150
+2700,6.387289,99.861936,address,"KAMPUNG PADANG LALANG, LANGKAWI KEDAH, KEDAH, Langkawi",Langkawi,Kedah,07000
+2736,2.572691,101.831617,name,PASAR LUKUT,Port Dickson,Negeri Sembilan,71010
+2739,6.352086,99.736546,name,PL SOON HUAT SDN. BHD.,Langkawi,Kedah,07000
+2758,6.331042,99.825489,name,PASAR AWAM PADANG MATSIRAT,Langkawi,Kedah,07100
+2775,4.572547,101.115584,name,PASAR GUNUNG RAPAT,Kinta,Perak,31350
+2788,2.464958,101.852733,name,PASAR TELUK KEMANG,Port Dickson,Negeri Sembilan,71050
+2831,4.689833,114.977808,postcode,98700,Limbang,Sarawak,98700
+2838,4.829828,101.079623,name,TF VALUE MART SG SIPUT,Kuala Kangsar,Perak,31100
+2846,4.689833,114.977808,postcode,98700,Limbang,Sarawak,98700
+2864,5.310207,103.081507,address,"KAMPUNG MANIR, KUALA TERENGGANU, TERENGGANU, Kuala Terengganu",Kuala Terengganu,Terengganu,
+2874,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,
+2879,2.299660,111.871001,district,"Sibu, Sarawak",Sibu,Sarawak,
+2906,4.455121,115.427188,district,"Lawas, Sarawak",Lawas,Sarawak,
+2907,2.033079,103.325903,postcode,86000,Kluang,Johor,86000
+2917,1.883627,103.402033,name,PASAR AWAM KLUANG,Kluang,Johor,86000
+2918,5.813934,100.741735,name,PASAR PEKAN SIK,Sik,Kedah,08200
+2925,5.550081,102.735511,district,"Setiu, Terengganu",Setiu,Terengganu,50038
+2948,5.506228,100.551395,name,PASAR AWAM PADANG SERAI,Kulim,Kedah,09400
+2952,5.820275,100.743450,address,"PEKAN SIK, SIK, KEDAH, Sik",Sik,Kedah,08210
+2955,5.371981,100.557339,name,PASAR AWAM KULIM,Kulim,Kedah,09000
+2959,5.734389,102.505598,name,SK MART,Besut,Terengganu,22000
+2983,3.612447,102.256682,district,"Temerloh, Pahang",Temerloh,Pahang,
+2984,4.772653,103.421766,name,NIRWANA MAJU SDN BHD,Dungun,Terengganu,23000
+2993,5.675388,100.917146,address,"JALAN SYED SHEIKH, BALING KEDAH, Baling",Baling,Kedah,09100
+3002,3.236674,102.541772,district,"Bera, Pahang",Bera,Pahang,
+3003,3.116647,101.676688,name,AEON ( MID VALLEY ),Lembah Pantai,W.P. Kuala Lumpur,
+3017,5.604196,100.643029,address,"SUSUR ORKID, KUALA KETIL, BALING, KEDAH, Baling",Baling,Kedah,09100
+3021,5.655849,100.871946,name,BILLION BALING,Baling,Kedah,09100
+3023,3.082054,101.642101,name,WAN LEE HENG CASH & CARRY,Titiwangsa,W.P. Kuala Lumpur,
+3024,2.430924,103.832229,name,PASAR BASAH MERSING,Mersing,Johor,86800
+3041,3.044839,101.444736,district,"Klang, Selangor",Klang,Selangor,44220
+3051,5.215578,100.611892,name,PASAR AWAM SERDANG,Kulim,Kedah,09800
+3053,5.115509,118.430636,district,"Lahad Datu, Sabah",Lahad Datu,Sabah,91111
+3056,2.299660,111.871001,district,"Sibu, Sarawak",Sibu,Sarawak,
+3066,5.115509,118.430636,district,"Lahad Datu, Sabah",Lahad Datu,Sabah,60249
+3078,3.145593,101.697390,district,"Titiwangsa, W.P. Kuala Lumpur",Titiwangsa,W.P. Kuala Lumpur,
+3103,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+3130,3.213197,101.638880,name,AEON ( METRO PRIMA ),Kepong,W.P. Kuala Lumpur,
+3150,3.214714,101.643944,name,AEON BIG ( KEPONG ),Kepong,W.P. Kuala Lumpur,
+3171,5.676000,100.917540,address,"JALAN LIKU, BALING KEDAH, Baling",Baling,Kedah,09100
+3178,3.081844,101.588311,name,AEON BIG SUBANG JAYA,Petaling,Selangor,47500
+3181,3.133834,101.715464,name,PASAR PUDU,Cheras,W.P. Kuala Lumpur,
+3195,3.276703,101.513554,name,PASAR BATU 5,Batu,W.P. Kuala Lumpur,
+3204,3.069383,101.693253,name,THE STORE ( SRI PETALING ),Seputeh,W.P. Kuala Lumpur,24211
+3211,3.243188,101.665516,name,PASAR HARIAN SELAYANG ( KL ),Batu,W.P. Kuala Lumpur,
+3214,3.200911,113.058646,name,FARLEY SUPERMARKET,Bintulu,Sarawak,97000
+3251,5.317392,103.125213,name,PASAR BUKIT BESAR,Kuala Terengganu,Terengganu,
+3254,4.910689,102.765070,district,"Hulu Terengganu, Terengganu",Hulu Terengganu,Terengganu,
+3256,5.714434,102.546529,postcode,22200,Besut,Terengganu,22200
+3261,4.910689,102.765070,district,"Hulu Terengganu, Terengganu",Hulu Terengganu,Terengganu,
+3265,4.778258,103.421734,name,PASAR BESAR DUNGUN,Dungun,Terengganu,23000
+3274,6.194175,116.244479,postcode,89208,Tuaran,Sabah,89208
+3302,3.243188,101.665516,name,PASAR SELAYANG BARU,Gombak,Selangor,68100
+3304,4.482970,100.912837,postcode,32800,Perak Tengah,Perak,32800
+3305,3.138678,101.628908,name,PASAR BESAR TAMAN TUN DR ISMAIL ( TTDI ),Segambut,W.P. Kuala Lumpur,
+3336,3.065692,101.488894,name,GIANT SEKSYEN 7 SHAH ALAM,Petaling,Selangor,40000
+3339,3.846636,101.424965,postcode,35800,Muallim,Perak,35800
+3344,4.005948,101.301463,address,"SUNGKAI, PERAK, Batang Padang",Batang Padang,Perak,35600
+3346,4.111288,101.286873,name,PASAR AWAM BIDOR,Batang Padang,Perak,35500
+3359,1.828043,103.307928,name,PASAR AWAM SIMPANG RENGGAM,Kluang,Johor,86200
+3366,3.145593,101.697390,district,"Segambut, W.P. Kuala Lumpur",Segambut,W.P. Kuala Lumpur,
+3383,4.477829,100.910394,name,PASAR AWAM PARIT,Perak Tengah,Perak,32800
+3399,3.087549,101.645087,name,PASAR BESAR JALAN OTHMAN,Petaling Jaya,Selangor,46000
+3424,2.518786,102.157364,name,PASAR AWAM REMBAU,Rembau,Negeri Sembilan,71300
+3438,3.189316,101.718660,name,PASAR AIR PANAS,Setiawangsa,W.P. Kuala Lumpur,
+3444,3.601443,102.641005,district,"Maran, Pahang",Maran,Pahang,22584
+3517,3.612447,102.256682,district,"Temerloh, Pahang",Temerloh,Pahang,
+3528,3.145593,101.697390,district,"Lembah Pantai, W.P. Kuala Lumpur",Lembah Pantai,W.P. Kuala Lumpur,
+3531,5.280379,115.245528,name,MILIMEWAH SUPERSTORE,Kawasan Bandar,W.P. Labuan,80838
+3541,3.245269,101.699389,address,"JALAN 1, TAMAN SRI GOMBAK, BATU CAVES, SELANGOR, Gombak",Gombak,Selangor,68100
+3558,3.351132,101.251831,name,PASAR AWAM PASIR PENAMBANG,Kuala Selangor,Selangor,45000
+3575,3.427793,101.177019,name,PASAR AWAM TANJUNG KARANG,Kuala Selangor,Selangor,45500
+3587,2.147601,102.424901,name,PASAR BESAR JASIN,Jasin,Melaka,77000
+3588,2.147601,102.424901,name,PASAR BESAR MERLIMAU,Jasin,Melaka,77300
+3662,3.673569,100.990490,postcode,45300,Sabak Bernam,Selangor,45300
+3692,3.086650,101.620357,name,PASAR SERI SETIA,Petaling Jaya,Selangor,47300
+3694,4.243521,117.885331,district,"Tawau, Sabah",Tawau,Sabah,91000
+3702,6.350231,116.441407,postcode,89158,Kota Belud,Sabah,89158
+3727,3.145593,101.697390,district,"Setiawangsa, W.P. Kuala Lumpur",Setiawangsa,W.P. Kuala Lumpur,
+3739,5.346082,115.744008,name,PASAR AM BEAUFORT,Beaufort,Sabah,
+3770,5.309032,103.123544,address,"CHABANG TIGA, KUALA TERENGGANU, TERENGGANU, Kuala Terengganu",Kuala Terengganu,Terengganu,
+3786,3.612447,102.256682,district,"Temerloh, Pahang",Temerloh,Pahang,
+3837,2.099026,112.156057,name,NAM LEONG (KANOWIT) SUPERMARKET,Kanowit,Sarawak,
+3838,2.238440,111.977443,name,KIM HOCK SUPERMARKET,Sibujaya,Sarawak,96000
+3845,5.891166,116.049784,address,"LORONG GRAND PLAZA PUTATAN, PUTATAN, Putatan",Putatan,Sabah,88200
+3861,5.736741,102.493888,address,"JALAN FARIDAH, JERTEH, JERTEH TERENGGANU, Besut",Besut,Terengganu,22000
+3870,4.686270,118.233177,postcode,91207,Kunak,Sabah,91207
+3901,2.991177,101.782886,postcode,43000,Hulu Langat,Selangor,43000
+3904,3.067668,101.429414,name,AEON BIG KAPAR,Klang,Selangor,42100
+3908,3.072166,101.502777,postcode,40000,Petaling,Selangor,40000
+3909,3.105903,101.444150,name,TESCO SETIA ALAM,Klang,Selangor,40170
+3936,6.250742,100.609978,address,"KUALA NERANG, KUALA NERANG, KEDAH, Padang Terap",Padang Terap,Kedah,06300
+3939,2.623439,113.150393,district,"Tatau, Sarawak",Tatau,Sarawak,
+3984,5.339626,100.478708,postcode,14000,Seberang Perai Tengah,Pulau Pinang,14000
+4015,3.341469,101.250496,address,"PEKAN PASIR PENAMBANG, KUALA SELANGOR, SELANGOR, Kuala Selangor",Kuala Selangor,Selangor,45400
+4057,5.339626,100.478708,postcode,14000,Seberang Perai Tengah,Pulau Pinang,14000
+4069,2.964242,101.780580,name,PASAR  BANGI,Hulu Langat,Selangor,43650
+4081,3.167939,101.724062,address,"LORONG KERAMAT 11, KAMPUNG DATUK KERAMAT, Titiwangsa",Titiwangsa,W.P. Kuala Lumpur,
+4088,6.427253,100.427506,address,"PEKAN BARU CHANGLUN, CHANGLUN, KEDAH, Kubang Pasu",Kubang Pasu,Kedah,06010
+4097,3.177288,101.749262,name,PASAR KERAMAT,Titiwangsa,W.P. Kuala Lumpur,
+4106,5.432378,100.391193,name,CHOP JOO ENG,Seberang Perai Utara,Pulau Pinang,13400
+4110,5.857124,100.454213,name,PASAR AWAM SG YAN,Yan,Kedah,06900
+4118,5.441586,100.382868,name,PASAR AWAM BAGAN AJAM,Seberang Perai Utara,Pulau Pinang,13000
+4148,5.499281,100.446799,district,"Seberang Perai Utara, Pulau Pinang",Seberang Perai Utara,Pulau Pinang,
+4169,3.108935,113.269243,district,"Sebauh, Sarawak",Sebauh,Sarawak,97100
+4172,3.108935,113.269243,district,"Sebauh, Sarawak",Sebauh,Sarawak,
+4177,5.339626,100.478708,postcode,14000,Seberang Perai Tengah,Pulau Pinang,14000
+4181,5.898765,100.378884,address,"SUNGAI LIMAU DALAM, YAN, KEDAH DARUL AMAN, Yan",Yan,Kedah,06910
+4191,5.859884,100.451530,postcode,08800,Yan,Kedah,08800
+4195,2.991415,101.792534,name,PASAR KAJANG,Hulu Langat,Selangor,43000
+4197,2.946341,101.846476,name,PASAR SEMENYIH,Hulu Langat,Selangor,43500
+4203,5.407092,100.463488,name,PASAR AWAM SRI PENANTI,Seberang Perai Tengah,Pulau Pinang,
+4205,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+4231,5.385210,100.391211,name,PASAR AWAM CHAI LENG PARK,Seberang Perai Tengah,Pulau Pinang,
+4234,5.455477,100.416143,postcode,13800,Seberang Perai Utara,Pulau Pinang,13800
+4296,3.978501,103.331298,address,"BALOK, KUANTAN, Kuantan",Kuantan,Pahang,
+4299,5.145714,100.491427,name,PASAR MINI TMN PERAI,Seberang Perai Tengah,Pulau Pinang,
+4302,6.010506,116.127352,postcode,88450,Kota Kinabalu,Sabah,88450
+4303,1.469802,110.330189,address,"7TH MILE, KOTA SENTOSA, KUCHING, SARAWAK, Kuching",Kuching,Sarawak,
+4313,5.982304,116.072546,name,PASAR BESAR KOTA KINABALU,Kota Kinabalu,Sabah,
+4315,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+4324,4.297397,100.756673,name,PASAR AWAM AYER TAWAR,Manjung,Perak,32400
+4377,5.339626,100.478708,postcode,14000,Seberang Perai Tengah,Pulau Pinang,14000
+4387,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+4454,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+4470,5.376483,100.398593,address,"BANDAR SEBERANG JAYA, SEBERANG JAYA, PENANG, Seberang Perai Tengah",Seberang Perai Tengah,Pulau Pinang,13700
+4473,5.222221,100.496471,name,PASAR AWAM SG BAKAP,Seberang Perai Selatan,Pulau Pinang,14200
+4496,5.168194,100.477337,postcode,14300,Seberang Perai Selatan,Pulau Pinang,14300
+4501,5.515347,100.415875,name,PASAR AWAM KEPALA BATAS,Seberang Perai Utara,Pulau Pinang,13200
+4505,5.393225,100.401490,name,PASAR AWAM SEBERANG JAYA,Seberang Perai Tengah,Pulau Pinang,
+4507,5.403660,100.369235,postcode,12000,Seberang Perai Utara,Pulau Pinang,12000
+4511,5.480380,100.494256,name,PASAR AWAM TASEK GELUGOR,Seberang Perai Utara,Pulau Pinang,13300
+4530,5.499281,100.446799,district,"Seberang Perai Utara, Pulau Pinang",Seberang Perai Utara,Pulau Pinang,12700
+4547,5.445989,100.431725,name,PASAR AWAM SUNGAI DUA,Seberang Perai Utara,Pulau Pinang,13800
+4591,1.819804,111.899002,district,"Julau, Sarawak",Julau,Sarawak,
+4593,5.449067,100.394984,postcode,13020,Seberang Perai Utara,Pulau Pinang,13020
+4633,5.328607,100.486216,name,PASAR AWAM BUKIT MERTAJAM,Seberang Perai Tengah,Pulau Pinang,14000
+4637,5.648899,100.514832,address,"LORONG GAMELAN 5, TAMAN RIA JAYA, SUNGAI PETANI, KEDAH, Kuala Muda",Kuala Muda,Kedah,08000
+4648,5.661481,100.504723,name,PASAR TAMAN RIA,Kuala Muda,Kedah,08000
+4655,5.582579,100.450639,postcode,08600,Kuala Muda,Kedah,08600
+4657,5.803792,100.488215,postcode,08300,Kuala Muda,Kedah,08300
+4658,5.818366,100.477858,name,PASAR GURUN,Kuala Muda,Kedah,08600
+4660,5.640813,100.485794,address,"PEKAN MERBOK, MERBOK, KEDAH, Kuala Muda",Kuala Muda,Kedah,08400
+4662,5.707315,100.495289,district,"Kuala Muda, Kedah",Kuala Muda,Kedah,08700
+4664,4.689833,114.977808,postcode,98700,Limbang,Sarawak,98700
+4666,4.689833,114.977808,postcode,98700,Limbang,Sarawak,98700
+4667,4.455121,115.427188,district,"Lawas, Sarawak",Lawas,Sarawak,
+4696,5.779086,102.553017,name,SHAKRI MINI MARKET,Besut,Terengganu,22200
+4767,5.995119,102.386741,district,"Bachok, Kelantan",Bachok,Kelantan,
+4812,4.910689,102.765070,district,"Hulu Terengganu, Terengganu",Hulu Terengganu,Terengganu,
+4815,4.910689,102.765070,district,"Hulu Terengganu, Terengganu",Hulu Terengganu,Terengganu,
+4936,2.167632,111.677988,district,"Meradong, Sarawak",Meradong,Sarawak,
+4970,5.361070,100.457358,district,"Seberang Perai Tengah, Pulau Pinang",Seberang Perai Tengah,Pulau Pinang,
+4981,4.096078,113.964031,name,NATION LIGHT SDN BHD,Bekenu,Sarawak,98150
+5003,4.067373,113.881782,postcode,98150,Bekenu,Sarawak,98150
+5058,2.335844,102.096621,postcode,78300,Alor Gajah,Melaka,78300
+5072,3.145593,101.697390,district,"Seputeh, W.P. Kuala Lumpur",Seputeh,W.P. Kuala Lumpur,
+5086,2.380854,102.038057,name,PASAR BESAR ALOR GAJAH,Alor Gajah,Melaka,78000
+5093,3.063443,101.694403,name,AEON BIG ( SRI PETALING ),Bandar Tun Razak,W.P. Kuala Lumpur,
+5102,3.092507,101.711722,address,"JALAN SRI PERMAISURI 8, BANDAR SRI PERMAISURI, Bandar Tun Razak",Bandar Tun Razak,W.P. Kuala Lumpur,
+5137,3.101825,101.717474,address,"JALAN PERMAISURI 9, BANDAR SRI PERMAISURI, Bandar Tun Razak",Bandar Tun Razak,W.P. Kuala Lumpur,
+5161,2.429984,103.832683,name,PASARAYA KINI,Mersing,Johor,86800
+5179,3.237991,101.643640,name,MYDIN SELAYANG,Gombak,Selangor,68100
+5190,5.347205,100.472489,name,PASAR AWAM KG BARU,Seberang Perai Tengah,Pulau Pinang,14000
+5204,5.413715,100.327945,name,PASARAYA GAMA,Timur Laut,Pulau Pinang,
+5205,2.534555,101.807521,postcode,71000,Port Dickson,Negeri Sembilan,71000
+5218,4.449981,114.038406,name,SERVAY HYPERMARKET,Miri,Sarawak,98008
+5219,4.414976,114.012583,name,BOULEVARD HYPERMARKET,Miri,Sarawak,98000
+5221,3.612447,102.256682,district,"Temerloh, Pahang",Temerloh,Pahang,
+5230,2.534555,101.807521,postcode,71000,Port Dickson,Negeri Sembilan,71000
+5234,4.344218,113.993331,name,EMART SUPERMARKET,Miri,Sarawak,98107
+5257,3.052753,101.489979,name,PASAR SEKSYEN 16,Petaling,Selangor,40000
+5260,3.145593,101.697390,district,"Titiwangsa, W.P. Kuala Lumpur",Titiwangsa,W.P. Kuala Lumpur,
+5274,3.058976,101.596505,name,MYDIN USJ,Petaling,Selangor,47600
+5278,2.912193,101.684669,district,"Wp Putrajaya, W.P. Putrajaya",Wp Putrajaya,W.P. Putrajaya,62130
+5302,3.197460,101.711659,name,PASAR JALAN GENTING KLANG,Wangsa Maju,W.P. Kuala Lumpur,
+5304,2.240930,111.973603,district,"Sibujaya, Sarawak",Sibujaya,Sarawak,
+5309,3.378196,103.209612,district,"Pekan, Pahang",Pekan,Pahang,
+5311,3.491313,103.394666,name,PASAR BESAR PEKAN,Pekan,Pahang,
+5316,3.378196,103.209612,district,"Pekan, Pahang",Pekan,Pahang,
+5325,5.377195,100.315146,name,TESCO JELUTONG PULAU PINANG,Timur Laut,Pulau Pinang,
+5348,4.465228,114.016074,postcode,98100,Miri,Sarawak,98100
+5355,3.145593,101.697390,district,"Wangsa Maju, W.P. Kuala Lumpur",Wangsa Maju,W.P. Kuala Lumpur,
+5360,4.198096,100.669201,name,PASAR AWAM SERI MANJUNG,Manjung,Perak,32040
+5377,5.311497,103.130603,name,MYDIN MALL,Kuala Terengganu,Terengganu,
+5379,2.133387,111.523941,name,CENTRAL MARKET SARIKEI,Sarikei,Sarawak,
+5416,3.804638,101.870188,name,TF VALUE MART RAUB,Raub,Pahang,
+5433,3.362471,102.017268,district,"Bentong, Pahang",Bentong,Pahang,
+5434,3.523200,101.908019,address,"JALAN AH PENG, BENTONG, Bentong",Bentong,Pahang,
+5448,3.793705,101.855617,address,"JALAN DATO ABDULLAH, RAUB, PAHANG, Raub",Raub,Pahang,
+5488,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+5516,4.056904,113.845564,name,MUI KUANG MINI MARKET,Bekenu,Sarawak,98150
+5532,3.018801,101.412681,postcode,42000,Klang,Selangor,42000
+5816,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+5823,3.081923,101.543916,postcode,40100,Petaling,Selangor,40100
+5827,2.992578,101.625670,postcode,47100,Petaling,Selangor,47100
+5836,5.068448,100.473962,name,PASAR SIMPANG,"Larut, Matang & Selama",Perak,34700
+5838,2.379774,102.203534,postcode,78000,Alor Gajah,Melaka,78000
+5857,2.218128,102.246705,name,TESCO PERINGGIT,Melaka Tengah,Melaka,75400
+5859,2.223833,102.272180,postcode,75460,Melaka Tengah,Melaka,75460
+5870,2.210089,102.403760,address,"BANDAR JASIN 3, 7700 JASIN, MELAKA, Jasin",Jasin,Melaka,
+5880,5.277486,100.466034,name,PASAR AWAM TAMBUN INDAH,Seberang Perai Selatan,Pulau Pinang,14100
+5889,4.436884,114.004951,name,NG SIAN HAP SUPERMARKET,Miri,Sarawak,98000
+5895,3.085046,101.549407,name,GIANT SEKSYEN 13,Petaling,Selangor,40100
+5897,2.240380,102.245066,address,"JALAN TUN FATIMAH, BACHANG, MELAKA, Melaka Tengah",Melaka Tengah,Melaka,75350
+5980,3.074686,101.587665,name,PASAR SS 15 SUBANG JAYA,Petaling,Selangor,47500
+6039,4.568481,101.082735,postcode,31650,Kinta,Perak,31650
+6101,4.816692,100.664360,district,"Larut, Matang & Selama, Perak","Larut, Matang & Selama",Perak,
+6136,2.897196,112.095765,name,PASAR BASAH MUKAH,Mukah,Sarawak,
+6143,2.131223,111.517781,address,"JALAN ABDUL RAHMAN, BANDAR SARIKEI, Sarikei",Sarikei,Sarawak,
+6177,1.167655,110.568530,name,H&L SERIAN,Serian,Sarawak,94700
+6206,1.166087,110.566579,address,"BANDAR SERIAN, SERIAN, SARAWAK, Serian",Serian,Sarawak,94700
+6437,3.762879,113.749297,address,"JALAN BATU NIAH, BATU NIAH, SARAWAK, Batu Niah",Batu Niah,Sarawak,98200
+6504,3.477967,102.500925,address,"JALAN SETIA JASA, TAMAN SETIA JASA, Temerloh",Temerloh,Pahang,
+6515,4.176613,114.360475,district,"Marudi, Sarawak",Marudi,Sarawak,98050
+6525,3.009387,101.433257,name,GIANT BUKIT TINGGI,Klang,Selangor,41200
+6609,5.406335,100.404552,name,TESCO EXTRA SEBERANG JAYA,Seberang Perai Tengah,Pulau Pinang,13700
+6676,1.426329,110.327001,address,"10TH MILE, KOTA PADAWAN, SARAWAK, Kota Padawan",Kota Padawan,Sarawak,
+6772,2.593494,102.078253,address,"TAMAN REMBAU JAYA, REMBAU, REMBAU NEGERI SEMBILAN, Rembau",Rembau,Negeri Sembilan,71300
+6899,3.236674,102.541772,district,"Bera, Pahang",Bera,Pahang,
+6931,3.974506,100.987961,address,"JALAN MAHARAJALELA, TELUK INTAN, PERAK, Hilir Perak",Hilir Perak,Perak,36000
+6941,3.082186,101.508970,address,"PASAR SEKSYEN 6, SEKSYEN 6, SHAH ALAM, SELANGOR, Petaling",Petaling,Selangor,40000
+6961,5.714434,102.546529,postcode,22200,Besut,Terengganu,22200
+7008,4.394854,113.987684,name,SIN LIANG SUPERMARKET,Miri,Sarawak,98000
+7014,4.193507,100.704685,name,PASAR AWAM SITIAWAN,Manjung,Perak,32000
+7040,3.005526,101.440901,name,TESCO BUKIT TINGGI,Klang,Selangor,41200
+7192,4.682481,101.160064,postcode,31250,Kinta,Perak,31250
+7260,5.485396,100.503511,postcode,13300,Seberang Perai Utara,Pulau Pinang,13300
+7280,2.503895,102.839441,postcode,85000,Segamat,Johor,85000
+7283,2.659751,101.565740,name,PASAR AWAM BANTING,Kuala Langat,Selangor,42700
+7349,6.008094,102.092513,district,"Pasir Mas, Kelantan",Pasir Mas,Kelantan,
+7472,3.161828,101.436445,name,PASAR MERU KLANG,Klang,Selangor,40150
+7473,3.137505,101.373058,address,"PEKAN KAPAR KLANG, KAPAR, SELANGOR, Klang",Klang,Selangor,42200
+7826,4.234584,103.421784,address,"JALAN SULAIMANI, KEMAMAN, TERENGGANU, Kemaman",Kemaman,Terengganu,24000
+7832,4.228691,103.366485,address,"TAMAN SEMARAK, BINJAI, KEMAMAN, TERENGGANU, Kemaman",Kemaman,Terengganu,24000
+7922,4.222973,103.421721,address,"JALAN KUBANG KURUS, CHUKAI KEMAMAN, TERENGGANU, Kemaman",Kemaman,Terengganu,24000
+7961,6.029485,102.130620,address,"BANDAR TASEK RAJA, PASIR MAS, Pasir Mas",Pasir Mas,Kelantan,
+7983,5.233856,103.102456,address,"PASAR BUKIT PAYONG, MARANG, TERENGGANU, Marang",Marang,Terengganu,
+7995,5.369539,100.305621,name,PASAR TAMAN TUN SARDON,Timur Laut,Pulau Pinang,
+7997,5.166667,103.166667,district,"Marang, Terengganu",Marang,Terengganu,
+8176,5.132167,103.087093,address,"WAKAF TAPAI, JALAN KUALA BERANG, MARANG, TERENGGANU, Marang",Marang,Terengganu,
+8359,5.520700,102.747011,address,"BANDAR PERMAISURI, SETIU, TERENGGANU, Setiu",Setiu,Terengganu,22100
+8539,7.231645,117.171156,district,"Kudat, Sabah",Kudat,Sabah,89058
+8544,6.530573,116.759405,postcode,89108,Kota Marudu,Sabah,89108
+8582,5.995119,102.386741,district,"Bachok, Kelantan",Bachok,Kelantan,
+8614,2.856682,101.680683,address,"PEKAN DENGKIL, DENGKIL, SELANGOR, Sepang",Sepang,Selangor,43800
+8616,3.164888,101.698395,name,PASAR CHOW KIT,Titiwangsa,W.P. Kuala Lumpur,
+8678,5.283641,100.279086,address,"LEBUHRAYA BATU MAUNG, BAYAN LEPAS, PULAU PINANG, Barat Daya",Barat Daya,Pulau Pinang,11960
+8747,5.815439,100.736598,postcode,08200,Sik,Kedah,08200
+8757,6.194058,102.167045,name,PASAR SUMAYYAH,Tumpat,Kelantan,
+8908,3.450350,102.414238,address,"JALAN SUDIRMAN 6, TEMERLOH, PAHANG, Temerloh",Temerloh,Pahang,
+8915,3.232775,101.703669,address,"TAMAN GREENWOOD, BATU CAVES, SELANGOR, Gombak",Gombak,Selangor,68100
+9050,6.147219,102.239192,name,MZI TRADING,Kota Bharu,Kelantan,
+9051,4.769319,100.939910,name,THE STORE (KUALA KANGSAR),Kuala Kangsar,Perak,33000
+9100,1.471599,103.767043,postcode,80300,Johor Bahru,Johor,80300
+9118,1.808207,103.889602,postcode,81900,Kota Tinggi,Johor,81900
+9214,3.156249,101.596667,name,GIANT HYPERMARKET KOTA DAMANSARA,Petaling Jaya,Selangor,47810
+9239,2.150917,102.747208,postcode,84600,Muar,Johor,84600
+9252,2.061336,102.594618,address,"JLN. INDAH, TMN. PERTAMA INDAH, SG. ABONG, MUAR, Muar",Muar,Johor,84000
+9258,2.104308,102.637469,postcode,84300,Muar,Johor,84300
+9259,2.044180,102.588698,postcode,84000,Muar,Johor,84000
+9410,3.202186,101.733048,address,"JALAN 27A/2A, SEKSYEN 1, WANGSA MAJU, Wangsa Maju",Wangsa Maju,W.P. Kuala Lumpur,
+9488,5.361070,100.457358,district,"Seberang Perai Tengah, Pulau Pinang",Seberang Perai Tengah,Pulau Pinang,
+9545,1.518028,103.379064,postcode,82000,Pontian,Johor,82000
+9548,3.001498,101.595002,address,"JALAN PRIMA 5/1, TAMAN PUCHONG PRIMA, PUCHONG, SELANGOR, Petaling",Petaling,Selangor,47100
+9604,3.452598,102.394247,name,ENG YU MINI MARKET (TAMAN TEMERLOH JAYA),Temerloh,Pahang,
+9787,3.889955,100.936548,address,"JALAN SIMPANG EMPAT, HUTAN MELINTANG, PERAK, Bagan Datuk",Bagan Datuk,Perak,36400
+9827,6.071289,102.202692,address,"KAMPUNG TOK BUAK, TENDONG, Pasir Mas",Pasir Mas,Kelantan,
+9933,5.338792,116.152948,name,HIAP LEE SUPERMARKET,Keningau,Sabah,
+9944,5.018096,100.434125,address,"JALAN SWEE LEE, KUALA KURAU, PERAK, Kerian",Kerian,Perak,34350
+10053,6.438383,100.200009,postcode,01000,Padang Besar,Perlis,01000
+10131,5.395990,100.286002,name,SUNSHINE FARLIM,Timur Laut,Pulau Pinang,
+10197,4.892263,100.700765,address,"KAMUNTING, TAIPING, PERAK, KAMUNTING, TAIPING, PERAK, Larut, Matang & Selama","Larut, Matang & Selama",Perak,34600
+10203,2.993377,101.531384,name,ECONSAVE KOTA KEMUNING,Petaling,Selangor,40640
+10214,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+10230,5.767670,102.238082,district,"Machang, Kelantan",Machang,Kelantan,
+10715,2.379774,102.203534,postcode,78000,Alor Gajah,Melaka,78000
+10720,6.137591,116.270535,name,GMART TUARAN,Tuaran,Sabah,89200
+10750,4.479076,118.429773,district,"Semporna, Sabah",Semporna,Sabah,
+10850,3.144521,101.710841,name,GIANT SUPERMARKET ( SUNGEI WANG ),Bukit Bintang,W.P. Kuala Lumpur,
+10853,3.156790,101.712131,name,COLD STORAGE ( KLCC ),Bukit Bintang,W.P. Kuala Lumpur,
+10854,3.156751,101.695452,name,SOGO ( KL ),Bukit Bintang,W.P. Kuala Lumpur,
+10855,3.146732,101.698653,name,MYDIN ( SINAR KOTA ),Bukit Bintang,W.P. Kuala Lumpur,
+10862,3.145593,101.697390,district,"Bukit Bintang, W.P. Kuala Lumpur",Bukit Bintang,W.P. Kuala Lumpur,
+10975,4.473572,101.047742,name,TF VALUE MART BATU GAJAH,Kinta,Perak,
+11222,2.270494,102.291825,name,MYDIN MITC MELAKA,Melaka Tengah,Melaka,75450
+11235,1.747985,109.777185,district,"Lundu, Sarawak",Lundu,Sarawak,
+11257,3.573618,101.666300,postcode,44000,Hulu Selangor,Selangor,44000
+11332,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+11423,2.941852,101.705960,postcode,62000,Wp Putrajaya,W.P. Putrajaya,62000
+11479,3.483698,102.347539,name,PASARAYA DARUL MAKMUR,Temerloh,Pahang,
+11509,2.702028,101.984736,name,GIANT SENAWANG,Seremban,Negeri Sembilan,70450
+11511,6.094854,100.354689,address,"LEBUHRAYA SULTANAH BAHIYAH, ALOR SETAR, KEDAH, Kota Setar",Kota Setar,Kedah,05150
+11512,6.126614,100.375914,postcode,05200,Kota Setar,Kedah,05200
+11513,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+11517,6.109302,100.351843,postcode,05050,Kota Setar,Kedah,05050
+11518,3.221022,101.670950,name,LOTUS'S SELAYANG,Batu,W.P. Kuala Lumpur,
+11523,2.265355,111.863338,name,FARLEY SUPERMARKET SIBU,Sibu,Sarawak,96000
+11524,2.311020,111.838842,address,"JALAN PAHLAWAN 7, SIBU, SARAWAK, Sibu",Sibu,Sarawak,
+11530,6.335638,100.372322,district,"Kubang Pasu, Kedah",Kubang Pasu,Kedah,
+11536,3.190589,113.058747,postcode,97000,Bintulu,Sarawak,97000
+11537,3.190589,113.058747,postcode,97000,Bintulu,Sarawak,97000
+11538,4.244791,117.889316,address,"KOMPLEKS CAHAYA BARU, JALAN BUNGA, Tawau",Tawau,Sabah,
+11540,4.215266,100.702184,postcode,32000,Manjung,Perak,32000
+11543,5.280562,115.240810,name,UTAMA JAYA SUPERSTORE,Kawasan Bandar,W.P. Labuan,81995
+11545,3.884356,101.792028,district,"Raub, Pahang",Raub,Pahang,16773
+11546,1.235272,111.463181,name,"PASAR TAMU SRI AMAN,SRI AMAN",Sri Aman,Sarawak,
+11547,1.237616,111.462148,address,"SRI AMAN, SARAWAK, Sri Aman",Sri Aman,Sarawak,95000
+11550,4.634452,115.686101,district,"Sipitang, Sabah",Sipitang,Sabah,
+11551,6.130079,102.239249,name,PASAR  BESAR SITI KHADIJAH,Kota Bharu,Kelantan,
+11554,5.440192,115.494931,district,"Kuala Penyu, Sabah",Kuala Penyu,Sabah,
+11556,4.481127,118.634008,postcode,91308,Semporna,Sabah,91308
+11564,3.178791,101.750995,name,AEON ( AU2 ),Setiawangsa,W.P. Kuala Lumpur,
+11566,3.193708,101.680084,name,UMA RANI CASH & CARRY,Batu,W.P. Kuala Lumpur,
+11567,3.145593,101.697390,district,"Setiawangsa, W.P. Kuala Lumpur",Setiawangsa,W.P. Kuala Lumpur,
+11568,3.145593,101.697390,district,"Bandar Tun Razak, W.P. Kuala Lumpur",Bandar Tun Razak,W.P. Kuala Lumpur,
+11569,3.125603,101.738912,address,"JALAN 13/91, TAMAN SHAMELIN PERKASA, CHERAS, Cheras",Cheras,W.P. Kuala Lumpur,
+11571,3.145593,101.697390,district,"Setiawangsa, W.P. Kuala Lumpur",Setiawangsa,W.P. Kuala Lumpur,
+11572,3.112715,101.724141,name,PASAR BESAR CHERAS,Bandar Tun Razak,W.P. Kuala Lumpur,
+11577,6.258868,100.419551,name,PASARAYA K-CERIA SDN BHD,Kubang Pasu,Kedah,
+11580,3.101000,101.742443,name,PASAR TAMAN CHERAS,Cheras,W.P. Kuala Lumpur,
+11581,3.145593,101.697390,district,"Batu, W.P. Kuala Lumpur",Batu,W.P. Kuala Lumpur,
+11586,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+11587,5.278655,115.242394,name,LABUAN SUPERMARKET,Kawasan Bandar,W.P. Labuan,80883
+11588,5.631185,100.489479,address,"LORONG 16, TYCOON SQUARE, TAMAN PETANI JAYA, SUNGAI PETANI, KEDAH, Kuala Muda",Kuala Muda,Kedah,08000
+11590,5.629856,100.514586,postcode,08000,Kuala Muda,Kedah,08000
+11595,2.780213,101.749284,address,"PEKAN SALAK, SEPANG, SELANGOR, Sepang",Sepang,Selangor,43900
+11616,4.193507,100.704685,name,PASAR AWAM KG. KOH,Manjung,Perak,32000
+11617,5.764804,102.219839,name,PASAR BESAR MACHANG,Machang,Kelantan,
+11618,3.063957,101.710597,name,PASAR SUNGAI BESI,Bandar Tun Razak,W.P. Kuala Lumpur,
+11619,1.845423,102.950725,postcode,83000,Batu Pahat,Johor,83000
+11621,2.044187,102.566468,address,"WETEX PARADE, JALAN ALI, MUAR JOHOR, Muar",Muar,Johor,84000
+11622,3.196773,101.742362,name,AEON ( WANGSA MAJU ),Wangsa Maju,W.P. Kuala Lumpur,
+11623,3.128737,101.669098,name,TMC ( BANGSAR ),Lembah Pantai,W.P. Kuala Lumpur,
+11624,3.129276,101.670627,name,VILLAGE GROCER ( BANGSAR VILLAGE ),Lembah Pantai,W.P. Kuala Lumpur,
+11627,2.044180,102.588698,postcode,84000,Muar,Johor,84000
+11631,3.565135,101.659796,name,PASAR AWAM KUALA KUBU BHARU,Hulu Selangor,Selangor,44000
+11632,5.352578,115.735444,address,"BEAUFORT SENTRAL, BEAUFORT, Beaufort",Beaufort,Sabah,89808
+11652,3.125816,101.728176,name,AEON (TAMAN MALURI ),Cheras,W.P. Kuala Lumpur,
+11655,3.145593,101.697390,district,"Lembah Pantai, W.P. Kuala Lumpur",Lembah Pantai,W.P. Kuala Lumpur,
+11656,3.145593,101.697390,district,"Lembah Pantai, W.P. Kuala Lumpur",Lembah Pantai,W.P. Kuala Lumpur,
+11664,5.658325,100.501411,address,"JALAN LAGENDA 1, LAGENDA HEIGHTS, SUNGAI PETANI, KEDAH, Kuala Muda",Kuala Muda,Kedah,08000
+11669,1.547611,103.793539,name,LOTUS`S DESA TEBRAU,Johor Bahru,Johor,81100
+11677,6.134865,102.237458,name,PASAR KUBANG PASU,Kota Bharu,Kelantan,
+11699,1.479012,103.773960,address,"JALAN KUNING, TAMAN PELANGI, JOHOR BAHRU, JOHOR, Johor Bahru",Johor Bahru,Johor,80400
+11703,5.463529,100.284829,name,PASAR TANJUNG BUNGAH,Timur Laut,Pulau Pinang,
+11711,5.877337,118.051329,address,"BATU 8, JALAN LABUK, SANDAKAN, SABAH, Sandakan",Sandakan,Sabah,90000
+11712,4.394010,113.988020,address,"MIRI, SARAWAK, Miri",Miri,Sarawak,98000
+11716,5.026475,118.313911,postcode,91100,Lahad Datu,Sabah,91100
+11718,6.654244,100.310250,postcode,02100,Padang Besar,Perlis,02100
+11726,5.333540,116.153897,address,"PEKAN KENINGAU, Keningau",Keningau,Sabah,
+11728,2.723243,101.960790,name,PASAR AMPANGAN,Seremban,Negeri Sembilan,70400
+11737,2.730712,101.936622,name,PASAR BESAR SEREMBAN,Seremban,Negeri Sembilan,70000
+11747,5.839127,118.115860,district,"Sandakan, Sabah",Sandakan,Sabah,
+11748,6.552503,100.238512,postcode,02400,Padang Besar,Perlis,02400
+11749,6.552503,100.238512,postcode,02400,Padang Besar,Perlis,02400
+11750,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+11753,4.187213,102.053020,address,"KUALA LIPIS, PAHANG, Lipis",Lipis,Pahang,
+11772,2.120384,111.531997,name,FRIENDLY SUPERMARKET,Sarikei,Sarawak,
+11786,2.195783,102.253186,name,PASAR BUKIT CINA,Melaka Tengah,Melaka,75000
+11844,4.224345,103.419980,postcode,24000,Kemaman,Terengganu,24000
+11853,5.734219,102.496549,postcode,22000,Besut,Terengganu,22000
+11874,5.835429,102.553882,postcode,22300,Besut,Terengganu,22300
+11883,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+11893,6.123783,102.254534,name,PASAR BEREK 12,Kota Bharu,Kelantan,
+11894,5.364046,115.228789,name,D'ONE MART,Kawasan Bandar,W.P. Labuan,87028
+11925,2.740395,102.250007,name,PASAR AWAM KUALA PILAH,Kuala Pilah,Negeri Sembilan,72000
+11956,5.409165,100.292028,name,PASAR PADANG TEMBAK,Timur Laut,Pulau Pinang,
+12000,5.493597,102.224405,address,"BANDAR KUALA KRAI, KUALA KRAI, Kuala Krai",Kuala Krai,Kelantan,
+12002,3.791533,103.310445,name,GIANT KUANTAN,Kuantan,Pahang,
+12024,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+12025,5.385584,100.276277,name,ECONSAVE PAYA TERUBONG,Timur Laut,Pulau Pinang,
+12028,5.335792,100.276297,name,PASAR AYER ITAM,Timur Laut,Pulau Pinang,
+12165,3.160232,101.728551,name,HOCK CHOON SUPERMARKET,Titiwangsa,W.P. Kuala Lumpur,
+12352,4.583333,101.083333,district,"Kinta, Perak",Kinta,Perak,34100
+12691,6.438383,100.200009,postcode,01000,Kangar,Perlis,01000
+12713,2.697193,101.994805,postcode,70450,Seremban,Negeri Sembilan,70450
+12740,1.583026,103.822718,postcode,81800,Johor Bahru,Johor,81800
+12742,1.565308,103.811631,name,ECONSAVE TAMAN DESA CEMERLANG,Johor Bahru,Johor,81800
+12743,1.542960,103.629297,name,AEON MALL TAMAN UNIVERSITI,Johor Bahru,Johor,81300
+12745,1.537764,103.629201,name,PASAR AWAM TAMAN UNIVERSITI,Johor Bahru,Johor,81300
+12750,5.632716,100.482815,address,"JALAN BAKAR ARANG, SUNGAI PETANI, KEDAH, Kuala Muda",Kuala Muda,Kedah,08000
+12755,1.718252,103.895288,name,ECONSAVE KOTA TINGGI,Kota Tinggi,Johor,81900
+12759,3.145593,101.697390,district,"Titiwangsa, W.P. Kuala Lumpur",Titiwangsa,W.P. Kuala Lumpur,
+12761,4.634452,115.686101,district,"Sipitang, Sabah",Sipitang,Sabah,89850
+12762,4.634452,115.686101,district,"Sipitang, Sabah",Sipitang,Sabah,89850
+13081,2.044180,102.588698,postcode,84000,Muar,Johor,84000
+13120,1.829246,103.307864,name,TARGET CASH & CARRY,Kluang,Johor,86200
+13283,6.286623,100.377486,name,"PASARAYA TUNJANG MELATI,TUNJANG",Kubang Pasu,Kedah,06000
+13369,4.414530,114.015624,name,TAMU KROKOP,Miri,Sarawak,98000
+13475,5.531158,102.199367,district,"Kuala Krai, Kelantan",Kuala Krai,Kelantan,
+13480,4.508976,103.444449,address,"KAMPUNG TELAGA PAPAN, KERTEH KEMAMAN, Kemaman",Kemaman,Terengganu,24300
+13490,5.740178,102.481982,name,PASARAYA SHAKRI,Besut,Terengganu,
+13535,3.880148,100.933952,address,"JALAN BAGAN DATOH, HUTAN MELINTANG, PERAK, Bagan Datuk",Bagan Datuk,Perak,36400
+13627,5.766305,102.034148,district,"Tanah Merah, Kelantan",Tanah Merah,Kelantan,
+13715,6.069447,102.283474,postcode,16150,Kota Bharu,Kelantan,16150
+13729,5.590019,101.817168,district,"Jeli, Kelantan",Jeli,Kelantan,
+13788,2.718147,101.922873,name,FAMILY STORE SEREMBAN 2,Seremban,Negeri Sembilan,27030
+13791,2.723099,101.940060,district,"Seremban, Negeri Sembilan",Seremban,Negeri Sembilan,
+13903,1.845423,102.950725,postcode,83000,Batu Pahat,Johor,83000
+13904,5.553066,102.739626,postcode,22100,Setiu,Terengganu,22100
+13941,6.428441,100.273167,address,"KOMPLEKS ARAU, ARAU, PERLIS, Arau",Arau,Perlis,02600
+13949,3.145593,101.697390,district,"Segambut, W.P. Kuala Lumpur",Segambut,W.P. Kuala Lumpur,
+14108,4.176613,114.360475,district,"Marudi, Sarawak",Marudi,Sarawak,98050
+14150,5.409157,100.381352,address,"JALAN BAGAN TAMAN BAGAN BUTTERWORTH PULAU PINANG, TAMAN BAGAN, Seberang Perai Utara",Seberang Perai Utara,Pulau Pinang,13400
+14213,3.193357,101.633254,name,LOTUS'S KEPONG,Segambut,W.P. Kuala Lumpur,
+14237,4.904218,100.717964,postcode,34600,"Larut, Matang & Selama",Perak,34600
+14332,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+14371,5.316072,100.475889,name,TESCO BUKIT MERTAJAM,Seberang Perai Tengah,Pulau Pinang,14000
+14384,4.478129,114.030675,address,"PHASE 3, JALAN TUDAN, TUDAN, MIRI, SARAWAK, Miri",Miri,Sarawak,98107
+14406,5.736966,102.494148,name,PASARAYA ECONJAYA,Machang,Kelantan,
+14455,3.206836,101.717951,name,MY MYDIN ( DANAU SAUJANA ),Wangsa Maju,W.P. Kuala Lumpur,
+14474,5.168194,100.477337,postcode,14300,Seberang Perai Selatan,Pulau Pinang,14300
+14564,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,30274
+14621,4.772642,100.932469,address,"JALAN TAIPING TALANG, KUALA KANGSAR, PERAK, Kuala Kangsar",Kuala Kangsar,Perak,33000
+14657,5.412221,100.323820,name,PASAR JALAN KUANTAN,Timur Laut,Pulau Pinang,
+14661,3.043338,101.525771,name,AEON BIG SEKSYEN 23,Petaling,Selangor,40300
+14662,3.031818,101.541596,postcode,40400,Petaling,Selangor,40400
+14663,2.999471,101.528670,name,AEON BIG SEKSYEN 32,Petaling,Selangor,40300
+14759,4.334761,100.634266,district,"Manjung, Perak",Manjung,Perak,
+14803,3.236574,101.428376,name,TESCO KUALA SELANGOR,Kuala Selangor,Selangor,45000
+14807,4.613573,101.118707,name,AEON KINTA CITY,Kinta,Perak,31400
+14811,2.701824,101.911885,name,AEON (SEREMBAN 2),Seremban,Negeri Sembilan,70300
+14824,3.085174,101.691055,name,NSK TRADE CITY ( KUCHAI LAMA ),Seputeh,W.P. Kuala Lumpur,
+14832,3.082759,101.702376,name,GIANT SUPERMARKET ( DESA PETALING ),Bandar Tun Razak,W.P. Kuala Lumpur,
+14840,3.056980,103.084566,address,"JALAN MEDAN MEWAH 12, BANDAR MUADZAM SHAH, MUADZAM SHAH, PAHANG DARUL MAKMUR, Rompin",Rompin,Pahang,
+14867,2.298624,102.423650,postcode,77000,Jasin,Melaka,77000
+14869,2.746678,102.258656,postcode,72000,Kuala Pilah,Negeri Sembilan,72000
+14883,5.415879,100.320942,name,PASAR JALAN ANSON,Timur Laut,Pulau Pinang,
+14944,3.236674,102.541772,district,"Bera, Pahang",Bera,Pahang,
+14958,6.436140,100.272856,postcode,02600,Arau,Perlis,02600
+14964,3.798206,103.337559,address,"TANJUNG LUMPUR, KUANTAN PAHANG, Kuantan",Kuantan,Pahang,36634
+15069,2.130672,111.519114,address,"JALAN MASJID LAMA, BANDAR SARIKEI, SARIKEI, Sarikei",Sarikei,Sarawak,
+15081,5.334301,100.291034,name,MYDIN HYPERMARKET BUKIT JAMBUL,Barat Daya,Pulau Pinang,11900
+15092,5.550720,100.797587,district,"Baling, Kedah",Baling,Kedah,
+15112,5.346932,103.090809,address,"KAMPUNG BATU ENAM, KUALA NERUS, Kuala Nerus",Kuala Nerus,Terengganu,
+15118,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+15123,5.431306,100.399006,postcode,13400,Seberang Perai Utara,Pulau Pinang,13400
+15192,5.531158,102.199367,district,"Kuala Krai, Kelantan",Kuala Krai,Kelantan,
+15201,5.531158,102.199367,district,"Kuala Krai, Kelantan",Kuala Krai,Kelantan,
+15284,4.224345,103.419980,postcode,24000,Kemaman,Terengganu,24000
+15376,4.224345,103.419980,postcode,24000,Kemaman,Terengganu,24000
+15382,2.684553,101.971238,name,TESCO SEREMBAN JAYA,Seremban,Negeri Sembilan,70400
+15427,6.030120,100.481437,name,PASARAYA TANAH MERAH,Pendang,Kedah,06700
+15458,2.932494,101.676912,postcode,62250,Wp Putrajaya,W.P. Putrajaya,62250
+15476,3.612447,102.256682,district,"Temerloh, Pahang",Temerloh,Pahang,
+15503,5.839761,102.375281,address,"KG WAKAF LANAS, Pasir Puteh",Pasir Puteh,Kelantan,
+15504,5.839316,102.376288,address,"WAKAF LANAS, JALAN KOTA BHARU, Pasir Puteh",Pasir Puteh,Kelantan,
+15524,1.607335,103.643675,name,PASAR AWAM KULAI,Johor Bahru,Johor,81000
+15525,4.365776,100.980551,address,"JALAN SUSUR UTAMA, SERI ISKANDAR, PERAK, Perak Tengah",Perak Tengah,Perak,
+15531,5.292915,115.206960,name,FAMILY SHOPPING MART,Kawasan Luar Bandar,W.P. Labuan,87000
+15535,5.458853,100.307956,name,TESCO TANJUNG PINANG,Timur Laut,Pulau Pinang,
+15536,5.328341,100.445979,name,AEON BIG BUKIT TENGAH,Seberang Perai Tengah,Pulau Pinang,14000
+15537,2.803556,102.395946,postcode,72100,Bahau,Negeri Sembilan,72100
+15553,5.731993,102.494685,address,"JALAN ZAINAL ABIDIN, JERTEH TERENGGANU, Besut",Besut,Terengganu,22000
+15563,6.087496,102.237152,name,PASAR BORONG WAKAF CHE YEH,Kota Bharu,Kelantan,
+15575,1.205436,111.695975,postcode,95800,Engkelili,Sarawak,95800
+15576,4.234586,103.423585,district,"Kemaman, Terengganu",Kemaman,Terengganu,
+15578,2.352225,102.108979,address,"MASJID TANAH, MELAKA, Alor Gajah",Alor Gajah,Melaka,78300
+15653,3.145593,101.697390,district,"Bukit Bintang, W.P. Kuala Lumpur",Bukit Bintang,W.P. Kuala Lumpur,
+15655,6.183225,102.181559,postcode,16200,Tumpat,Kelantan,16200
+15664,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+15699,5.815439,100.736598,postcode,08200,Sik,Kedah,08200
+15707,2.035619,103.332531,name,ECONSAVE KLUANG,Kluang,Johor,86000
+15714,3.177873,101.749053,address,"JALAN AU 3/21, TAMAN KERAMAT, Setiawangsa",Setiawangsa,W.P. Kuala Lumpur,
+15763,5.019814,102.038266,district,"Gua Musang, Kelantan",Gua Musang,Kelantan,
+15782,6.350473,99.760781,address,"MUKIM KEDAWANG, LANGKAWI, KEDAH, Langkawi",Langkawi,Kedah,07100
+15783,6.329281,99.774978,postcode,07000,Langkawi,Kedah,07000
+15785,6.329281,99.774978,postcode,07000,Langkawi,Kedah,07000
+15786,5.275699,115.232815,district,"Kawasan Luar Bandar, W.P. Labuan",Kawasan Luar Bandar,W.P. Labuan,80792
+15820,5.026475,118.313911,postcode,91100,Lahad Datu,Sabah,91100
+15826,6.243253,100.578447,postcode,06300,Padang Terap,Kedah,06300
+15827,6.243253,100.578447,postcode,06300,Padang Terap,Kedah,06300
+15880,5.835429,102.553882,postcode,22300,Besut,Terengganu,22300
+15903,4.670966,101.074499,name,MYDIN MERU RAYA,Kinta,Perak,30020
+15917,5.188129,103.221585,address,"KG RHU MUDA, Marang",Marang,Terengganu,
+15926,5.835429,102.553882,postcode,22300,Besut,Terengganu,22300
+15936,5.834617,102.382964,district,"Pasir Puteh, Kelantan",Pasir Puteh,Kelantan,
+15948,6.093086,100.381086,address,"JALAN ALOR MENGKUDU, TAMAN SAGA, ALOR SETAR, KEDAH, Kota Setar",Kota Setar,Kedah,05400
+15949,6.087049,100.365985,postcode,05400,Kota Setar,Kedah,05400
+15950,6.087049,100.365985,postcode,05400,Kota Setar,Kedah,05400
+15953,6.029078,100.480116,address,"BANDAR BARU TANAH MERAH, PENDANG, PENDANG, KEDAH, Pendang",Pendang,Kedah,06700
+15954,6.329281,99.774978,postcode,07000,Langkawi,Kedah,07000
+15956,5.859884,100.451530,postcode,08800,Yan,Kedah,08800
+15960,1.417864,110.155334,district,"Bau, Sarawak",Bau,Sarawak,
+15964,4.234586,103.423585,district,"Kemaman, Terengganu",Kemaman,Terengganu,
+15965,4.234586,103.423585,district,"Kemaman, Terengganu",Kemaman,Terengganu,
+15976,4.196119,101.264130,name,TF VALUE MART TAPAH,Batang Padang,Perak,35000
+16035,6.051018,102.394296,address,"KAMPUNG KEMUDI, JALAN KEMUDI, JALAN KAMPUNG TELUK, BACHOK, Bachok",Bachok,Kelantan,
+16077,1.814243,112.647871,address,"KAPIT, SARAWAK, Song",Song,Sarawak,
+16087,4.197879,100.664847,postcode,32040,Manjung,Perak,32040
+16088,4.334761,100.634266,district,"Manjung, Perak",Manjung,Perak,
+16090,2.249743,102.303137,postcode,75450,Melaka Tengah,Melaka,75450
+16092,2.167430,102.429722,postcode,77300,Jasin,Melaka,77300
+16104,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,23034
+16157,1.860577,103.626819,postcode,81440,Kota Tinggi,Johor,81440
+16191,5.590019,101.817168,district,"Jeli, Kelantan",Jeli,Kelantan,
+16193,5.923304,116.075558,name,PASAR DONGGONGON,Penampang,Sabah,
+16195,5.939789,116.071202,postcode,88200,Penampang,Sabah,88200
+16227,5.378885,100.534309,postcode,09000,Kulim,Kedah,09000
+16233,2.932494,101.676912,postcode,62250,Wp Putrajaya,W.P. Putrajaya,62250
+16263,5.376738,102.009922,district,"Dabong, Kelantan",Dabong,Kelantan,
+16266,5.376738,102.009922,district,"Dabong, Kelantan",Dabong,Kelantan,
+16267,5.376738,102.009922,district,"Dabong, Kelantan",Dabong,Kelantan,
+16276,5.995119,102.386741,district,"Bachok, Kelantan",Bachok,Kelantan,
+16286,5.361070,100.457358,district,"Seberang Perai Tengah, Pulau Pinang",Seberang Perai Tengah,Pulau Pinang,
+16317,2.738375,102.218010,name,GIANT SUPERSTORE KUALA PILAH,Kuala Pilah,Negeri Sembilan,72000
+16343,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+16353,3.145593,101.697390,district,"Segambut, W.P. Kuala Lumpur",Segambut,W.P. Kuala Lumpur,
+16356,2.036558,103.333908,name,AEON BIG (KLUANG),Kluang,Johor,86000
+16386,4.186838,102.062136,address,"BANDAR BARU KUALA LIPIS, KUALA LIPIS PAHANG, Lipis",Lipis,Pahang,
+16388,2.654998,103.616000,address,"JLN DATO' MOHD ALI, ENDAU, Mersing",Mersing,Johor,86900
+16389,2.521688,101.800421,name,TF VALUE MART PORT DICKSON,Port Dickson,Negeri Sembilan,71000
+16391,2.473914,101.857603,name,FAMILY STORE SUNGGALA,Port Dickson,Negeri Sembilan,71050
+16460,5.766305,102.034148,district,"Tanah Merah, Kelantan",Tanah Merah,Kelantan,10577
+16467,5.706484,101.772324,address,"JALAN RAYA TIMUR-BARAT, JELI, KELANTAN, Jeli",Jeli,Kelantan,
+16472,1.417864,110.155334,district,"Bau, Sarawak",Bau,Sarawak,
+16482,3.094092,101.637221,postcode,46000,Petaling Jaya,Selangor,46000
+16494,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+16509,2.013903,112.935677,district,"Kapit, Sarawak",Kapit,Sarawak,
+16519,3.199727,113.057334,name,SING KWONG,Bintulu,Sarawak,97000
+16547,2.695587,101.903702,name,MYDIN SEREMBAN 2,Seremban,Negeri Sembilan,70300
+16548,6.438383,100.200009,postcode,01000,Kangar,Perlis,01000
+16554,5.839127,118.115860,district,"Sandakan, Sabah",Sandakan,Sabah,
+16678,5.019814,102.038266,district,"Gua Musang, Kelantan",Gua Musang,Kelantan,
+16702,6.387289,99.861936,address,"KAMPUNG PADANG LALANG, LANGKAWI KEDAH, Langkawi",Langkawi,Kedah,
+16784,5.590019,101.817168,district,"Jeli, Kelantan",Jeli,Kelantan,
+16798,5.531158,102.199367,district,"Kuala Krai, Kelantan",Kuala Krai,Kelantan,
+16801,5.362224,100.527197,name,TESCO KULIM,Kulim,Kedah,09000
+16813,1.547649,103.762750,address,"JALAN SAGU 32, TAMAN DAYA, JOHOR BAHRU, JOHOR, Johor Bahru",Johor Bahru,Johor,81100
+16927,1.371690,111.601705,address,"SRI AMAN, BETONG, SARAWAK, Betong",Betong,Sarawak,
+16990,6.107619,102.265811,address,"KG.BAYAM, JALAN LUNDANG, Kota Bharu",Kota Bharu,Kelantan,
+16995,4.835016,101.081936,postcode,31100,Kuala Kangsar,Perak,31100
+17020,4.294861,100.743530,postcode,32400,Manjung,Perak,32400
+17035,1.501598,103.741960,postcode,80350,Johor Bahru,Johor,80350
+17036,4.687236,101.119781,name,ECONSAVE KLEBANG,Kinta,Perak,
+17037,4.632974,101.114541,address,"JALAN TASEK, MEDAN TASEK, IPOH, PERAK, Kinta",Kinta,Perak,31400
+17038,4.583333,101.083333,district,"Kinta, Perak",Kinta,Perak,
+17039,4.629983,101.059991,address,"PUSAT PERDAGANGAN JELAPANG, IPOH, PERAK, Kinta",Kinta,Perak,30020
+17046,5.118837,100.478565,postcode,34200,Kerian,Perak,34200
+17095,1.489563,103.712232,address,"JALAN PADI 1, BANDAR BARU UDA, JOHOR BAHRU JOHOR, Johor Bahru",Johor Bahru,Johor,81200
+17096,1.495276,103.682187,name,PASAR AWAM PERLING,Johor Bahru,Johor,81200
+17097,6.257299,100.412258,postcode,06000,Kubang Pasu,Kedah,06000
+17098,5.939789,116.071202,postcode,88200,Putatan,Sabah,88200
+17100,1.642556,103.607187,postcode,81000,Johor Bahru,Johor,81000
+17101,1.640419,103.617182,name,AEON MALL KULAIJAYA,Johor Bahru,Johor,81000
+17102,1.610907,103.656259,name,ECONSAVE SENAI,Johor Bahru,Johor,81400
+17128,5.516299,100.441654,postcode,13200,Seberang Perai Utara,Pulau Pinang,13200
+17141,1.979608,102.879358,postcode,83500,Batu Pahat,Johor,83500
+17147,2.466561,102.957185,address,"TENANG STATION, SEGAMAT, JOHOR, Segamat",Segamat,Johor,85000
+17149,4.849859,100.742558,address,"TAIPING MALL TAIPING, TAIPING, PERAK, Larut, Matang & Selama","Larut, Matang & Selama",Perak,34000
+17152,6.137591,116.270535,name,GMART TAMPARULI,Tamparuli,Sabah,
+17162,2.404107,103.014033,postcode,85300,Segamat,Johor,85300
+17167,4.851344,100.740680,postcode,34000,"Larut, Matang & Selama",Perak,34000
+17168,2.811882,101.504361,name,MEGAH SUPERMARKET (BANTING),Kuala Langat,Selangor,42700
+17174,2.033079,103.325903,postcode,86000,Kluang,Johor,86000
+17179,5.294961,115.241339,name,BATARAS HYPERMARKET,Kawasan Bandar,W.P. Labuan,87000
+17188,4.910689,102.765070,district,"Hulu Terengganu, Terengganu",Hulu Terengganu,Terengganu,
+17189,4.910689,102.765070,district,"Hulu Terengganu, Terengganu",Hulu Terengganu,Terengganu,
+17195,3.106370,101.669919,address,"PPR PANTAI PERMAI, Lembah Pantai",Lembah Pantai,W.P. Kuala Lumpur,
+17202,3.145593,101.697390,district,"Setiawangsa, W.P. Kuala Lumpur",Setiawangsa,W.P. Kuala Lumpur,
+17204,3.190109,101.728471,address,"JALAN REJANG 7, SETAPAK JAYA, Setiawangsa",Setiawangsa,W.P. Kuala Lumpur,
+17205,2.589558,102.093947,address,"JALAN MAHKAMAH, REMBAU, NEGERI SEMBILAN, Rembau",Rembau,Negeri Sembilan,71300
+17208,2.526249,101.810616,district,"Port Dickson, Negeri Sembilan",Port Dickson,Negeri Sembilan,
+17211,3.100628,101.732995,name,KEDAI UBAT & RUNCIT KIM LOY,Cheras,W.P. Kuala Lumpur,
+17212,3.145593,101.697390,district,"Cheras, W.P. Kuala Lumpur",Cheras,W.P. Kuala Lumpur,
+17213,2.534555,101.807521,postcode,71000,Port Dickson,Negeri Sembilan,71000
+17217,6.003338,102.096218,address,"BANDAR BARU PASIR MAS, LUBOK JONG, Pasir Mas",Pasir Mas,Kelantan,
+17228,6.124147,100.369658,name,C-MART ALOR SETAR,Kota Setar,Kedah,05000
+17236,1.124403,111.373907,postcode,95000,Sri Aman,Sarawak,95000
+17275,5.465476,100.280783,address,"JALAN LEMBAH PERMAI, TANJUNG BUNGAH, Timur Laut",Timur Laut,Pulau Pinang,
+17280,4.480894,117.407133,district,"Kalabakan, Sabah",Kalabakan,Sabah,
+17308,4.683512,118.250082,name,MOKTAR TRADING,Kunak,Sabah,91209
+17329,6.488630,116.761882,postcode,89100,Kota Marudu,Sabah,89100
+17330,3.272831,102.452270,address,"BERA, PAHANG, Bera",Bera,Pahang,
+17332,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+17364,5.278603,115.248085,postcode,87008,Kawasan Luar Bandar,W.P. Labuan,87008
+17365,5.275699,115.232815,district,"Kawasan Bandar, W.P. Labuan",Kawasan Bandar,W.P. Labuan,
+17370,3.145593,101.697390,district,"Seputeh, W.P. Kuala Lumpur",Seputeh,W.P. Kuala Lumpur,
+17371,5.431992,101.127235,name,TF VALUE MART GERIK,Hulu Perak,Perak,33300
+17386,5.216964,100.480466,district,"Seberang Perai Selatan, Pulau Pinang",Seberang Perai Selatan,Pulau Pinang,
+17391,5.766305,102.034148,district,"Tanah Merah, Kelantan",Tanah Merah,Kelantan,
+17395,4.686270,118.233177,postcode,91207,Kunak,Sabah,91207
+17399,3.846636,101.424965,postcode,35800,Muallim,Perak,35800
+17402,5.389298,100.280719,address,"LEBUHRAYA THEAN TEIK, AYER ITAM, Timur Laut",Timur Laut,Pulau Pinang,
+17403,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+17422,4.745171,103.381698,postcode,23000,Dungun,Terengganu,23000
+17426,4.689833,114.977808,postcode,98700,Limbang,Sarawak,98700
+17428,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+17460,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,42749
+17461,3.362471,102.017268,district,"Bentong, Pahang",Bentong,Pahang,
+17463,2.911839,101.682972,postcode,62100,Wp Putrajaya,W.P. Putrajaya,62100
+17464,2.969121,101.713912,postcode,62502,Wp Putrajaya,W.P. Putrajaya,62502
+17466,5.329848,100.268893,postcode,11900,Barat Daya,Pulau Pinang,11900
+17488,5.026475,118.313911,postcode,91100,Lahad Datu,Sabah,91100
+17522,5.370564,100.413995,address,"JALAN BARU, SEBERANG PERAI, PULAU PINANG, Seberang Perai Tengah",Seberang Perai Tengah,Pulau Pinang,13600
+17532,3.200507,101.656531,address,"JALAN 9/40, TAMAN PUSAT KEPONG, Kepong",Kepong,W.P. Kuala Lumpur,
+17533,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+17534,5.262376,103.098535,address,"KAMPUNG PADANG MIDIN, Kuala Terengganu",Kuala Terengganu,Terengganu,
+17554,3.483870,102.349899,name,THE STORE TEMERLOH,Temerloh,Pahang,
+17559,5.921200,116.054463,address,"PETAGAS, PUTATAN, Putatan",Putatan,Sabah,
+17561,6.472512,100.255798,postcode,02500,Padang Besar,Perlis,02500
+17563,6.419251,100.196632,name,GIANT SUPERSTORE KANGAR,Kangar,Perlis,01000
+17565,4.744986,103.412851,address,"JALAN BALAI BESAR, DUNGUN, Dungun",Dungun,Terengganu,23000
+17566,4.715683,103.428773,address,"JALAN LAPANGAN TERBANG, SURA HUJUNG, DUNGUN, TERENGGANU, Dungun",Dungun,Terengganu,23000
+17571,2.811853,112.291206,district,"Mukah, Sarawak",Mukah,Sarawak,
+17590,3.145593,101.697390,district,"Titiwangsa, W.P. Kuala Lumpur",Titiwangsa,W.P. Kuala Lumpur,
+17592,3.145593,101.697390,district,"Wangsa Maju, W.P. Kuala Lumpur",Wangsa Maju,W.P. Kuala Lumpur,
+17609,3.237715,101.649751,address,"JALAN SJ17, TAMAN SELAYANG JAYA, BATU CAVES, SELANGOR, Gombak",Gombak,Selangor,68100
+17624,3.199916,101.722905,name,GIANT HYPERMARKET ( SETAPAK ),Setiawangsa,W.P. Kuala Lumpur,
+17633,4.242986,117.884922,address,"BA JALAN DUNLOP, TAWAU, Tawau",Tawau,Sabah,91000
+17634,4.724542,117.389679,postcode,91000,Kalabakan,Sabah,91000
+17635,4.243521,117.885331,district,"Tawau, Sabah",Tawau,Sabah,91000
+17636,4.605501,101.064313,postcode,30100,Kinta,Perak,30100
+17637,6.110255,102.230746,name,AEON MALL KOTA BHARU,Kota Bharu,Kelantan,15050
+17638,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+17641,5.125879,103.084016,name,PASARAYA PXR WAKAF TAPAI,Marang,Terengganu,52502
+17651,4.197879,100.664847,postcode,32040,Manjung,Perak,32040
+17654,6.388811,100.143557,postcode,02000,Kangar,Perlis,02000
+17657,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+17671,5.734219,102.496549,postcode,22000,Besut,Terengganu,22000
+17685,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+17686,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,
+17693,5.297056,103.118592,name,Q-MART,Kuala Terengganu,Terengganu,
+17695,5.032710,118.318775,postcode,91110,Lahad Datu,Sabah,91110
+17696,5.026475,118.313911,postcode,91100,Lahad Datu,Sabah,91100
+17697,5.376738,102.009922,district,"Dabong, Kelantan",Dabong,Kelantan,
+17698,4.481127,118.634008,postcode,91308,Semporna,Sabah,91308
+17700,4.481127,118.634008,postcode,91308,Semporna,Sabah,91308
+17707,1.814243,112.647871,district,"Song, Sarawak",Song,Sarawak,
+17710,5.352521,115.728696,postcode,89808,Beaufort,Sabah,89808
+17712,3.145593,101.697390,district,"Cheras, W.P. Kuala Lumpur",Cheras,W.P. Kuala Lumpur,
+17713,3.123760,101.722966,address,"JALAN 3/93, TAMAN MIHARJA, Cheras",Cheras,W.P. Kuala Lumpur,
+17714,3.123760,101.722966,address,"JALAN 3/93, TAMAN MIHARJA, Cheras",Cheras,W.P. Kuala Lumpur,
+17723,3.233642,101.647074,address,"JALAN 15/2A, TAMAN WILAYAH, SELAYANG, Batu",Batu,W.P. Kuala Lumpur,
+17725,3.145593,101.697390,district,"Lembah Pantai, W.P. Kuala Lumpur",Lembah Pantai,W.P. Kuala Lumpur,
+17728,1.442303,111.579774,postcode,95700,Betong,Sarawak,95700
+17730,5.662840,102.634250,postcode,22020,Besut,Terengganu,22020
+17731,5.553066,102.739626,postcode,22100,Setiu,Terengganu,22100
+17734,4.324251,101.908585,district,"Lipis, Pahang",Lipis,Pahang,
+17741,6.176396,102.166328,district,"Tumpat, Kelantan",Tumpat,Kelantan,
+17744,6.552503,100.238512,postcode,02400,Padang Besar,Perlis,02400
+17764,3.145593,101.697390,district,"Seputeh, W.P. Kuala Lumpur",Seputeh,W.P. Kuala Lumpur,
+17767,5.516923,100.442487,name,LOTUS'S BERTAM PERDANA,Seberang Perai Utara,Pulau Pinang,13200
+17771,5.834617,102.382964,district,"Pasir Puteh, Kelantan",Pasir Puteh,Kelantan,13645
+17775,2.492365,102.845280,address,"JALAN PERDANA, TAMAN PERDANA, BUKIT SIPUT, SEGAMAT, JOHOR, Segamat",Segamat,Johor,85020
+17777,6.088409,102.227499,postcode,15100,Kota Bharu,Kelantan,15100
+17778,3.201423,101.718816,name,SHUANG-LIM CASH & CARRY,Wangsa Maju,W.P. Kuala Lumpur,
+17780,3.085678,101.720701,address,"JALAN JUJUR 3, BANDAR TUN RAZAK, Bandar Tun Razak",Bandar Tun Razak,W.P. Kuala Lumpur,
+17785,3.145593,101.697390,district,"Lembah Pantai, W.P. Kuala Lumpur",Lembah Pantai,W.P. Kuala Lumpur,
+17786,5.894919,102.333801,address,"SELISING, PASIR PUTEH, Pasir Puteh",Pasir Puteh,Kelantan,
+17788,3.408504,101.661177,address,"JALAN BATANG KALI- HULU YAM, PEKAN BATANG KALI, BATANG KALI, SELANGOR, Hulu Selangor",Hulu Selangor,Selangor,44300
+17790,3.145593,101.697390,district,"Bukit Bintang, W.P. Kuala Lumpur",Bukit Bintang,W.P. Kuala Lumpur,
+17796,6.120604,102.217197,address,"BANDAR BARU TUMPAT, TUMPAT, Tumpat",Tumpat,Kelantan,
+17797,3.094030,101.716373,address,"JALAN BUDIMAN 25, TAMAN MULIA, Bandar Tun Razak",Bandar Tun Razak,W.P. Kuala Lumpur,
+17798,5.019814,102.038266,district,"Gua Musang, Kelantan",Gua Musang,Kelantan,
+17799,5.352521,115.728696,postcode,89808,Beaufort,Sabah,89808
+17800,4.224345,103.419980,postcode,24000,Kemaman,Terengganu,24000
+17802,5.995119,102.386741,district,"Bachok, Kelantan",Bachok,Kelantan,
+17828,1.463698,110.489127,district,"Kota Samarahan, Sarawak",Kota Samarahan,Sarawak,
+17835,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+17839,1.463698,110.489127,district,"Kota Samarahan, Sarawak",Kota Samarahan,Sarawak,
+17844,2.013903,112.935677,district,"Kapit, Sarawak",Kapit,Sarawak,
+17849,4.724542,117.389679,postcode,91000,Kalabakan,Sabah,91000
+17851,4.242060,117.886859,name,TAI YANG SUPERMARKET,Tawau,Sabah,91020
+17852,4.243521,117.885331,district,"Tawau, Sabah",Tawau,Sabah,91000
+17853,4.724542,117.389679,postcode,91000,Kalabakan,Sabah,91000
+17856,4.263816,118.010372,address,"BANDAR SRI INDAH, TAWAU, SABAH, Tawau",Tawau,Sabah,91000
+17860,4.176613,114.360475,district,"Marudi, Sarawak",Marudi,Sarawak,98050
+17861,5.329848,100.268893,postcode,11900,Barat Daya,Pulau Pinang,11900
+17863,5.171196,102.008724,address,"KG JEREK BARU, GUA MUSANG, KELANTAN, Gua Musang",Gua Musang,Kelantan,
+17864,5.019814,102.038266,district,"Gua Musang, Kelantan",Gua Musang,Kelantan,
+17865,2.623439,113.150393,district,"Tatau, Sarawak",Tatau,Sarawak,
+17866,3.190589,113.058747,postcode,97000,Bintulu,Sarawak,97000
+17869,1.782999,111.662580,district,"Pakan, Sarawak",Pakan,Sarawak,
+17870,1.782999,111.662580,district,"Pakan, Sarawak",Pakan,Sarawak,
+17871,2.052193,102.571291,name,PASAR AWAM MAHARANI,Muar,Johor,84000
+17872,2.213707,102.652234,name,PASAR AWAM TANGKAK,Ledang,Johor,84900
+17873,3.086750,101.655308,address,"JALAN 5/51, BUKIT GASING, PETALING JAYA, SELANGOR, Petaling Jaya",Petaling Jaya,Selangor,46000
+17874,3.154526,101.589409,postcode,47810,Petaling Jaya,Selangor,47810
+17876,4.478602,114.030879,name,A HONG'S GROCER,Miri,Sarawak,98000
+17877,4.467447,114.007960,address,"PASAR LUTONG, MIRI, SARAWAK, Miri",Miri,Sarawak,98000
+17878,4.057204,113.845823,name,PASAR MINI KELUARGA BEKENU,Bekenu,Sarawak,98150
+17880,2.495590,112.352496,district,"Selangau, Sarawak",Selangau,Sarawak,
+17881,2.289301,111.838780,postcode,96000,Sibu,Sarawak,96000
+17884,3.190589,113.058747,postcode,97000,Bintulu,Sarawak,97000
+17892,5.830793,102.414703,postcode,16800,Pasir Puteh,Kelantan,16800
+17893,5.834617,102.382964,district,"Pasir Puteh, Kelantan",Pasir Puteh,Kelantan,
+17895,6.010506,116.127352,postcode,88450,Kota Kinabalu,Sabah,88450
+17896,5.978007,116.072899,district,"Kota Kinabalu, Sabah",Kota Kinabalu,Sabah,82450
+17898,5.939789,116.071202,postcode,88200,Putatan,Sabah,88200
+17901,6.006107,116.116225,postcode,88400,Kota Kinabalu,Sabah,88400
+17906,3.670073,100.987135,address,"JALAN 6, TAMAN BERKAT, SUNGAI BESAR, SELANGOR, Sabak Bernam",Sabak Bernam,Selangor,45300
+17908,2.949879,101.722691,postcode,62050,Wp Putrajaya,W.P. Putrajaya,62050
+17909,2.941852,101.705960,postcode,62000,Wp Putrajaya,W.P. Putrajaya,62000
+17928,5.590019,101.817168,district,"Jeli, Kelantan",Jeli,Kelantan,
+17938,5.328518,100.292012,address,"LORONG MAHSURI 7, BAYAN BARU, BAYAN LEPAS, PULAU PINANG, Barat Daya",Barat Daya,Pulau Pinang,11900
+17939,6.008992,100.748200,postcode,08210,Sik,Kedah,08210
+17940,3.145593,101.697390,district,"Cheras, W.P. Kuala Lumpur",Cheras,W.P. Kuala Lumpur,
+17943,4.360232,100.970639,name,ECONSAVE SERI ISKANDAR,Perak Tengah,Perak,
+17944,1.985425,102.955243,address,"JALAN TAN CHIN CHEONG, SERI MEDAN, BATU PAHAT, Batu Pahat",Batu Pahat,Johor,83500
+17958,2.239702,102.227513,postcode,75250,Melaka Tengah,Melaka,75250
+17959,2.965051,101.667881,postcode,62300,Wp Putrajaya,W.P. Putrajaya,62300
+17968,4.745171,103.381698,postcode,23000,Dungun,Terengganu,23000
+17975,6.016802,116.122807,name,BATARAS SUPERSTORE,Kota Kinabalu,Sabah,
+17976,4.628274,103.436518,postcode,23100,Dungun,Terengganu,23100
+17980,4.910689,102.765070,district,"Hulu Terengganu, Terengganu",Hulu Terengganu,Terengganu,
+17982,4.628274,103.436518,postcode,23100,Dungun,Terengganu,23100
+17983,4.635232,103.436570,name,PASAR MINI ADUKA,Dungun,Terengganu,23100
+17990,3.465046,102.392024,address,"JALAN CHENGAL INDAH, TAMAN CHENGAL INDAH, TEMERLOH, PAHANG, Temerloh",Temerloh,Pahang,
+18005,5.615068,115.888304,district,"Kimanis, Sabah",Kimanis,Sabah,89727
+18010,5.168194,100.477337,postcode,14300,Seberang Perai Selatan,Pulau Pinang,14300
+18011,5.475370,115.799600,name,PASAR AM MEMBAKUT,Kimanis,Sabah,89728
+18018,5.215445,103.199790,address,"KG. KIJING, MARANG, TERENGGANU, Marang",Marang,Terengganu,
+18019,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+18021,5.166667,103.166667,district,"Marang, Terengganu",Marang,Terengganu,
+18025,2.949879,101.722691,postcode,62050,Wp Putrajaya,W.P. Putrajaya,62050
+18039,5.216964,100.480466,district,"Seberang Perai Selatan, Pulau Pinang",Seberang Perai Selatan,Pulau Pinang,
+18041,6.438383,100.200009,postcode,01000,Kangar,Perlis,01000
+18043,3.153908,101.699490,name,ST ROSYAM MART,Setiawangsa,W.P. Kuala Lumpur,
+18044,4.072607,101.152703,postcode,36700,Hilir Perak,Perak,36700
+18051,5.859579,100.456045,name,LONGWAN GUAR CHEMPEDAK,Yan,Kedah,08800
+18056,1.736159,103.891117,address,"JALAN MANGGA 1, TAMAN KOTA JAYA, KOTA TINGGI, JOHOR, Kota Tinggi",Kota Tinggi,Johor,81900
+18063,1.515359,103.635351,name,MYDIN HYPERMARKET MUTIARA RINI,Johor Bahru,Johor,81300
+18064,2.249743,102.303137,postcode,75450,Melaka Tengah,Melaka,75450
+18068,2.133830,111.335745,district,"Tanjung Manis, Sarawak",Tanjung Manis,Sarawak,
+18073,2.522616,112.326534,name,EVERWIN SUPERMARKET (SELANGAU),Selangau,Sarawak,
+18087,1.518028,103.379064,postcode,82000,Pontian,Johor,82000
+18088,1.528652,103.550867,postcode,81500,Pontian,Johor,81500
+18089,2.013903,112.935677,district,"Kapit, Sarawak",Kapit,Sarawak,
+18094,4.585515,101.136230,name,ECONSAVE AMPANG,Kinta,Perak,31350
+18095,4.581561,101.059618,name,AEON BIG FALIM,Kinta,Perak,30200
+18098,3.204386,101.715869,name,AEON BIG ( DANAU KOTA ),Wangsa Maju,W.P. Kuala Lumpur,
+18099,4.583333,101.083333,district,"Kinta, Perak",Kinta,Perak,
+18100,4.586774,101.135659,name,99 SPEEDMART AMPANG,Kinta,Perak,
+18102,4.550083,101.087913,address,"LALUAN LAPANGAN PERDANA 1, PANORAMA LAPANGAN PERDANA, IPOH, PERAK, Kinta",Kinta,Perak,
+18104,4.689833,114.977808,postcode,98700,Limbang,Sarawak,98700
+18105,6.493035,116.770424,name,BATARAS SUPERSTORE (KOTA MARUDU),Kota Marudu,Sabah,
+18106,4.231041,103.422190,address,"JALAN ABDUL RAHMAN, KEMAMAN, Kemaman",Kemaman,Terengganu,24000
+18107,4.455121,115.427188,district,"Lawas, Sarawak",Lawas,Sarawak,
+18109,4.455121,115.427188,district,"Lawas, Sarawak",Lawas,Sarawak,
+18116,3.104806,101.599227,address,"JALAN SS 6/12, PETALING JAYA, SELANGOR, Petaling Jaya",Petaling Jaya,Selangor,47301
+18117,5.428254,101.128814,name,99 SPEEDMART JALAN TUN SABAN,Hulu Perak,Perak,33300
+18118,4.827494,100.703264,postcode,34700,"Larut, Matang & Selama",Perak,34700
+18119,4.012061,101.018440,postcode,36000,Hilir Perak,Perak,36000
+18120,4.772071,100.940878,district,"Kuala Kangsar, Perak",Kuala Kangsar,Perak,
+18121,4.197763,101.260435,name,99 SPEEDMART TAPAH,Batang Padang,Perak,35000
+18122,5.118837,100.478565,postcode,34200,Kerian,Perak,34200
+18123,4.201667,100.660036,name,99 SPEEDMART SERI MANJUNG,Manjung,Perak,32040
+18125,5.115509,118.430636,district,"Lahad Datu, Sabah",Lahad Datu,Sabah,91116
+18126,5.439162,100.382188,name,LOTUS'S BAGAN AJAM,Seberang Perai Utara,Pulau Pinang,13000
+18129,2.623439,113.150393,district,"Tatau, Sarawak",Tatau,Sarawak,
+18130,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+18132,3.259002,102.434564,address,"JALAN SENTRAL TRIANG 10, SENTRAL TRIANG, TRIANG PAHANG, Bera",Bera,Pahang,
+18133,2.417255,103.839474,address,"JLN WAWASAN 1, TMN WAWASAN, MERSING, JOHOR, Mersing",Mersing,Johor,86800
+18134,1.562076,103.613979,name,99 SPEEDMART,Kota Tinggi,Johor,81440
+18135,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,20023
+18144,1.545750,103.757920,postcode,81100,Johor Bahru,Johor,81100
+18160,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,
+18162,5.283502,115.244571,postcode,87000,Kawasan Luar Bandar,W.P. Labuan,87000
+18164,4.758742,100.927520,postcode,33000,Kuala Kangsar,Perak,33000
+18165,6.140127,116.203494,postcode,89200,Kota Kinabalu,Sabah,89200
+18170,5.978007,116.072899,district,"Kota Kinabalu, Sabah",Kota Kinabalu,Sabah,
+18172,5.216964,100.480466,district,"Seberang Perai Selatan, Pulau Pinang",Seberang Perai Selatan,Pulau Pinang,
+18177,5.376738,102.009922,district,"Dabong, Kelantan",Dabong,Kelantan,
+18185,2.966590,101.788143,name,ECONSAVE JALAN REKO,Hulu Langat,Selangor,43000
+18189,3.472936,102.325964,address,"JALAN SRI LAYANG 1/2, TAMAN SRI LAYANG, MENTAKAB, PAHANG, Temerloh",Temerloh,Pahang,
+18193,3.120002,101.577780,address,"JALAN PJU 1A/3, ARA DAMANSARA, PETALING JAYA, SELANGOR, Petaling Jaya",Petaling Jaya,Selangor,47301
+18197,1.173643,110.565218,name,LEPAPA HYPERMARKET,Serian,Sarawak,94700
+18198,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,
+18199,2.660919,114.381651,district,"Belaga, Sarawak",Belaga,Sarawak,
+18203,3.222755,101.639256,address,"JALAN BESAR KEPONG, TAMAN KEPONG, Kepong",Kepong,W.P. Kuala Lumpur,11095
+18208,3.072224,101.502417,postcode,40000,Petaling,Selangor,40000
+18209,1.208835,111.408029,district,"Sri Aman, Sarawak",Sri Aman,Sarawak,
+18212,3.145593,101.697390,district,"Segambut, W.P. Kuala Lumpur",Segambut,W.P. Kuala Lumpur,
+18242,6.472512,100.255798,postcode,02500,Padang Besar,Perlis,02500
+18245,5.550720,100.797587,district,"Baling, Kedah",Baling,Kedah,
+18316,3.145593,101.697390,district,"Seputeh, W.P. Kuala Lumpur",Seputeh,W.P. Kuala Lumpur,
+18319,3.447895,101.654776,postcode,44300,Hulu Selangor,Selangor,44300
+18325,2.133830,111.335745,district,"Tanjung Manis, Sarawak",Tanjung Manis,Sarawak,
+18327,7.231645,117.171156,district,"Kudat, Sabah",Kudat,Sabah,
+18328,3.573618,101.666300,postcode,44000,Hulu Selangor,Selangor,44000
+18337,2.975429,101.824937,name,MYDIN TAMAN ANGGERIK,Hulu Langat,Selangor,43500
+18340,4.479494,118.612515,name,BATARAS HYPERMARKET SEMPORNA,Semporna,Sabah,91308
+18341,3.601443,102.641005,district,"Maran, Pahang",Maran,Pahang,
+18343,6.008094,102.092513,district,"Pasir Mas, Kelantan",Pasir Mas,Kelantan,
+18344,2.891097,112.093781,name,GAFU SUPERMARKET (MUKAH),Mukah,Sarawak,96400
+18345,2.890140,112.092754,name,EVERWIN SUPERMARKET (MUKAH),Mukah,Sarawak,
+18347,3.426849,101.177153,address,"JALAN KILANG PADI, TANJONG KARANG, SELANGOR, Kuala Selangor",Kuala Selangor,Selangor,45500
+18348,5.369941,100.217680,name,TF VALUE MART BALIK PULAU,Barat Daya,Pulau Pinang,11000
+18349,5.342643,100.465374,address,"KAMPUNG ALMA, BUKIT MERTAJAM, PULAU PINANG, Seberang Perai Tengah",Seberang Perai Tengah,Pulau Pinang,14000
+18350,2.932297,101.858869,postcode,43500,Hulu Langat,Selangor,43500
+18351,5.737511,115.938727,name,BATARAS SUPERSTORE PAPAR,Papar,Sabah,
+18352,3.204744,101.667432,name,NSK TRADE CITY ( KEPONG ),Kepong,W.P. Kuala Lumpur,
+18353,3.145593,101.697390,district,"Wangsa Maju, W.P. Kuala Lumpur",Wangsa Maju,W.P. Kuala Lumpur,
+18358,2.991177,101.782886,postcode,43000,Hulu Langat,Selangor,43000
+18400,2.199321,102.237943,postcode,75200,Melaka Tengah,Melaka,75200
+18402,6.654244,100.310250,postcode,02100,Padang Besar,Perlis,02100
+18409,2.230145,102.245307,district,"Melaka Tengah, Melaka",Melaka Tengah,Melaka,75480
+18410,2.145390,102.421987,address,"JALAN DEBUNGA 1, TAMAN DEBUNGA, MERLIMAU MELAKA, Jasin",Jasin,Melaka,77300
+18413,5.357731,116.174683,name,BATARAS HYPERMARKET KENINGAU,Keningau,Sabah,89000
+18457,5.991366,116.124322,address,"MILE 5, JALAN KOLOMBONG, INANAM, KOTA KINABALU, SABAH, Kota Kinabalu",Kota Kinabalu,Sabah,88450
+18460,2.289301,111.838780,postcode,96000,Sibu,Sarawak,96000
+18462,5.866343,118.057022,name,BATARAS HYPERMARKET SANDAKAN,Sandakan,Sabah,90000
+18464,5.839127,118.115860,district,"Sandakan, Sabah",Sandakan,Sabah,
+18465,5.839650,118.119402,address,"JALAN PRYER, PUSAT BANDAR SANDAKAN, SANDAKAN, SABAH, Sandakan",Sandakan,Sabah,90000
+18467,5.839127,118.115860,district,"Sandakan, Sabah",Sandakan,Sabah,
+18470,2.919211,101.650520,address,"LINGKARAN CYBER POINT TIMUR, CYBER 12, CYBERJAYA, SELANGOR, Sepang",Sepang,Selangor,63000
+18471,2.822977,101.695421,address,"KIPMALL, KOTA WARISAN, SEPANG, SELANGOR, Sepang",Sepang,Selangor,43900
+18472,2.828613,101.729282,address,"JALAN SEROJA 7, TAMAN SEROJA, BANDAR BARU SALAK TINGGI, SEPANG SELANGOR, Sepang",Sepang,Selangor,43900
+18473,2.812453,101.737183,name,PASAR SEGAR SAFIRA,Sepang,Selangor,43900
+18474,4.017163,101.026872,address,"RAPID MALL SERI INTAN, JALAN CHANGKAT JONG, TELUK INTAN, PERAK, Hilir Perak",Hilir Perak,Perak,36000
+18475,5.010835,100.530377,address,"JALAN MAHARAJA, TMN BAGAN SERAI, BAGAN SERAI, PERAK, Kerian",Kerian,Perak,34300
+18476,5.070480,100.389460,name,PASAR SEJAHTERA TANJUNG PIANDANG,Kerian,Perak,34250
+18477,4.234586,103.423585,district,"Kemaman, Terengganu",Kemaman,Terengganu,10963
+18478,2.274036,102.543309,address,"4-14 JALAN PERNIAGAAN PAYAMAS, PUSAT PERNIAGAAN PAYAMAS, Tangkak",Tangkak,Johor,
+18480,3.235864,101.680012,address,"JALAN BATU CAVES, TAMAN BATU CAVES, BATU CAVES, SELANGOR, Gombak",Gombak,Selangor,68100
+18481,6.010506,116.127352,postcode,88450,Kota Kinabalu,Sabah,88450
+18486,3.055168,101.537149,address,"11 JALAN SINGA E 20/E, SEKSYEN 20, SHAH ALAM, SELANGOR, Petaling",Petaling,Selangor,40300
+18488,3.049982,101.492373,name,LESTARI MINI MARKET,Klang,Selangor,41300
+18489,3.082858,101.507026,address,"JLN MURAI 6/1F, SEKSYEN 6, SHAH ALAM, SELANGOR, Petaling",Petaling,Selangor,40000
+18491,2.273021,102.543676,address,"JALAN PAYAMAS, Tangkak",Tangkak,Johor,
+18492,1.845423,102.950725,postcode,83000,Batu Pahat,Johor,83000
+18501,1.516061,110.386478,name,EMART TABUAN JAYA,Kuching,Sarawak,93350
+18502,1.427686,110.325596,district,"Kota Padawan, Sarawak",Kota Padawan,Sarawak,
+18539,4.851344,100.740680,postcode,34000,"Larut, Matang & Selama",Perak,34000
+18541,6.105458,102.235696,address,"JALAN PINTU GENG, KOTA BHARU, Kota Bharu",Kota Bharu,Kelantan,
+18542,6.044990,102.329539,address,"MUKIM TEMU RANGGAS, JAJAHAN BACHOK, Bachok",Bachok,Kelantan,
+18550,5.995119,102.386741,district,"Bachok, Kelantan",Bachok,Kelantan,
+18552,5.995119,102.386741,district,"Bachok, Kelantan",Bachok,Kelantan,
+18553,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+18556,5.823141,102.098099,postcode,17500,Tanah Merah,Kelantan,17500
+18559,5.766305,102.034148,district,"Tanah Merah, Kelantan",Tanah Merah,Kelantan,
+18561,4.067373,113.881782,postcode,98150,Bekenu,Sarawak,98150
+18562,4.057832,113.846082,district,"Bekenu, Sarawak",Bekenu,Sarawak,98157
+18563,4.056670,113.846681,name,CHOP MUI HENG ( BEKENU),Bekenu,Sarawak,98157
+18568,4.483563,103.445042,postcode,24300,Kemaman,Terengganu,24300
+18575,1.561810,103.619805,postcode,81300,Johor Bahru,Johor,81300
+18576,2.912193,101.684669,district,"Wp Putrajaya, W.P. Putrajaya",Wp Putrajaya,W.P. Putrajaya,
+18578,3.378196,103.209612,district,"Pekan, Pahang",Pekan,Pahang,
+18605,3.159453,101.713598,address,"AVENUE K, JALAN AMPANG, Bukit Bintang",Bukit Bintang,W.P. Kuala Lumpur,
+18613,3.573618,101.666300,postcode,44000,Hulu Selangor,Selangor,44000
+18660,3.087830,101.715055,address,"FLAT SRI KOTA, BANDAR TUN RAZAK, Bandar Tun Razak",Bandar Tun Razak,W.P. Kuala Lumpur,
+18661,3.145593,101.697390,district,"Lembah Pantai, W.P. Kuala Lumpur",Lembah Pantai,W.P. Kuala Lumpur,
+18662,3.145593,101.697390,district,"Batu, W.P. Kuala Lumpur",Batu,W.P. Kuala Lumpur,
+18666,5.583333,102.500000,district,"Besut, Terengganu",Besut,Terengganu,
+18670,6.069447,102.283474,postcode,16150,Kota Bharu,Kelantan,16150
+18673,4.772071,100.940878,district,"Kuala Kangsar, Perak",Kuala Kangsar,Perak,
+18695,5.859884,100.451530,postcode,08800,Yan,Kedah,08800
+18697,5.632474,100.537960,name,MYDIN SUNGAI PETANI,Kuala Muda,Kedah,08000
+18700,4.903398,100.708299,address,"JALAN PERUSAHAAN 3, KAWASAN PERINDUSTRIAN KAMUNTING, KAMUNTING, PERAK, Larut, Matang & Selama","Larut, Matang & Selama",Perak,34600
+18705,4.682490,118.213707,postcode,91200,Kunak,Sabah,91200
+18708,5.300022,103.122516,address,"KAMPUNG MERBAU PATAH, KUALA TERENGGANU, Kuala Terengganu",Kuala Terengganu,Terengganu,20050
+18712,3.216683,101.644026,address,"JALAN METRO PERDANA 2, FORTUNE AVENUE, Kepong",Kepong,W.P. Kuala Lumpur,
+18716,3.145593,101.697390,district,"Bandar Tun Razak, W.P. Kuala Lumpur",Bandar Tun Razak,W.P. Kuala Lumpur,
+19117,6.065921,116.319811,district,"Tuaran, Sabah",Tuaran,Sabah,
+20689,1.458199,103.764906,district,"Johor Bahru, Johor",Johor Bahru,Johor,
+20690,3.145593,101.697390,district,"Lembah Pantai, W.P. Kuala Lumpur",Lembah Pantai,W.P. Kuala Lumpur,
+20691,4.252250,117.921204,name,FOH HING LOONG,Tawau,Sabah,
+20692,2.810735,102.395018,name,ZEMART BAHAU,Bahau,Negeri Sembilan,
+20694,4.674301,118.214986,name,STHAMIN SUPERMARKET KUNAK,Kunak,Sabah,
+20695,4.243521,117.885331,district,"Tawau, Sabah",Tawau,Sabah,14999
+20703,4.622351,101.150453,name,TF VALUE MART TAMBUN,Kinta,Perak,
+20704,4.583333,101.083333,district,"Kinta, Perak",Kinta,Perak,
+20705,4.494542,101.154346,name,MYDIN RTC GOPENG,Kinta,Perak,
+20706,4.012061,101.018440,postcode,36000,Hilir Perak,Perak,36000
+20707,3.833333,101.500000,district,"Muallim, Perak",Muallim,Perak,
+20708,4.010555,101.304367,name,99 SPEEDMART SUNGKAI PERDANA,Batang Padang,Perak,
+20714,5.115509,118.430636,district,"Lahad Datu, Sabah",Lahad Datu,Sabah,
+20717,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,28550
+20718,5.337008,103.107063,name,PASAR BUKIT TUNGGAL,Kuala Nerus,Terengganu,
+20724,3.494298,101.631337,address,"KAMPUNG CHUANG, RASA, Hulu Selangor",Hulu Selangor,Selangor,
+20728,3.544882,101.661827,address,"JALAN TANJAK, TAMAN TANJAK, KUALA KUBU BHARU, Hulu Selangor",Hulu Selangor,Selangor,
+20731,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+20732,1.463698,110.489127,district,"Kota Samarahan, Sarawak",Kota Samarahan,Sarawak,
+20733,1.553117,110.358513,address,"JALAN CENTRAL, Kuching",Kuching,Sarawak,
+20736,3.807053,101.854799,address,"JALAN PUTRA RAUB, PUSAT PERNIAGAAN PUTRA RAUB, RAUB, PAHANG, Raub",Raub,Pahang,27600
+20737,3.843575,101.878114,postcode,27600,Raub,Pahang,27600
+20738,3.522864,101.909584,address,"JALAN LOKE YEW, BENTONG, PAHANG, DARUL MAKMUR, Bentong",Bentong,Pahang,28700
+20739,3.465367,102.402807,postcode,28000,Temerloh,Pahang,28000
+20740,3.473566,102.344925,postcode,28400,Temerloh,Pahang,28400
+20741,3.473566,102.344925,postcode,28400,Temerloh,Pahang,28400
+20742,3.768373,102.446856,postcode,26400,Maran,Pahang,26400
+20743,3.768373,102.446856,postcode,26400,Maran,Pahang,26400
+20745,3.465367,102.402807,postcode,28000,Maran,Pahang,28000
+20747,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+20748,3.378196,103.209612,district,"Pekan, Pahang",Pekan,Pahang,
+20749,3.378196,103.209612,district,"Pekan, Pahang",Pekan,Pahang,
+20750,3.378196,103.209612,district,"Pekan, Pahang",Pekan,Pahang,
+20751,3.254943,102.438715,address,"JALAN SENTRAL TRIANG 3, SENTRAL TRIANG, TRIANG, PAHANG DARUL MAKMUR, Bera",Bera,Pahang,28300
+20754,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+20755,3.770804,103.313498,postcode,26060,Kuantan,Pahang,26060
+20757,4.099399,102.438127,postcode,27000,Jerantut,Pahang,27000
+20758,4.099399,102.438127,postcode,27000,Jerantut,Pahang,27000
+20759,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+20760,1.851206,103.075209,address,"JALAN UNIVERSITI, TAMAN UNIVERSITI, Batu Pahat",Batu Pahat,Johor,
+20762,1.933333,103.000000,district,"Batu Pahat, Johor",Batu Pahat,Johor,
+20763,1.933333,103.000000,district,"Batu Pahat, Johor",Batu Pahat,Johor,
+20766,1.733674,103.900698,district,"Kota Tinggi, Johor",Kota Tinggi,Johor,
+20767,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+20768,1.478569,103.399941,address,"JALAN EMAS 4, PUSAT PERNIAGAAN KOTA EMAS, Pontian",Pontian,Johor,
+20769,1.500000,103.500000,district,"Pontian, Johor",Pontian,Johor,
+20770,2.430060,103.838572,name,DF FRESH MART,Mersing,Johor,
+20771,2.438441,103.832692,address,"JALAN SRI MERSING 3, PUSAT PERDAGANGAN SRI MERSING, Mersing",Mersing,Johor,
+20772,2.438441,103.832692,address,"JALAN SRI MERSING 11, PUSAT PERDAGANGAN SRI MERSING, Mersing",Mersing,Johor,
+20774,2.495601,102.864991,address,"JALAN PUTRA 1/4, BANDAR IOI, Segamat",Segamat,Johor,
+20776,1.837223,103.307085,name,ECONSAVE SIMPANG RENGGAM,Kluang,Johor,
+20778,2.032347,103.319077,district,"Kluang, Johor",Kluang,Johor,
+20779,2.063882,103.307817,address,"JALAN KIARAMAS 5, Kluang",Kluang,Johor,
+20780,1.838032,103.328597,name,KEDAI RUNCIT NASHI,Kluang,Johor,
+20781,1.821325,103.315423,address,"JALAN KIJANG, Kluang",Kluang,Johor,
+20782,2.383453,102.210780,district,"Alor Gajah, Melaka",Alor Gajah,Melaka,
+20784,2.260707,102.234054,address,"JALAN TTC 26, TAMAN TEKNOLOGI CHENG, MELAKA, Melaka Tengah",Melaka Tengah,Melaka,19395
+20786,1.490331,103.866755,name,MYDIN HYPERMARKET TAMAN RINTING,Johor Bahru,Johor,92368
+20788,1.512972,103.704328,name,MASLEE EXPRESS KEMPAS,Johor Bahru,Johor,
+20789,2.050000,102.566667,district,"Muar, Johor",Muar,Johor,
+20790,2.050000,102.566667,district,"Muar, Johor",Muar,Johor,16815
+20791,2.250000,102.583333,district,"Tangkak, Johor",Tangkak,Johor,14738
+20792,2.040281,102.660519,address,"TAMAN BAKRI INDAH, BUKIT BAKRI, Muar",Muar,Johor,
+20793,2.250000,102.583333,district,"Tangkak, Johor",Tangkak,Johor,
+20794,2.250000,102.583333,district,"Tangkak, Johor",Tangkak,Johor,
+20796,3.090722,101.508674,address,"JALAN LIKU B, 8/B SHAH ALAM, SELANGOR, Petaling",Petaling,Selangor,40000
+20797,3.047382,101.527351,name,99 SPEEDMART SEKSYEN 23,Petaling,Selangor,40300
+20801,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+20803,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+20804,3.769771,103.235015,address,"BATU 9, JALAN GAMBANG, KUANTAN, PAHANG, Kuantan",Kuantan,Pahang,
+20805,3.806500,103.300927,address,"LORONG BUKIT SETONGKOL MAJU 17, BUKIT SETONGKOL, KUANTAN, PAHANG, Kuantan",Kuantan,Pahang,
+20806,3.749662,103.212150,address,"JALAN ABDUL RAHMAN TALIB, KG JAYA GADING, KUANTAN, PAHANG, Kuantan",Kuantan,Pahang,11570
+20807,2.866604,101.673312,name,PASARAYA MEGAH DENGKIL,Sepang,Selangor,43800
+20808,3.825233,103.277555,name,TMG MART 16,Kuantan,Pahang,
+20809,3.822551,103.326051,address,"JALAN LIM HOE LEK, KUANTAN, PAHANG, Kuantan",Kuantan,Pahang,
+20810,5.405660,100.372348,name,PASAR AWAM SRI BANDAR,Seberang Perai Utara,Pulau Pinang,
+20811,5.433842,100.386486,name,PASAR AWAM SRI UDA,Seberang Perai Utara,Pulau Pinang,
+20812,5.410154,100.383551,name,PASAR AWAM TAMAN BAGAN,Seberang Perai Utara,Pulau Pinang,
+20814,6.430728,100.271879,district,"Arau, Perlis",Arau,Perlis,
+20816,6.662684,100.320198,district,"Padang Besar, Perlis",Padang Besar,Perlis,
+20817,6.438931,100.194484,district,"Kangar, Perlis",Kangar,Perlis,
+20818,6.438931,100.194484,district,"Kangar, Perlis",Kangar,Perlis,
+20819,5.034575,100.498458,district,"Kerian, Perak",Kerian,Perak,
+20820,4.000000,101.000000,district,"Hilir Perak, Perak",Hilir Perak,Perak,
+20821,4.850578,100.740782,address,"HALAMAN PASAR, Larut, Matang & Selama","Larut, Matang & Selama",Perak,
+20822,4.816692,100.664360,district,"Larut, Matang & Selama, Perak","Larut, Matang & Selama",Perak,
+20823,6.370039,99.792863,district,"Langkawi, Kedah",Langkawi,Kedah,
+20826,5.766305,102.034148,district,"Tanah Merah, Kelantan",Tanah Merah,Kelantan,
+20828,5.269273,103.161638,address,"KAWASAN PERINDUSTRIAN CHENDERING, KUALA TERENGGANU, Kuala Terengganu",Kuala Terengganu,Terengganu,
+20831,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+20832,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+20833,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+20835,5.034575,100.498458,district,"Kerian, Perak",Kerian,Perak,
+20836,6.134372,100.389478,name,TF VALUE MART ALOR SETAR,Kota Setar,Kedah,
+20838,5.300022,103.122516,address,"KAMPUNG MERBAU PATAH, KUALA TERENGGANU, Kuala Terengganu",Kuala Terengganu,Terengganu,
+20840,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,18117
+20841,5.353278,103.115576,address,"5218-B JALAN BUKIT TUNGGAL, KUALA TERENGGANU, Kuala Nerus",Kuala Nerus,Terengganu,
+20842,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,11697
+20843,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+20845,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,15607
+20847,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+20850,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+20852,5.862623,116.113815,district,"Penampang, Sabah",Penampang,Sabah,
+20853,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,
+20855,1.665219,109.837210,address,"KAMPUNG SEMUNIN CINA, LUNDU, Lundu",Lundu,Sarawak,
+20856,2.811853,112.291206,district,"Mukah, Sarawak",Mukah,Sarawak,
+20857,6.014167,102.394330,address,"JELAWAT BACHOK, BACHOK, Bachok",Bachok,Kelantan,
+20859,4.578071,101.137387,name,TY PASARAYA,Kuala Kangsar,Perak,
+20860,1.567594,103.611612,name,ECONSAVE TAMAN TERATAI,Johor Bahru,Johor,43282
+20861,3.104987,101.624962,address,"JALAN 20/16 PARAMOUNT GARDEN, PETALING JAYA, Petaling Jaya",Petaling Jaya,Selangor,46300
+20863,2.922226,101.649302,postcode,63000,Cyberjaya,W.P. Putrajaya,63000
+20864,1.595455,110.335064,address,"JALAN TEMENGGONG HAJI GOBIL, PETRA JAYA, Kuching",Kuching,Sarawak,
+20865,1.484602,110.333230,name,FARLEY KUCHING,Kuching,Sarawak,
+20866,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+20867,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+20870,5.019814,102.038266,district,"Gua Musang, Kelantan",Gua Musang,Kelantan,12112
+20871,2.013903,112.935677,district,"Kapit, Sarawak",Kapit,Sarawak,
+20872,2.013903,112.935677,district,"Kapit, Sarawak",Kapit,Sarawak,
+20873,2.660919,114.381651,district,"Belaga, Sarawak",Belaga,Sarawak,
+20874,1.814243,112.647871,district,"Song, Sarawak",Song,Sarawak,
+20875,5.583333,102.500000,district,"Besut, Terengganu",Besut,Terengganu,
+20876,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+20877,3.145593,101.697390,district,"Segambut, W.P. Kuala Lumpur",Segambut,W.P. Kuala Lumpur,
+20882,2.033079,103.325903,postcode,86000,Kluang,Johor,86000
+20883,3.100383,101.633083,postcode,46100,Petaling Jaya,Selangor,46100
+20886,1.737868,103.894477,address,"JALAN DELIMA, TAMAN KOTA JAYA, KOTA TINGGI, Kota Tinggi",Kota Tinggi,Johor,
+20888,3.056980,103.084566,address,"JALAN MEDAN MEWAH, Rompin",Rompin,Pahang,
+20889,6.040085,102.142043,name,PASARAYA WAN MIE,Pasir Mas,Kelantan,
+20892,6.662684,100.320198,district,"Padang Besar, Perlis",Padang Besar,Perlis,
+20893,3.083333,101.833333,district,"Hulu Langat, Selangor",Hulu Langat,Selangor,
+20896,5.269273,103.161638,address,"KAWASAN PERINDUSTRIAN CHENDERING, Kuala Terengganu",Kuala Terengganu,Terengganu,
+20898,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+20899,3.145593,101.697390,district,"Titiwangsa, W.P. Kuala Lumpur",Titiwangsa,W.P. Kuala Lumpur,
+20901,2.818848,101.812648,address,"JLN T.S 2/1 E, TMN SEMARAK 2, NILAI, Seremban",Seremban,Negeri Sembilan,
+20902,3.110652,101.637155,name,JAYA 33 SUPERMARKET,Petaling Jaya,Selangor,46200
+20903,3.075543,101.633948,address,"JALAN PJS 3/2, PETALING JAYA SELATAN, PETALING JAYA, Petaling Jaya",Petaling Jaya,Selangor,46000
+20905,6.121678,116.268554,address,"TAMPARULI, SABAH, Tamparuli",Tamparuli,Sabah,
+20906,5.615068,115.888304,district,"Kimanis, Sabah",Kimanis,Sabah,
+20907,2.649385,103.629491,address,"LORONG MARKISA 1, TAMAN MARKISA, Mersing",Mersing,Johor,
+20908,1.547625,103.763892,address,"JALAN SAGU 33, TAMAN DAYA, Johor Bahru",Johor Bahru,Johor,
+20912,1.458199,103.764906,district,"Johor Bahru, Johor",Johor Bahru,Johor,
+20913,1.480046,103.897506,address,"JALAN SEJAMBAK 14, TAMAN BUKIT DAHLIA, PASIR GUDANG, Johor Bahru",Johor Bahru,Johor,81700
+20914,1.458199,103.764906,district,"Johor Bahru, Johor",Johor Bahru,Johor,
+20915,1.499595,103.718467,address,"44-01 JLN PADI RIA 13, BANDAR BARU UDA, JOHOR BAHRU, Johor Bahru",Johor Bahru,Johor,81200
+20916,1.561810,103.619805,postcode,81300,Johor Bahru,Johor,81300
+20918,1.550438,103.793283,address,"JALAN HARMONIUM 24/1, TAMAN DESA TEBRAU, Johor Bahru",Johor Bahru,Johor,
+20919,1.554020,103.795654,name,99 SPEEDMART (DESA TEBRAU),Johor Bahru,Johor,81100
+20920,2.436598,103.045841,address,"JALAN TENANG, SEGAMAT, Segamat",Segamat,Johor,85300
+20921,2.483691,102.851608,postcode,85020,Segamat,Johor,85020
+20922,1.527252,110.337230,name,AEON MALL KUCHING CENTRAL,Kuching,Sarawak,93200
+20923,2.492899,102.859304,address,"PTB 1234, JALAN GENUANG, SEGAMAT, Segamat",Segamat,Johor,85000
+20925,2.399412,103.017809,name,99 SPEEDMART SEGAMAT,Segamat,Johor,85000
+20926,1.517847,103.513758,name,MASLEE EXPRESS PEKAN NENAS,Pontian,Johor,81500
+20928,1.503772,103.517749,name,PERNIAGAAN UTAMA JAYA PEKAN,Pontian,Johor,81500
+20929,2.273926,103.856992,name,99 SPEEDMART JEMALUANG,Mersing,Johor,86810
+20930,2.431836,103.834911,address,"JALAN ENDAU, MERSING, Mersing",Mersing,Johor,86800
+20931,2.646217,103.628079,postcode,86900,Mersing,Johor,86900
+20932,1.808207,103.889602,postcode,81900,Kota Tinggi,Johor,81900
+20934,1.496312,103.683207,name,PASAR MINI AL-MASHUR,Kota Tinggi,Johor,81900
+20935,1.738260,103.889733,address,"JALAN PEDADA, TAMAN KOTA JAYA, KOTA TINGGI, Kota Tinggi",Kota Tinggi,Johor,81900
+20936,1.733674,103.900698,district,"Kota Tinggi, Johor",Kota Tinggi,Johor,
+20937,1.738260,103.889733,address,"JALAN PEDADA, TAMAN KOTA JAYA, KOTA TINGGI, Kota Tinggi",Kota Tinggi,Johor,81900
+20938,1.740572,103.888056,address,"JALAN LANGSAT, TAMAN KOTA JAYA, KOTA TINGGI, Kota Tinggi",Kota Tinggi,Johor,81900
+20939,2.033079,103.325903,postcode,86000,Kluang,Johor,86000
+20940,2.015026,103.301830,address,"JALAN INTAN 2/1, TAMAN INTAN, KLUANG, Kluang",Kluang,Johor,86000
+20941,2.032347,103.319077,district,"Kluang, Johor",Kluang,Johor,
+20942,2.044180,102.588698,postcode,84000,Muar,Johor,84000
+20943,2.156137,102.724870,postcode,84500,Muar,Johor,84500
+20944,2.104308,102.637469,postcode,84300,Muar,Johor,84300
+20946,2.050000,102.566667,district,"Muar, Johor",Muar,Johor,
+20947,2.208162,102.654094,address,"JALAN GAMBIR 4/2, BANDAR BARU, BUKIT GAMBIR, Tangkak",Tangkak,Johor,84800
+20948,2.912193,101.684669,district,"Wp Putrajaya, W.P. Putrajaya",Wp Putrajaya,W.P. Putrajaya,
+20949,2.914883,101.669659,district,"Cyberjaya, W.P. Putrajaya",Cyberjaya,W.P. Putrajaya,
+20950,2.912193,101.684669,district,"Wp Putrajaya, W.P. Putrajaya",Wp Putrajaya,W.P. Putrajaya,
+20951,3.145593,101.697390,district,"Lembah Pantai, W.P. Kuala Lumpur",Lembah Pantai,W.P. Kuala Lumpur,
+20952,3.145593,101.697390,district,"Seputeh, W.P. Kuala Lumpur",Seputeh,W.P. Kuala Lumpur,
+20953,3.236674,102.541772,district,"Bera, Pahang",Bera,Pahang,
+20954,3.142631,102.366930,address,"TAMAN JAYA, KEMAYAN, Bera",Bera,Pahang,
+20955,3.236674,102.541772,district,"Bera, Pahang",Bera,Pahang,
+20957,4.583333,101.083333,district,"Kinta, Perak",Kinta,Perak,
+20958,4.000000,101.000000,district,"Hilir Perak, Perak",Hilir Perak,Perak,
+20959,4.772071,100.940878,district,"Kuala Kangsar, Perak",Kuala Kangsar,Perak,
+20960,4.772071,100.940878,district,"Kuala Kangsar, Perak",Kuala Kangsar,Perak,
+20961,3.833333,101.500000,district,"Muallim, Perak",Muallim,Perak,
+20962,4.083333,101.333333,district,"Batang Padang, Perak",Batang Padang,Perak,
+20963,5.447973,101.297149,district,"Hulu Perak, Perak",Hulu Perak,Perak,
+20965,5.447973,101.297149,district,"Hulu Perak, Perak",Hulu Perak,Perak,
+20968,4.816692,100.664360,district,"Larut, Matang & Selama, Perak","Larut, Matang & Selama",Perak,
+20970,4.000000,101.000000,district,"Hilir Perak, Perak",Hilir Perak,Perak,
+20971,4.000000,101.000000,district,"Hilir Perak, Perak",Hilir Perak,Perak,
+20972,4.003428,101.017787,name,99 SPEEDMART BANDAR BARU,Hilir Perak,Perak,
+20973,4.000000,101.000000,district,"Hilir Perak, Perak",Hilir Perak,Perak,
+20974,4.000000,101.000000,district,"Hilir Perak, Perak",Hilir Perak,Perak,
+20975,4.000000,101.000000,district,"Hilir Perak, Perak",Hilir Perak,Perak,
+20976,4.250000,100.916667,district,"Perak Tengah, Perak",Perak Tengah,Perak,
+20979,4.334761,100.634266,district,"Manjung, Perak",Manjung,Perak,
+20980,4.334761,100.634266,district,"Manjung, Perak",Manjung,Perak,
+20981,4.334761,100.634266,district,"Manjung, Perak",Manjung,Perak,
+20982,4.334761,100.634266,district,"Manjung, Perak",Manjung,Perak,
+20984,4.583333,101.083333,district,"Kinta, Perak",Kinta,Perak,
+20985,4.583333,101.083333,district,"Kinta, Perak",Kinta,Perak,
+20986,4.682524,101.117358,address,"JALAN KLEBANG RIA 2, TAMAN KLEBANG RIA, Kinta",Kinta,Perak,
+20987,4.522256,101.122766,address,"PERSIARAN PULAI JAYA 9, BANDAR PULAI JAYA, Kinta",Kinta,Perak,
+20988,4.577545,101.123236,address,"SELASAR ROKAM 11, TAMAN IPOH JAYA, Kinta",Kinta,Perak,
+20989,4.615163,101.144407,name,99 SPEEDMART TAMBUN,Kinta,Perak,
+20990,4.583333,101.083333,district,"Kinta, Perak",Kinta,Perak,
+20992,5.583333,102.500000,district,"Besut, Terengganu",Besut,Terengganu,
+20993,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+20994,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+20995,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+20996,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+20997,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+20998,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+20999,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+21000,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21001,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21002,4.324251,101.908585,district,"Lipis, Pahang",Lipis,Pahang,
+21003,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21004,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21005,3.612447,102.256682,district,"Temerloh, Pahang",Temerloh,Pahang,
+21006,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21007,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21008,3.450865,102.410406,address,"JALAN BAHAGIA MAKMUR 8/1, TAMAN BAHAGIA MAKMUR, Temerloh",Temerloh,Pahang,
+21009,3.452563,102.395693,name,KS WALK IN MART (TAMAN TEMERLOH JAYA),Temerloh,Pahang,
+21010,3.451439,102.410447,address,"JALAN BAHAGIA 7, Temerloh",Temerloh,Pahang,
+21011,3.612447,102.256682,district,"Temerloh, Pahang",Temerloh,Pahang,
+21012,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21014,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21015,3.612447,102.256682,district,"Temerloh, Pahang",Temerloh,Pahang,
+21016,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21017,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21019,4.324251,101.908585,district,"Lipis, Pahang",Lipis,Pahang,
+21020,4.324251,101.908585,district,"Lipis, Pahang",Lipis,Pahang,
+21021,3.612447,102.256682,district,"Temerloh, Pahang",Temerloh,Pahang,
+21023,3.483918,102.347421,address,"JALAN HAJI KASSIM, Temerloh",Temerloh,Pahang,
+21024,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21026,3.362471,102.017268,district,"Bentong, Pahang",Bentong,Pahang,
+21027,3.362471,102.017268,district,"Bentong, Pahang",Bentong,Pahang,
+21028,3.362471,102.017268,district,"Bentong, Pahang",Bentong,Pahang,
+21030,3.884356,101.792028,district,"Raub, Pahang",Raub,Pahang,
+21031,3.884356,101.792028,district,"Raub, Pahang",Raub,Pahang,
+21032,3.362471,102.017268,district,"Bentong, Pahang",Bentong,Pahang,
+21033,3.884356,101.792028,district,"Raub, Pahang",Raub,Pahang,
+21036,1.933333,103.000000,district,"Batu Pahat, Johor",Batu Pahat,Johor,
+21037,1.866379,103.112396,address,"JALAN PASAR, PARIT RAJA, BATU PAHAT, Batu Pahat",Batu Pahat,Johor,86400
+21038,5.499281,100.446799,district,"Seberang Perai Utara, Pulau Pinang",Seberang Perai Utara,Pulau Pinang,
+21039,5.499281,100.446799,district,"Seberang Perai Utara, Pulau Pinang",Seberang Perai Utara,Pulau Pinang,
+21040,5.328293,100.486784,address,"11 JALAN RUSA, TAMAN SELAMAT, Seberang Perai Tengah",Seberang Perai Tengah,Pulau Pinang,
+21041,3.378196,103.209612,district,"Pekan, Pahang",Pekan,Pahang,
+21042,3.378196,103.209612,district,"Pekan, Pahang",Pekan,Pahang,
+21043,3.378196,103.209612,district,"Pekan, Pahang",Pekan,Pahang,
+21044,3.549033,103.382079,address,"LORONG 1, TAMAN MENTIGA JAYA, Pekan",Pekan,Pahang,15817
+21045,3.378196,103.209612,district,"Pekan, Pahang",Pekan,Pahang,
+21046,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+21048,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+21049,3.799766,103.267097,address,"JALAN PERMATANG BADAK BARU 2, Kuantan",Kuantan,Pahang,
+21050,3.825521,103.302442,address,"LORONG IM 15/19, BANDAR INDERA MAHKOTA, Kuantan",Kuantan,Pahang,
+21051,3.799322,103.317897,address,"JALAN MAT KILAU 1, Kuantan",Kuantan,Pahang,
+21053,3.829753,103.272973,name,SIDEK MINI MART,Kuantan,Pahang,
+21055,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+21057,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+21058,3.775501,103.234945,address,"JALAN TAS 3, TAMAN TAS, Kuantan",Kuantan,Pahang,
+21065,1.747985,109.777185,district,"Lundu, Sarawak",Lundu,Sarawak,94500
+21066,1.392457,110.753257,address,"SIMUNJAN, Simunjan",Simunjan,Sarawak,
+21067,1.360932,110.838326,district,"Simunjan, Sarawak",Simunjan,Sarawak,
+21068,1.360932,110.838326,district,"Simunjan, Sarawak",Simunjan,Sarawak,
+21070,2.167632,111.677988,district,"Meradong, Sarawak",Meradong,Sarawak,
+21071,3.145593,101.697390,district,"Bandar Tun Razak, W.P. Kuala Lumpur",Bandar Tun Razak,W.P. Kuala Lumpur,
+21072,5.392289,100.407124,address,"JALAN KELISA EMAS 1, Seberang Perai Tengah",Seberang Perai Tengah,Pulau Pinang,
+21073,5.209733,100.613389,name,PASARAYA ECONO,Seberang Perai Tengah,Pulau Pinang,
+21075,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+21076,5.019814,102.038266,district,"Gua Musang, Kelantan",Gua Musang,Kelantan,
+21077,5.499281,100.446799,district,"Seberang Perai Utara, Pulau Pinang",Seberang Perai Utara,Pulau Pinang,
+21078,3.145593,101.697390,district,"Batu, W.P. Kuala Lumpur",Batu,W.P. Kuala Lumpur,
+21079,3.145593,101.697390,district,"Bandar Tun Razak, W.P. Kuala Lumpur",Bandar Tun Razak,W.P. Kuala Lumpur,11811
+21080,3.145593,101.697390,district,"Cheras, W.P. Kuala Lumpur",Cheras,W.P. Kuala Lumpur,
+21081,3.163995,101.656488,name,VILLAGE GROCER ( SRI HARTAMAS ),Segambut,W.P. Kuala Lumpur,
+21082,3.196730,101.727992,address,"JALAN SRI RAMPAI 3, SRI RAMPAI BUSINESS PARK, Setiawangsa",Setiawangsa,W.P. Kuala Lumpur,
+21083,3.145593,101.697390,district,"Titiwangsa, W.P. Kuala Lumpur",Titiwangsa,W.P. Kuala Lumpur,
+21085,3.145593,101.697390,district,"Kepong, W.P. Kuala Lumpur",Kepong,W.P. Kuala Lumpur,
+21086,3.159313,101.721122,name,BEN'S INDEPENDENT GROCER ( B.I.G ),Seputeh,W.P. Kuala Lumpur,
+21087,3.145593,101.697390,district,"Bukit Bintang, W.P. Kuala Lumpur",Bukit Bintang,W.P. Kuala Lumpur,
+21089,2.429853,103.835494,district,"Mersing, Johor",Mersing,Johor,
+21091,1.501821,103.708270,address,"6 & 8 JALAN KEMAJUAN, TAMAN DESA RAHMAT, JOHOR BAHRU, Johor Bahru",Johor Bahru,Johor,
+21092,1.458199,103.764906,district,"Johor Bahru, Johor",Johor Bahru,Johor,
+21094,1.500911,103.748852,address,"JALAN SUSUR LARKIN PERDANA 2, LARKIN PERDANA, JOHOR BAHRU, Johor Bahru",Johor Bahru,Johor,
+21095,5.590019,101.817168,district,"Jeli, Kelantan",Jeli,Kelantan,
+21096,5.766305,102.034148,district,"Tanah Merah, Kelantan",Tanah Merah,Kelantan,
+21097,6.028527,100.482446,name,"SK FRESH SUPERMARKET (TANAH MERAH, PENDANG)",Pendang,Kedah,06700
+21099,5.370713,100.617207,district,"Kulim, Kedah",Kulim,Kedah,
+21100,5.209543,100.611944,name,SEGI FRESH SERDANG KEDAH,Kulim,Kedah,
+21102,5.369922,100.531965,address,"JALAN LEMBAH IMPIANA 1, TAMAN LEMBAH IMPIANA, KULIM. KEDAH, Kulim",Kulim,Kedah,
+21103,6.335638,100.372322,district,"Kubang Pasu, Kedah",Kubang Pasu,Kedah,
+21104,5.606289,100.640781,address,"PERSIARAN KKCC 3, KUALA KETIL COMMERCIAL CENTRE, KUALA KETIL, KEDAH, Baling",Baling,Kedah,
+21105,5.923901,100.823102,district,"Sik, Kedah",Sik,Kedah,
+21106,5.923901,100.823102,district,"Sik, Kedah",Sik,Kedah,
+21107,5.923901,100.823102,district,"Sik, Kedah",Sik,Kedah,
+21108,5.705960,100.536511,name,TF VALUE – MART SUNGAI LALANG,Kuala Muda,Kedah,
+21109,5.707315,100.495289,district,"Kuala Muda, Kedah",Kuala Muda,Kedah,
+21110,5.707315,100.495289,district,"Kuala Muda, Kedah",Kuala Muda,Kedah,
+21111,5.848275,100.415190,district,"Yan, Kedah",Yan,Kedah,
+21112,6.102899,100.348656,name,MCM UTARA TRADING,Yan,Kedah,
+21113,2.392699,103.853254,name,99 SPEEDMART TAMAN SRI PANTAI,Mersing,Johor,
+21114,2.429853,103.835494,district,"Mersing, Johor",Mersing,Johor,
+21116,3.145593,101.697390,district,"Titiwangsa, W.P. Kuala Lumpur",Titiwangsa,W.P. Kuala Lumpur,
+21117,3.145593,101.697390,district,"Wangsa Maju, W.P. Kuala Lumpur",Wangsa Maju,W.P. Kuala Lumpur,
+21118,5.767670,102.238082,district,"Machang, Kelantan",Machang,Kelantan,
+21119,5.767670,102.238082,district,"Machang, Kelantan",Machang,Kelantan,
+21120,5.447973,101.297149,district,"Hulu Perak, Perak",Hulu Perak,Perak,
+21121,5.291124,115.672474,district,"Beaufort, Sabah",Beaufort,Sabah,
+21122,4.823395,101.081522,name,V SEGAR MART,Kinta,Perak,70009
+21167,2.914883,101.669659,district,"Cyberjaya, W.P. Putrajaya",Cyberjaya,W.P. Putrajaya,
+21168,3.783460,103.257009,postcode,25150,Kuantan,Pahang,25150
+21169,5.315825,100.280575,address,"TAMAN GEDUNG HEIGHT, BAYAN LEPAS, Barat Daya",Barat Daya,Pulau Pinang,
+21170,5.427880,100.386134,name,JAYAMAS SUPERSTORE SDN. BHD.,Timur Laut,Pulau Pinang,
+21171,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+21172,5.268036,103.144638,address,"7150 KAMPUNG BELUKAR JAMBU, KUALA TERENGGANU, Kuala Terengganu",Kuala Terengganu,Terengganu,
+21173,5.550081,102.735511,district,"Setiu, Terengganu",Setiu,Terengganu,80548
+21174,3.091986,101.638363,postcode,46050,Petaling Jaya,Selangor,46050
+21175,4.910689,102.765070,district,"Hulu Terengganu, Terengganu",Hulu Terengganu,Terengganu,
+21176,2.496957,102.867650,address,"JALAN PUTRA 1/5, BANDAR IOI, Segamat",Segamat,Johor,
+21177,3.770837,103.235749,address,"JALAN TAS 4, TAMAN TAS, Kuantan",Kuantan,Pahang,
+21178,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+21179,3.470684,102.384291,name,99 SPEEDMART SEMANTAN TEMERLOH,Temerloh,Pahang,
+21181,5.115509,118.430636,district,"Lahad Datu, Sabah",Lahad Datu,Sabah,
+21182,1.481325,103.867088,address,"JALAN SIERRA PERDANA 2/1, TAMAN SIERRA PERDANA, MASAI, Johor Bahru",Johor Bahru,Johor,81750
+21183,1.427686,110.325596,district,"Kota Padawan, Sarawak",Kota Padawan,Sarawak,
+21186,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+21187,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+21188,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+21189,4.902540,102.013470,postcode,18300,Gua Musang,Kelantan,18300
+21190,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+21191,1.475305,110.332294,address,"LORONG LIU SHAN BANG, KOTA SENTOSA, KUCHING, Kuching",Kuching,Sarawak,
+21192,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+21193,1.463698,110.489127,district,"Kota Samarahan, Sarawak",Kota Samarahan,Sarawak,
+21194,1.583319,110.325193,address,"KAMPUNG SEMERAH PADI, KUCHING, Kuching",Kuching,Sarawak,
+21195,1.456184,110.451641,address,"KAMPUNG MELABAN, KOTA SAMARAHAN, Kota Samarahan",Kota Samarahan,Sarawak,
+21196,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+21197,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+21199,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+21200,1.520749,110.382824,name,EVERRISE STUTONG INDAH,Kuching,Sarawak,
+21201,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+21202,1.427095,110.326348,address,"BATU 10, KOTA PADAWAN, Kota Padawan",Kota Padawan,Sarawak,
+21203,1.427686,110.325596,district,"Kota Padawan, Sarawak",Kota Padawan,Sarawak,
+21204,6.119884,102.270544,address,"JALAN DATO' LUNDANG, Kota Bharu",Kota Bharu,Kelantan,
+21205,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21206,5.019814,102.038266,district,"Gua Musang, Kelantan",Gua Musang,Kelantan,
+21208,1.611331,103.654466,postcode,81400,Johor Bahru,Johor,81400
+21209,5.590019,101.817168,district,"Jeli, Kelantan",Jeli,Kelantan,
+21210,3.238776,101.695323,address,"JALAN INDUSTRI BOLTON, BATU CAVES, Gombak",Gombak,Selangor,68100
+21211,3.884356,101.792028,district,"Raub, Pahang",Raub,Pahang,
+21212,5.486257,100.480055,address,"JALAN HARMONI, VILLA HARMONI, Seberang Perai Utara",Seberang Perai Utara,Pulau Pinang,
+21213,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+21214,3.190589,113.058747,postcode,97000,Bintulu,Sarawak,97000
+21216,2.932837,102.066022,address,"TAMAN DATO' UNDANG ABDULLAH, KUALA KLAWANG, Jelebu",Jelebu,Negeri Sembilan,
+21217,2.743076,102.215488,district,"Kuala Pilah, Negeri Sembilan",Kuala Pilah,Negeri Sembilan,
+21218,5.370713,100.617207,district,"Kulim, Kedah",Kulim,Kedah,
+21219,5.531158,102.199367,district,"Kuala Krai, Kelantan",Kuala Krai,Kelantan,14934
+21221,5.767670,102.238082,district,"Machang, Kelantan",Machang,Kelantan,
+21222,5.765025,102.233958,postcode,18500,Machang,Kelantan,18500
+21223,5.288717,102.195319,postcode,18000,Dabong,Kelantan,18000
+21224,5.360864,101.995347,postcode,18200,Dabong,Kelantan,18200
+21225,6.495785,116.768353,address,"KOTA, MARUDU, Kota Marudu",Kota Marudu,Sabah,
+21226,7.231645,117.171156,district,"Kudat, Sabah",Kudat,Sabah,
+21227,4.479076,118.429773,district,"Semporna, Sabah",Semporna,Sabah,
+21228,4.243521,117.885331,district,"Tawau, Sabah",Tawau,Sabah,
+21229,4.243521,117.885331,district,"Tawau, Sabah",Tawau,Sabah,
+21231,6.090564,116.196339,name,JAYA SUPERSTORE TUARAN,Tuaran,Sabah,
+21232,6.357404,116.429254,name,GMART KOTA BELUD,Kota Belud,Sabah,
+21233,6.135867,116.267594,address,"PEKAN TAMPARULI, TAMPARULI, Tamparuli",Tamparuli,Sabah,
+21234,2.050000,102.566667,district,"Muar, Johor",Muar,Johor,
+21235,3.145593,101.697390,district,"Segambut, W.P. Kuala Lumpur",Segambut,W.P. Kuala Lumpur,
+21237,2.912193,101.684669,district,"Wp Putrajaya, W.P. Putrajaya",Wp Putrajaya,W.P. Putrajaya,
+21239,3.145593,101.697390,district,"Cheras, W.P. Kuala Lumpur",Cheras,W.P. Kuala Lumpur,
+21241,5.839127,118.115860,district,"Sandakan, Sabah",Sandakan,Sabah,
+21242,2.914883,101.669659,district,"Cyberjaya, W.P. Putrajaya",Cyberjaya,W.P. Putrajaya,
+21243,5.217948,116.246315,district,"Keningau, Sabah",Keningau,Sabah,
+21245,3.045120,101.515714,name,MYDIN MART SEKSYEN 18,Petaling,Selangor,40200
+21246,5.746149,116.044979,district,"Papar, Sabah",Papar,Sabah,
+21247,5.746149,116.044979,district,"Papar, Sabah",Papar,Sabah,
+21248,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+21249,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,10892
+21251,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21252,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21253,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21254,2.383453,102.210780,district,"Alor Gajah, Melaka",Alor Gajah,Melaka,
+21255,2.290859,102.238534,address,"JALAN PK 8G, KAWASAN PERINDUSTRIAN KRUBONG, KAWASAN PERINDUSTRIAN KRUBONG MELAKA, Melaka Tengah",Melaka Tengah,Melaka,
+21256,2.383453,102.210780,district,"Alor Gajah, Melaka",Alor Gajah,Melaka,
+21257,2.305810,102.422339,district,"Jasin, Melaka",Jasin,Melaka,
+21258,1.208835,111.408029,district,"Sri Aman, Sarawak",Sri Aman,Sarawak,
+21259,1.205901,111.468071,name,EVERWIN CENTRE SDN BHD,Sri Aman,Sarawak,
+21260,1.134734,111.663528,district,"Engkelili, Sarawak",Engkelili,Sarawak,
+21261,5.335659,100.238950,district,"Barat Daya, Pulau Pinang",Barat Daya,Pulau Pinang,
+21262,5.389781,100.313152,name,NOOR JAHAN MINI MARKET,Timur Laut,Pulau Pinang,
+21263,4.455121,115.427188,district,"Lawas, Sarawak",Lawas,Sarawak,
+21264,3.234849,101.694102,name,TF VALUE-MART BATU CAVES,Gombak,Selangor,68100
+21265,5.115509,118.430636,district,"Lahad Datu, Sabah",Lahad Datu,Sabah,
+21266,2.912193,101.684669,district,"Wp Putrajaya, W.P. Putrajaya",Wp Putrajaya,W.P. Putrajaya,
+21267,2.919705,101.636463,name,VILLAGE GROCER (TAMARIND SQUARE) CYBERJAYA,Cyberjaya,W.P. Putrajaya,
+21269,2.914883,101.669659,district,"Cyberjaya, W.P. Putrajaya",Cyberjaya,W.P. Putrajaya,
+21271,2.914883,101.669659,district,"Cyberjaya, W.P. Putrajaya",Cyberjaya,W.P. Putrajaya,
+21275,5.275699,115.232815,district,"W.P Labuan, W.P. Labuan",W.P Labuan,W.P. Labuan,
+21276,3.083333,101.583333,district,"Petaling, Selangor",Petaling,Selangor,
+21277,3.209140,101.565070,name,ST ROSYAM MART (SHAH ALAM),Petaling,Selangor,40100
+21278,3.072224,101.502417,postcode,40000,Petaling,Selangor,40000
+21279,3.081948,101.544052,postcode,40100,Petaling,Selangor,40100
+21280,3.109235,101.669050,name,PASAR AYAM DATO,Petaling Jaya,Selangor,46000
+21281,3.086118,101.657811,address,"JALAN 5/57, PETALING JAYA, Petaling Jaya",Petaling Jaya,Selangor,46000
+21282,3.154526,101.589409,postcode,47810,Petaling Jaya,Selangor,47810
+21283,3.094092,101.637221,postcode,46000,Petaling Jaya,Selangor,46000
+21284,3.098879,101.645420,district,"Petaling Jaya, Selangor",Petaling Jaya,Selangor,47310
+21285,3.565242,101.660190,name,PASAR PELADANG KUALA KUBU BHARU,Hulu Selangor,Selangor,44000
+21286,6.151237,100.404698,name,AL BAIK SPEEDMART,Kota Setar,Kedah,
+21287,6.122603,100.369032,district,"Kota Setar, Kedah",Kota Setar,Kedah,
+21288,6.109302,100.351843,postcode,05050,Kota Setar,Kedah,05050
+21289,6.281009,100.217398,name,PASARAYA PAK TORI,Kota Setar,Kedah,
+21290,6.103516,100.352158,address,"LRG PEREMBA 1, TAMAN ANGGERIK, ALOR SETAR, KEDAH, Kota Setar",Kota Setar,Kedah,
+21291,5.972084,100.550185,district,"Pendang, Kedah",Pendang,Kedah,
+21292,6.122603,100.369032,district,"Kota Setar, Kedah",Kota Setar,Kedah,
+21293,6.173052,100.520392,district,"Pokok Sena, Kedah",Pokok Sena,Kedah,
+21294,6.122603,100.369032,district,"Kota Setar, Kedah",Kota Setar,Kedah,
+21295,2.811853,112.291206,district,"Mukah, Sarawak",Mukah,Sarawak,
+21297,2.900770,112.080315,address,"JALAN HAJI MOHAMAD PAUZI, MUKAH, Mukah",Mukah,Sarawak,
+21298,2.892930,112.088913,name,CHAI GUAN MARKETPLACE SDN BHD,Mukah,Sarawak,
+21299,3.083333,101.583333,district,"Petaling, Selangor",Petaling,Selangor,
+21300,3.072224,101.502417,postcode,40000,Petaling,Selangor,40000
+21301,3.025292,101.623911,name,SEGI PUCHONG,Petaling,Selangor,47100
+21302,3.045977,101.504416,address,"JALAN MALUNG 17/19, SEKSYEN 17, SHAH ALAM, Petaling",Petaling,Selangor,40200
+21303,3.055762,101.471350,postcode,41300,Petaling,Selangor,41300
+21304,3.036920,101.520422,address,"JALAN TIMUN 24/E, SEKSYEN 24, SHAH ALAM, Petaling",Petaling,Selangor,40300
+21305,3.045187,101.526723,postcode,40300,Petaling,Selangor,40300
+21306,3.067219,101.489430,address,"JLN PLUMBUM U7/U, SEKSYEN 7, SHAH ALAM, Petaling",Petaling,Selangor,40000
+21307,3.057980,101.507170,address,"JLN CETAK 16/3, SEKSYEN 16, SHAH ALAM, Petaling",Petaling,Selangor,40200
+21308,3.072224,101.502417,postcode,40000,Petaling,Selangor,40000
+21309,3.072224,101.502417,postcode,40000,Petaling,Selangor,40000
+21310,3.055111,101.513702,postcode,40200,Petaling,Selangor,40200
+21311,3.235815,101.489174,name,ECONSAVE KUALA SELANGOR,Kuala Selangor,Selangor,45000
+21312,3.190323,101.314486,name,SEGI FRESH KUALA SELANGOR,Kuala Selangor,Selangor,45000
+21313,3.320070,101.269137,address,"JALAN BENDAHARA 1/2 A, TAMAN BENDAHARA, KUALA SELANGOR, Kuala Selangor",Kuala Selangor,Selangor,45000
+21314,3.327314,101.261812,address,"JALAN PIAI 1, TAMAN PIAI, KUALA SELANGOR, Kuala Selangor",Kuala Selangor,Selangor,45000
+21315,3.340051,101.250105,name,RAHMANIYAH MINI MARKET,Kuala Selangor,Selangor,45000
+21316,3.322714,101.261184,address,"LORONG TERATAI 2/12, BANDAR BARU, KUALA SELANGOR, Kuala Selangor",Kuala Selangor,Selangor,45000
+21317,3.332684,101.268133,address,"JALAN KSU 1, TAMAN KUALA SELANGOR, KUALA SELANGOR, Kuala Selangor",Kuala Selangor,Selangor,45000
+21318,3.444848,101.157533,address,"JALAN 2 TAMAN TANJONG KARANG, TANJONG KARANG, Kuala Selangor",Kuala Selangor,Selangor,45500
+21319,3.424299,101.181335,name,ECONSAVE TANJONG KARANG,Kuala Selangor,Selangor,45500
+21320,3.394582,101.214262,postcode,45500,Kuala Selangor,Selangor,45500
+21321,3.472333,101.198859,address,"JALAN KILANG PADI, TANJONG KARANG, Kuala Selangor",Kuala Selangor,Selangor,45500
+21322,3.673569,100.990490,postcode,45300,Sabak Bernam,Selangor,45300
+21323,3.690603,100.971563,name,99 SPEEDMART SUNGAI BESAR,Sabak Bernam,Selangor,45300
+21324,3.682478,100.972887,address,"JALAN PANCHANG BEDENA, SUNGAI BESAR, Sabak Bernam",Sabak Bernam,Selangor,45300
+21325,3.673569,100.990490,postcode,45300,Sabak Bernam,Selangor,45300
+21326,2.991177,101.782886,postcode,43000,Hulu Langat,Selangor,43000
+21327,2.936970,101.853038,name,SEGI FRESH KAJANG,Hulu Langat,Selangor,43000
+21328,3.090288,101.763273,address,"JALAN KAJANG PERDANA, TAMAN KAJANG PERDANA, KAJANG, Hulu Langat",Hulu Langat,Selangor,43000
+21330,2.828243,101.709992,postcode,43900,Sepang,Selangor,43900
+21331,2.790125,101.748979,name,99 SPEEDMART SALAK TINGGI,Sepang,Selangor,43900
+21332,2.828243,101.709992,postcode,43900,Sepang,Selangor,43900
+21333,2.825253,101.727485,address,"JALAN SEROJA 6, TAMAN SEROJA, SEPANG, Sepang",Sepang,Selangor,43900
+21334,2.828243,101.709992,postcode,43900,Sepang,Selangor,43900
+21335,3.049836,101.491010,name,AQILAH KHAYLA PADANG JAWA,Petaling,Selangor,40200
+21336,3.083333,101.583333,district,"Petaling, Selangor",Petaling,Selangor,
+21337,3.076257,101.497149,address,"JALAN ZIRKON E7/E SEKSYEN 7, SHAH ALAM, Petaling",Petaling,Selangor,40000
+21338,4.394010,113.988020,district,"Miri, Sarawak",Miri,Sarawak,10563
+21339,4.407290,114.004012,postcode,98000,Miri,Sarawak,98000
+21340,4.407290,114.004012,postcode,98000,Miri,Sarawak,98000
+21342,4.407290,114.004012,postcode,98000,Miri,Sarawak,98000
+21344,4.407290,114.004012,postcode,98000,Miri,Sarawak,98000
+21345,5.550720,100.797587,district,"Baling, Kedah",Baling,Kedah,
+21346,4.407290,114.004012,postcode,98000,Miri,Sarawak,98000
+21347,4.465228,114.016074,postcode,98100,Miri,Sarawak,98100
+21350,4.407290,114.004012,postcode,98000,Miri,Sarawak,98000
+21353,4.583333,101.083333,district,"Kinta, Perak",Kinta,Perak,
+21355,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+21357,4.586484,101.136142,address,"JALAN PERNIAGAAN AMPANG 4, PUSAT PERNIAGAAN AMPANG, Kinta",Kinta,Perak,
+21358,5.431215,101.129928,name,ECONSAVE GERIK,Hulu Perak,Perak,
+21359,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+21360,4.541275,101.070502,name,TY PASARAYA STATION 18,Kinta,Perak,
+21361,4.641950,101.063405,name,ECONSAVE JELAPANG,Kinta,Perak,
+21362,5.447973,101.297149,district,"Hulu Perak, Perak",Hulu Perak,Perak,
+21364,5.440466,100.536749,name,PASAR JALAN PERMAI,Timur Laut,Pulau Pinang,
+21367,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+21368,5.447973,101.297149,district,"Hulu Perak, Perak",Hulu Perak,Perak,
+21369,4.583333,101.083333,district,"Kinta, Perak",Kinta,Perak,
+21370,5.447973,101.297149,district,"Hulu Perak, Perak",Hulu Perak,Perak,
+21371,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+21372,4.682078,101.117433,name,99 SPEEDMART TAMAN KLEBANG RIA,Kinta,Perak,
+21373,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+21375,4.203373,100.660689,address,"LORONG KURAU 3, TAMAN SAMUDERA, SERI MANJUNG, Manjung",Manjung,Perak,
+21377,4.334761,100.634266,district,"Manjung, Perak",Manjung,Perak,
+21378,4.334761,100.634266,district,"Manjung, Perak",Manjung,Perak,
+21381,4.083333,101.333333,district,"Batang Padang, Perak",Batang Padang,Perak,
+21382,4.334761,100.634266,district,"Manjung, Perak",Manjung,Perak,
+21383,3.995751,101.308370,name,PASAR RAYA MEGA,Batang Padang,Perak,
+21384,4.334761,100.634266,district,"Manjung, Perak",Manjung,Perak,
+21385,4.120209,101.280082,name,99 SPEEDMART BIDOR,Batang Padang,Perak,
+21386,4.203995,100.662435,address,"TAMAN SAMUDERA, SERI MANJUNG, Manjung",Manjung,Perak,
+21387,4.334761,100.634266,district,"Manjung, Perak",Manjung,Perak,
+21389,4.203373,100.660689,address,"LORONG KURAU 3, TAMAN SAMUDERA, SERI MANJUNG, Manjung",Manjung,Perak,
+21390,3.837771,101.398894,name,99 SPEEDMART SLIM RIVER,Muallim,Perak,
+21392,3.833333,101.500000,district,"Muallim, Perak",Muallim,Perak,
+21393,5.122570,100.488884,address,"JALAN ENGGANG, PEKAN BARU, PARIT BUNTAR, Kerian",Kerian,Perak,
+21394,5.016320,100.426380,address,"LINTANG AMAN 1, TAMAN KURAU AMAN, KUALA KURAU, Kerian",Kerian,Perak,
+21395,5.034575,100.498458,district,"Kerian, Perak",Kerian,Perak,
+21396,4.083333,101.333333,district,"Batang Padang, Perak",Batang Padang,Perak,
+21397,4.772071,100.940878,district,"Kuala Kangsar, Perak",Kuala Kangsar,Perak,
+21398,4.770966,100.936740,name,BINTANG FRESH KUALA KANGSAR,Kuala Kangsar,Perak,
+21399,4.823395,101.081522,name,V SEGAR MART SUNGAI SIPUT,Kuala Kangsar,Perak,
+21400,5.034575,100.498458,district,"Kerian, Perak",Kerian,Perak,
+21401,4.773155,100.929301,name,ECONSAVE KUALA KANGSAR,Kuala Kangsar,Perak,
+21402,5.069967,100.388893,name,99 SPEEDMART TAMAN PIANDANG INDAH,Kerian,Perak,
+21403,4.772071,100.940878,district,"Kuala Kangsar, Perak",Kuala Kangsar,Perak,
+21405,4.772071,100.940878,district,"Kuala Kangsar, Perak",Kuala Kangsar,Perak,
+21406,5.034575,100.498458,district,"Kerian, Perak",Kerian,Perak,
+21407,2.050771,111.417600,district,"Sarikei, Sarawak",Sarikei,Sarawak,
+21408,2.126247,111.517252,postcode,96100,Sarikei,Sarawak,96100
+21409,4.976241,100.789734,address,"SUSUR KURAU MUTIARA, TAMAN KURAU MUTIARA, BATU KURAU, Larut, Matang & Selama","Larut, Matang & Selama",Perak,
+21410,4.884635,100.738351,address,"JALAN MEDAN KAMUNTING 1, MEDAN KAMUNTING, KAMUNTING, Larut, Matang & Selama","Larut, Matang & Selama",Perak,
+21411,4.816692,100.664360,district,"Larut, Matang & Selama, Perak","Larut, Matang & Selama",Perak,
+21412,4.814878,100.700227,address,"LORONG 1, TAMAN LAGENDA, SIMPANG, Larut, Matang & Selama","Larut, Matang & Selama",Perak,
+21413,4.816692,100.664360,district,"Larut, Matang & Selama, Perak","Larut, Matang & Selama",Perak,
+21414,4.833965,100.703537,address,"TAMAN INDAH, SIMPANG, Larut, Matang & Selama","Larut, Matang & Selama",Perak,
+21415,5.216964,100.480466,district,"Seberang Perai Selatan, Pulau Pinang",Seberang Perai Selatan,Pulau Pinang,
+21416,4.814878,100.700227,address,"LORONG 1, TAMAN LAGENDA, SIMPANG, Larut, Matang & Selama","Larut, Matang & Selama",Perak,
+21417,5.216964,100.480466,district,"Seberang Perai Selatan, Pulau Pinang",Seberang Perai Selatan,Pulau Pinang,
+21418,4.816692,100.664360,district,"Larut, Matang & Selama, Perak","Larut, Matang & Selama",Perak,34482
+21419,4.813731,100.693838,address,"JALAN SIMPANG, TAMAN SIMPANG MAKMUR, SIMPANG, Larut, Matang & Selama","Larut, Matang & Selama",Perak,
+21420,5.361070,100.457358,district,"Seberang Perai Tengah, Pulau Pinang",Seberang Perai Tengah,Pulau Pinang,
+21421,4.889105,100.712410,address,"LORONG MEWAH 8, TAMAN MEWAH, KAMUNTING, Larut, Matang & Selama","Larut, Matang & Selama",Perak,
+21422,5.358035,100.447628,address,"LORONG TEMBIKAI 8, KAWASAN PERNIAGAAN SUNGAI RAMBAI, BUKIT MERTAJAM, Seberang Perai Tengah",Seberang Perai Tengah,Pulau Pinang,
+21423,3.916667,100.916667,district,"Bagan Datuk, Perak",Bagan Datuk,Perak,15362
+21424,5.361070,100.457358,district,"Seberang Perai Tengah, Pulau Pinang",Seberang Perai Tengah,Pulau Pinang,
+21425,4.000000,101.000000,district,"Hilir Perak, Perak",Hilir Perak,Perak,
+21426,5.353188,100.472908,address,"TAMAN SENTOSA, JALAN KULIM, BUKIT MERTAJAM, Seberang Perai Tengah",Seberang Perai Tengah,Pulau Pinang,
+21428,4.000000,101.000000,district,"Hilir Perak, Perak",Hilir Perak,Perak,
+21429,5.361070,100.457358,district,"Seberang Perai Tengah, Pulau Pinang",Seberang Perai Tengah,Pulau Pinang,
+21430,4.070367,101.146541,name,99 SPEEDMART CHANGKAT JONG,Hilir Perak,Perak,
+21431,4.028004,101.014010,name,99 SPEEDMART JALAN PASAR,Hilir Perak,Perak,
+21433,4.074768,101.149203,address,"JALAN KAMPAR, LANGKAP, Hilir Perak",Hilir Perak,Perak,
+21435,3.145593,101.697390,district,"Batu, W.P. Kuala Lumpur",Batu,W.P. Kuala Lumpur,
+21438,3.145593,101.697390,district,"Batu, W.P. Kuala Lumpur",Batu,W.P. Kuala Lumpur,
+21439,3.145593,101.697390,district,"Batu, W.P. Kuala Lumpur",Batu,W.P. Kuala Lumpur,
+21441,2.990729,101.791792,name,WHOLE FOODS EXPRESS,Wangsa Maju,W.P. Kuala Lumpur,
+21443,3.145593,101.697390,district,"Wangsa Maju, W.P. Kuala Lumpur",Wangsa Maju,W.P. Kuala Lumpur,
+21444,3.145593,101.697390,district,"Wangsa Maju, W.P. Kuala Lumpur",Wangsa Maju,W.P. Kuala Lumpur,
+21445,3.063709,101.710069,name,PERNIAGAAN WAH SING,Wangsa Maju,W.P. Kuala Lumpur,
+21446,3.145593,101.697390,district,"Wangsa Maju, W.P. Kuala Lumpur",Wangsa Maju,W.P. Kuala Lumpur,
+21447,3.178307,101.743576,name,GIANT SETIAWANGSA,Setiawangsa,W.P. Kuala Lumpur,16895
+21448,3.145593,101.697390,district,"Setiawangsa, W.P. Kuala Lumpur",Setiawangsa,W.P. Kuala Lumpur,
+21450,3.145593,101.697390,district,"Setiawangsa, W.P. Kuala Lumpur",Setiawangsa,W.P. Kuala Lumpur,
+21451,3.190109,101.728471,address,"JALAN REJANG 7, TAMAN SETAPAK JAYA, Setiawangsa",Setiawangsa,W.P. Kuala Lumpur,
+21452,3.190109,101.728471,address,"JALAN REJANG 7, SETAPAK JAYA, Setiawangsa",Setiawangsa,W.P. Kuala Lumpur,
+21453,3.191162,101.728597,address,"JALAN REJANG 6, TAMAN SETAPAK JAYA, SETAPAK, Setiawangsa",Setiawangsa,W.P. Kuala Lumpur,
+21456,3.198144,101.728340,address,"JALAN RAMPAI NIAGA 3, TAMAN SRI RAMPAI, Setiawangsa",Setiawangsa,W.P. Kuala Lumpur,
+21457,3.022561,101.705857,name,WHOLESALE MART,Setiawangsa,W.P. Kuala Lumpur,
+21458,3.236674,102.541772,district,"Bera, Pahang",Bera,Pahang,
+21459,3.236674,102.541772,district,"Bera, Pahang",Bera,Pahang,
+21460,3.236674,102.541772,district,"Bera, Pahang",Bera,Pahang,
+21461,3.236674,102.541772,district,"Bera, Pahang",Bera,Pahang,
+21462,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+21463,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,15452
+21464,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,11456
+21465,5.512392,100.533643,name,TT FRESH MART,Kulim,Kedah,
+21466,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+21467,5.368770,100.558271,address,"JALAN KOTA KENARI, TAMAN KENARI, KULIM, KEDAH, Kulim",Kulim,Kedah,
+21468,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+21469,5.370713,100.617207,district,"Kulim, Kedah",Kulim,Kedah,
+21470,5.370713,100.617207,district,"Kulim, Kedah",Kulim,Kedah,
+21472,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,28056
+21473,5.848275,100.415190,district,"Yan, Kedah",Yan,Kedah,
+21474,5.372898,103.095918,postcode,21300,Kuala Nerus,Terengganu,21300
+21475,5.848275,100.415190,district,"Yan, Kedah",Yan,Kedah,
+21478,5.707315,100.495289,district,"Kuala Muda, Kedah",Kuala Muda,Kedah,
+21479,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+21480,5.707315,100.495289,district,"Kuala Muda, Kedah",Kuala Muda,Kedah,
+21483,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+21484,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,
+21485,6.256651,100.664580,district,"Padang Terap, Kedah",Padang Terap,Kedah,
+21486,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,
+21487,6.245103,100.603685,address,"LORONG DESA SAPURA 1, TAMAN DESA SAPURA, KUALA NERANG, KEDAH, Padang Terap",Padang Terap,Kedah,
+21488,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21489,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21490,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21491,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21492,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21493,4.283414,102.557523,district,"Jerantut, Pahang",Jerantut,Pahang,
+21495,4.187572,102.049517,address,"JALAN LIPIS JAYA 2, PUSAT PERNIAGAAN LIPIS JAYA, KUALA LIPIS, Lipis",Lipis,Pahang,
+21496,4.324251,101.908585,district,"Lipis, Pahang",Lipis,Pahang,
+21497,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+21498,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,27937
+21499,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+21500,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+21501,3.449877,102.408134,address,"JALAN BAHAGIA 31, TAMAN BAHAGIA, Temerloh",Temerloh,Pahang,
+21502,3.477079,102.340308,address,"JALAN BENDERA MAHKOTA, TAMAN BUKIT BENDERA, Temerloh",Temerloh,Pahang,
+21503,3.612447,102.256682,district,"Temerloh, Pahang",Temerloh,Pahang,
+21504,3.601443,102.641005,district,"Maran, Pahang",Maran,Pahang,
+21505,3.470359,102.331872,address,"JLN STAR CITY 1, STAR CITY, MENTAKAB, Temerloh",Temerloh,Pahang,
+21506,3.459962,102.397030,address,"JLN TEMERLOH JAYA, TMN TEMERLOH JAYA, Temerloh",Temerloh,Pahang,
+21507,3.612447,102.256682,district,"Temerloh, Pahang",Temerloh,Pahang,
+21508,3.601443,102.641005,district,"Maran, Pahang",Maran,Pahang,
+21509,3.612447,102.256682,district,"Temerloh, Pahang",Temerloh,Pahang,
+21510,3.601443,102.641005,district,"Maran, Pahang",Maran,Pahang,
+21512,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+21513,2.230145,102.245307,district,"Melaka Tengah, Melaka",Melaka Tengah,Melaka,
+21514,2.167430,102.429722,postcode,77300,Jasin,Melaka,77300
+21515,2.164600,102.430506,name,MERLIMAU POINT,Jasin,Melaka,77300
+21516,2.293433,102.135133,postcode,76300,Melaka Tengah,Melaka,76300
+21517,2.462930,102.231393,name,HYPERMARKET MYDIN PULAU SEBANG,Alor Gajah,Melaka,78000
+21518,2.379774,102.203534,postcode,78000,Alor Gajah,Melaka,78000
+21520,2.249743,102.303137,postcode,75450,Melaka Tengah,Melaka,75450
+21521,2.249743,102.303137,postcode,75450,Melaka Tengah,Melaka,75450
+21523,2.319486,102.283860,postcode,76100,Melaka Tengah,Melaka,76100
+21524,2.245938,102.272469,address,"JLN EMAS 9, TAMAN KERJASAMA, BUKIT BERUANG, MELAKA, Melaka Tengah",Melaka Tengah,Melaka,75450
+21525,2.245440,102.271929,address,"JALAN INTAN, TAMAN KERJASAMA, BUKIT BERUANG, MELAKA, Melaka Tengah",Melaka Tengah,Melaka,75450
+21526,2.249743,102.303137,postcode,75450,Melaka Tengah,Melaka,75450
+21527,2.251143,102.252158,postcode,75350,Melaka Tengah,Melaka,75350
+21529,2.335844,102.096621,postcode,78300,Alor Gajah,Melaka,78300
+21530,2.383453,102.210780,district,"Alor Gajah, Melaka",Alor Gajah,Melaka,
+21531,2.379774,102.203534,postcode,78000,Alor Gajah,Melaka,78000
+21533,2.379774,102.203534,postcode,78000,Alor Gajah,Melaka,78000
+21534,2.379774,102.203534,postcode,78000,Alor Gajah,Melaka,78000
+21536,2.272818,102.382007,postcode,77200,Jasin,Melaka,77200
+21537,2.298624,102.423650,postcode,77000,Jasin,Melaka,77000
+21539,2.281616,102.280177,address,"JALAN TU 41, TAMAN TASIK, AYER KEROH, MELAKA, Melaka Tengah",Melaka Tengah,Melaka,75450
+21540,2.013903,112.935677,district,"Kapit, Sarawak",Kapit,Sarawak,
+21541,1.814243,112.647871,district,"Song, Sarawak",Song,Sarawak,
+21542,1.814243,112.647871,district,"Song, Sarawak",Song,Sarawak,
+21543,4.889105,100.712410,address,"LORONG MEWAH 8, TAMAN MEWAH, KAMUNTING, Larut, Matang & Selama","Larut, Matang & Selama",Perak,
+21544,4.351998,115.060242,district,"Limbang, Sarawak",Limbang,Sarawak,
+21545,4.351998,115.060242,district,"Limbang, Sarawak",Limbang,Sarawak,
+21546,4.351998,115.060242,district,"Limbang, Sarawak",Limbang,Sarawak,
+21547,4.351998,115.060242,district,"Limbang, Sarawak",Limbang,Sarawak,
+21548,4.351998,115.060242,district,"Limbang, Sarawak",Limbang,Sarawak,
+21549,4.351998,115.060242,district,"Limbang, Sarawak",Limbang,Sarawak,
+21551,4.351998,115.060242,district,"Limbang, Sarawak",Limbang,Sarawak,
+21553,4.351998,115.060242,district,"Limbang, Sarawak",Limbang,Sarawak,
+21555,4.351998,115.060242,district,"Limbang, Sarawak",Limbang,Sarawak,
+21557,2.308337,111.832542,address,"JALAN SUARAH, SIBU, Sibu",Sibu,Sarawak,
+21558,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+21559,2.237618,111.976122,name,JUMBO GROCER,Sibujaya,Sarawak,
+21561,2.304084,111.849004,address,"LORONG PAHLAWAN 7A2, SIBU, Sibu",Sibu,Sarawak,
+21562,5.322864,103.117575,address,"LOSONG HAJI MAT SHAFIE, Kuala Terengganu",Kuala Terengganu,Terengganu,
+21563,2.305732,111.839889,address,"LORONG REJANG 3, SIBU, Sibu",Sibu,Sarawak,
+21564,2.315911,111.832311,address,"JALAN TUN ABANG HAJI OPENG, SIBU, Sibu",Sibu,Sarawak,
+21565,5.352681,103.116433,address,"JALAN BUKIT TOK BENG, Kuala Nerus",Kuala Nerus,Terengganu,
+21566,2.252218,111.850299,address,"JALAN MANTIS, SIBU, Sibu",Sibu,Sarawak,
+21568,2.240930,111.973603,district,"Sibujaya, Sarawak",Sibujaya,Sarawak,
+21574,2.260181,111.846389,address,"JALAN UPPER LANANG, Sibu",Sibu,Sarawak,
+21576,5.126373,103.087277,address,"TAMAN TAPAI INDAH, Marang",Marang,Terengganu,14664
+21577,2.260317,111.864003,address,"LORONG SALIM 17, Sibu",Sibu,Sarawak,
+21578,5.166667,103.166667,district,"Marang, Terengganu",Marang,Terengganu,70002
+21579,4.910689,102.765070,district,"Hulu Terengganu, Terengganu",Hulu Terengganu,Terengganu,
+21580,3.145593,101.697390,district,"Kepong, W.P. Kuala Lumpur",Kepong,W.P. Kuala Lumpur,
+21581,3.200006,101.656963,name,99 SPEEDMART TAMAN PUSAT KEPONG,Kepong,W.P. Kuala Lumpur,
+21582,2.100615,112.158020,address,"7 JALAN KUBU, KANOWIT, Kanowit",Kanowit,Sarawak,
+21583,2.524837,112.324061,name,SINYIN MART,Selangau,Sarawak,
+21585,3.145593,101.697390,district,"Kepong, W.P. Kuala Lumpur",Kepong,W.P. Kuala Lumpur,
+21586,3.210680,101.651844,address,"JALAN RIMBUNAN RAYA, LAMAN RIMBUNAN, KEPONG, Kepong",Kepong,W.P. Kuala Lumpur,
+21588,6.176928,102.253911,address,"KAMPUNG KIJANG, JALAN PANTAI CAHAYA BULAN, Kota Bharu",Kota Bharu,Kelantan,
+21590,6.162578,102.278285,address,"CABANG 3 PENGKALAN CHEPA, KOTA BHARU, Kota Bharu",Kota Bharu,Kelantan,
+21591,4.910689,102.765070,district,"Hulu Terengganu, Terengganu",Hulu Terengganu,Terengganu,
+21592,6.129360,102.315538,address,"JALAN PULAU MELAKA, SERING, KOTA BHARU, Kota Bharu",Kota Bharu,Kelantan,12085
+21594,3.378196,103.209612,district,"Pekan, Pahang",Pekan,Pahang,
+21599,3.145593,101.697390,district,"Cheras, W.P. Kuala Lumpur",Cheras,W.P. Kuala Lumpur,
+21600,3.134833,101.711399,name,PASAR SEMENTARA JALAN LENGKUAS,Cheras,W.P. Kuala Lumpur,
+21601,3.378196,103.209612,district,"Pekan, Pahang",Pekan,Pahang,
+21602,3.378196,103.209612,district,"Pekan, Pahang",Pekan,Pahang,
+21603,3.145593,101.697390,district,"Cheras, W.P. Kuala Lumpur",Cheras,W.P. Kuala Lumpur,
+21604,3.094765,101.713144,address,"JALAN SRI PERMAISURI 9, BANDAR SRI PERMAISURI, KUALA LUMPUR, Bandar Tun Razak",Bandar Tun Razak,W.P. Kuala Lumpur,56000
+21605,3.145448,101.767474,name,ECONSAVE EXPRESS,Cheras,W.P. Kuala Lumpur,
+21606,3.145593,101.697390,district,"Cheras, W.P. Kuala Lumpur",Cheras,W.P. Kuala Lumpur,
+21608,3.070655,101.740051,postcode,56000,Bandar Tun Razak,W.P. Kuala Lumpur,56000
+21611,3.145593,101.697390,district,"Cheras, W.P. Kuala Lumpur",Cheras,W.P. Kuala Lumpur,
+21612,3.087316,101.721039,address,"JALAN JUJUR 2, BANDAR TUN RAZAK, CHERAS, KUALA LUMPUR, Bandar Tun Razak",Bandar Tun Razak,W.P. Kuala Lumpur,56000
+21614,3.164894,101.695560,name,PASAR MINI HOO HING,Bukit Bintang,W.P. Kuala Lumpur,
+21615,3.060225,101.685367,postcode,57000,Bandar Tun Razak,W.P. Kuala Lumpur,57000
+21616,3.142234,101.710504,address,"BERJAYA TIMES SQUARE, JALAN IMBI, Bukit Bintang",Bukit Bintang,W.P. Kuala Lumpur,
+21617,3.157534,101.712999,name,ISETAN ( KLCC ),Bukit Bintang,W.P. Kuala Lumpur,
+21618,3.070655,101.740051,postcode,56000,Bandar Tun Razak,W.P. Kuala Lumpur,56000
+21619,3.145593,101.697390,district,"Bukit Bintang, W.P. Kuala Lumpur",Bukit Bintang,W.P. Kuala Lumpur,
+21620,3.060225,101.685367,postcode,57000,Bandar Tun Razak,W.P. Kuala Lumpur,57000
+21621,3.143394,101.716701,name,MERCATO TRX,Bukit Bintang,W.P. Kuala Lumpur,
+21624,3.142243,101.716912,name,SEIBU TRX,Bukit Bintang,W.P. Kuala Lumpur,
+21630,3.145780,101.696978,name,BHUIYEN K ( JALAN PETALING ),Bukit Bintang,W.P. Kuala Lumpur,
+21631,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21633,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+21635,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21638,3.190589,113.058747,postcode,97000,Bintulu,Sarawak,97000
+21639,3.190589,113.058747,postcode,97000,Bintulu,Sarawak,97000
+21640,3.190589,113.058747,postcode,97000,Bintulu,Sarawak,97000
+21642,3.190589,113.058747,postcode,97000,Bintulu,Sarawak,97000
+21644,3.108935,113.269243,district,"Sebauh, Sarawak",Sebauh,Sarawak,97100
+21645,2.050771,111.417600,district,"Sarikei, Sarawak",Sarikei,Sarawak,
+21647,3.108935,113.269243,district,"Sebauh, Sarawak",Sebauh,Sarawak,97002
+21649,2.829762,113.093956,postcode,97200,Tatau,Sarawak,97200
+21650,2.050771,111.417600,district,"Sarikei, Sarawak",Sarikei,Sarawak,
+21652,2.167632,111.677988,district,"Meradong, Sarawak",Meradong,Sarawak,47166
+21653,2.050771,111.417600,district,"Sarikei, Sarawak",Sarikei,Sarawak,
+21654,1.426210,110.325517,name,CCK FRESH MART (KOTA PADAWAN BRANCH),Kota Padawan,Sarawak,
+21656,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,10816
+21660,1.523177,110.363556,address,"LORONG TABUAN DAYAK 16, Kuching",Kuching,Sarawak,
+21661,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,13968
+21662,3.090476,101.669445,address,"JALAN PANTAI DALAM, TAMAN PANTAI INDAH, Lembah Pantai",Lembah Pantai,W.P. Kuala Lumpur,51624
+21664,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+21667,6.100076,102.280012,address,"JALAN RAJA PEREMPUAN ZAINAB 2, KUBANG KERIAN, KOTA BHARU, Kota Bharu",Kota Bharu,Kelantan,
+21670,6.191738,102.167667,address,"JALAN SETIA 5, BANDAR BARU TUMPAT, TUMPAT, Tumpat",Tumpat,Kelantan,
+21671,6.176396,102.166328,district,"Tumpat, Kelantan",Tumpat,Kelantan,
+21672,6.124707,102.265950,address,"KAMPUNG CHERANG, JALAN HOSPITAL, KOTA BHARU, Kota Bharu",Kota Bharu,Kelantan,
+21673,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+21674,5.958046,102.249776,address,"KG SERENDAH, KETEREH, Kota Bharu",Kota Bharu,Kelantan,
+21675,3.796702,103.261263,address,"KG. PERMATANG BADAK, Kuantan",Kuantan,Pahang,
+21676,5.995119,102.386741,district,"Bachok, Kelantan",Bachok,Kelantan,13870
+21677,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21678,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+21680,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21681,6.138430,102.237747,address,"JALAN ATAS BANGGOL, KOTA BHARU, Kota Bharu",Kota Bharu,Kelantan,
+21683,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21684,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21685,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,14949
+21687,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,14299
+21688,1.417864,110.155334,district,"Bau, Sarawak",Bau,Sarawak,
+21689,5.499281,100.446799,district,"Seberang Perai Utara, Pulau Pinang",Seberang Perai Utara,Pulau Pinang,
+21690,5.490514,100.497228,address,"JALAN TASEK GELUGOR UTAMA, Seberang Perai Utara",Seberang Perai Utara,Pulau Pinang,
+21691,1.417864,110.155334,district,"Bau, Sarawak",Bau,Sarawak,
+21693,1.417864,110.155334,district,"Bau, Sarawak",Bau,Sarawak,
+21694,5.518341,100.493743,address,"PERSIARAN SEKSYEN 6/1, BANDAR PUTRA BERTAM, Seberang Perai Utara",Seberang Perai Utara,Pulau Pinang,
+21695,5.399207,100.464679,name,MF SEJAHTERA BARU,Seberang Perai Utara,Pulau Pinang,
+21701,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+21704,3.146131,101.714394,postcode,55100,Titiwangsa,W.P. Kuala Lumpur,55100
+21705,3.145593,101.697390,district,"Segambut, W.P. Kuala Lumpur",Segambut,W.P. Kuala Lumpur,
+21706,3.171131,101.664919,name,BEN'S INDEPENDENT GROCER PUBLIKA,Segambut,W.P. Kuala Lumpur,
+21708,6.398562,100.426661,name,99 SPEEDMART TAMAN JELUTONG,Kubang Pasu,Kedah,
+21710,6.335638,100.372322,district,"Kubang Pasu, Kedah",Kubang Pasu,Kedah,
+21712,3.067136,101.674021,name,THE FOOD MERCHANT,Titiwangsa,W.P. Kuala Lumpur,50450
+21713,6.335638,100.372322,district,"Kubang Pasu, Kedah",Kubang Pasu,Kedah,
+21714,3.145593,101.697390,district,"Segambut, W.P. Kuala Lumpur",Segambut,W.P. Kuala Lumpur,
+21716,6.335638,100.372322,district,"Kubang Pasu, Kedah",Kubang Pasu,Kedah,
+21717,3.362471,102.017268,district,"Bentong, Pahang",Bentong,Pahang,
+21718,6.256915,100.419088,address,"JALAN PEKAN JITRA 2, PEKAN JITRA 2, JITRA, KEDAH, Kubang Pasu",Kubang Pasu,Kedah,
+21719,3.884356,101.792028,district,"Raub, Pahang",Raub,Pahang,
+21720,3.166016,101.698979,address,"JLN HJ HUSSEIN, KUALA LUMPUR, Titiwangsa",Titiwangsa,W.P. Kuala Lumpur,50300
+21721,6.335638,100.372322,district,"Kubang Pasu, Kedah",Kubang Pasu,Kedah,
+21722,6.335638,100.372322,district,"Kubang Pasu, Kedah",Kubang Pasu,Kedah,
+21724,3.766884,101.851861,address,"TAMAN WAWASAN, Raub",Raub,Pahang,
+21727,3.145593,101.697390,district,"Batu, W.P. Kuala Lumpur",Batu,W.P. Kuala Lumpur,
+21729,3.362471,102.017268,district,"Bentong, Pahang",Bentong,Pahang,
+21731,3.884356,101.792028,district,"Raub, Pahang",Raub,Pahang,
+21733,3.060225,101.685367,postcode,57000,Seputeh,W.P. Kuala Lumpur,57000
+21734,3.060225,101.685367,postcode,57000,Seputeh,W.P. Kuala Lumpur,57000
+21736,4.764397,103.418446,district,"Dungun, Terengganu",Dungun,Terengganu,12553
+21737,5.499281,100.446799,district,"Seberang Perai Utara, Pulau Pinang",Seberang Perai Utara,Pulau Pinang,
+21739,3.145593,101.697390,district,"Seputeh, W.P. Kuala Lumpur",Seputeh,W.P. Kuala Lumpur,
+21741,4.611344,103.444804,name,PAKA MART,Dungun,Terengganu,
+21742,6.079856,100.360178,address,"PERSIARAN DESA SERAYA 2, DESA SERAYA, ALOR SETAR, KEDAH, Kota Setar",Kota Setar,Kedah,
+21743,4.764397,103.418446,district,"Dungun, Terengganu",Dungun,Terengganu,71867
+21745,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21747,6.090851,102.276680,address,"JALAN WAKAF STAN, KUBANG KERIAN, Kota Bharu",Kota Bharu,Kelantan,
+21749,6.138812,102.311219,address,"KG PULAU BELANGA, SERING, Kota Bharu",Kota Bharu,Kelantan,
+21751,4.231041,103.422190,address,"JALAN ABDUL RAHMAN, CUKAI, Kemaman",Kemaman,Terengganu,
+21752,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21757,6.100037,102.106141,address,"KAMPUNG MERANTI, Pasir Mas",Pasir Mas,Kelantan,
+21758,6.176396,102.166328,district,"Tumpat, Kelantan",Tumpat,Kelantan,
+21760,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21764,5.776814,102.146370,address,"TAMAN KOTA HARMONI, Tanah Merah",Tanah Merah,Kelantan,
+21765,6.109219,102.360040,address,"KG WAKAF ZIN, TAWANG, BACHOK, Bachok",Bachok,Kelantan,
+21766,4.234586,103.423585,district,"Kemaman, Terengganu",Kemaman,Terengganu,
+21767,6.171018,102.230320,name,HOME-U GERONG,Tumpat,Kelantan,
+21768,5.859240,102.168141,address,"JLN PASIR MAS - TANAH MERAH, TANAH MERAH, Tanah Merah",Tanah Merah,Kelantan,
+21769,6.179149,102.175581,address,"KEDAI KAMPUNG BERANGAN, TUMPAT, Tumpat",Tumpat,Kelantan,
+21770,5.995119,102.386741,district,"Bachok, Kelantan",Bachok,Kelantan,
+21771,6.161970,102.277986,address,"CABANG 3, PENGKALAN CHEPA, KOTA BHARU, Kota Bharu",Kota Bharu,Kelantan,
+21772,4.234586,103.423585,district,"Kemaman, Terengganu",Kemaman,Terengganu,15977
+21773,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21776,6.082501,102.230713,name,PANTAI TIMOR MART SALOR-PENDEK,Kota Bharu,Kelantan,
+21777,6.176396,102.166328,district,"Tumpat, Kelantan",Tumpat,Kelantan,
+21778,6.176396,102.166328,district,"Tumpat, Kelantan",Tumpat,Kelantan,
+21781,6.188065,102.268982,name,PANTAI TIMOR MART (PCB),Kota Bharu,Kelantan,
+21783,5.834617,102.382964,district,"Pasir Puteh, Kelantan",Pasir Puteh,Kelantan,
+21786,5.531158,102.199367,district,"Kuala Krai, Kelantan",Kuala Krai,Kelantan,
+21787,6.097683,102.277768,name,MYDIN KOTA BHARU,Kota Bharu,Kelantan,
+21789,5.531158,102.199367,district,"Kuala Krai, Kelantan",Kuala Krai,Kelantan,
+21790,6.098686,102.230326,address,"KG PALOH, PINTU GENG, KOTA BHARU, Kota Bharu",Kota Bharu,Kelantan,
+21791,5.531158,102.199367,district,"Kuala Krai, Kelantan",Kuala Krai,Kelantan,
+21792,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+21793,5.019814,102.038266,district,"Gua Musang, Kelantan",Gua Musang,Kelantan,
+21795,6.176396,102.166328,district,"Tumpat, Kelantan",Tumpat,Kelantan,
+21796,5.019814,102.038266,district,"Gua Musang, Kelantan",Gua Musang,Kelantan,
+21797,6.052948,102.281240,name,TMG EXPRESS PASIR TUMBOH,Kota Bharu,Kelantan,
+21798,5.766305,102.034148,district,"Tanah Merah, Kelantan",Tanah Merah,Kelantan,
+21799,6.149255,102.213927,address,"DAN 997, KAMPUNG KEPULAU, PALEKBANG, Tumpat",Tumpat,Kelantan,
+21800,5.766305,102.034148,district,"Tanah Merah, Kelantan",Tanah Merah,Kelantan,
+21801,5.957010,102.436659,name,PERNIAGAAN MOHD ROSLI,Bachok,Kelantan,
+21804,5.019814,102.038266,district,"Gua Musang, Kelantan",Gua Musang,Kelantan,
+21806,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+21807,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+21810,2.701079,111.960895,district,"Dalat, Sarawak",Dalat,Sarawak,
+21811,2.701079,111.960895,district,"Dalat, Sarawak",Dalat,Sarawak,
+21813,2.725890,101.910214,address,"JALAN BUKIT GALENA 1, TAMAN BUKIT GALENA, SEREMBAN, Seremban",Seremban,Negeri Sembilan,
+21814,2.723099,101.940060,district,"Seremban, Negeri Sembilan",Seremban,Negeri Sembilan,
+21815,2.771045,101.763183,address,"JALAN PUSAT NIAGA KLIA 2, NILAI, Seremban",Seremban,Negeri Sembilan,
+21816,2.718407,101.941070,address,"JLN TUANKU ANTAH, SEREMBAN, Seremban",Seremban,Negeri Sembilan,
+21817,2.561721,101.815937,name,ECONSAVE PORT DICKSON,Port Dickson,Negeri Sembilan,
+21818,2.694210,101.947140,address,"BUKIT BLOSSOM RASAH, SEREMBAN, Seremban",Seremban,Negeri Sembilan,13453
+21820,2.683728,101.910523,address,"JALAN S2 F1, GARDEN HOMES, SEREMBAN, Seremban",Seremban,Negeri Sembilan,
+21821,2.812246,101.791686,name,GIANT NILAI,Seremban,Negeri Sembilan,
+21822,2.681924,101.908478,address,"GARDEN HOMES, SEREMBAN, Seremban",Seremban,Negeri Sembilan,
+21823,1.458199,103.764906,district,"Johor Bahru, Johor",Johor Bahru,Johor,
+21824,5.832502,102.544424,address,"KG. KUALA BESUT, Besut",Besut,Terengganu,
+21825,2.685776,101.904585,address,"PERSIARAN S2 F, GARDEN HOMES, SEREMBAN, Seremban",Seremban,Negeri Sembilan,
+21826,5.583333,102.500000,district,"Besut, Terengganu",Besut,Terengganu,
+21827,1.496312,103.683207,name,PASAR MINI AL MASHUR,Johor Bahru,Johor,
+21828,2.723099,101.940060,district,"Seremban, Negeri Sembilan",Seremban,Negeri Sembilan,
+21829,2.940137,102.069727,address,"JALAN DATO MENTERI, KAMPUNG JELEBU TENGAH, KUALA KLAWANG, Jelebu",Jelebu,Negeri Sembilan,
+21831,1.495433,103.718795,address,"JALAN PADI MAHSURI 12, BANDAR BARU UDA, Johor Bahru",Johor Bahru,Johor,
+21832,2.743076,102.215488,district,"Kuala Pilah, Negeri Sembilan",Kuala Pilah,Negeri Sembilan,
+21833,5.550081,102.735511,district,"Setiu, Terengganu",Setiu,Terengganu,
+21834,2.743076,102.215488,district,"Kuala Pilah, Negeri Sembilan",Kuala Pilah,Negeri Sembilan,
+21836,2.806495,102.397673,name,SUPER STORE VALLI,Bahau,Negeri Sembilan,
+21837,1.478373,103.865406,address,"JALAN SIERRA PERDANA 6/3, TAMAN SIERRA PERDANA, MASAI, Johor Bahru",Johor Bahru,Johor,
+21838,2.743076,102.215488,district,"Kuala Pilah, Negeri Sembilan",Kuala Pilah,Negeri Sembilan,
+21840,1.521581,103.815249,name,LOTUS'S PLENTONG,Johor Bahru,Johor,
+21842,5.836164,102.536617,name,PKT BESUT,Besut,Terengganu,
+21843,1.511760,103.816016,name,ECONSAVE PERMAS JAYA,Johor Bahru,Johor,
+21844,2.716920,102.245333,address,"JALAN 1/1, TAMAN BAHAGIA DELIMA, KUALA PILAH, Kuala Pilah",Kuala Pilah,Negeri Sembilan,
+21846,5.834525,102.540565,name,KHADEEJA MART,Besut,Terengganu,
+21847,2.811358,102.403891,district,"Bahau, Negeri Sembilan",Bahau,Negeri Sembilan,
+21848,2.807456,102.372891,address,"TAMAN TUNKU PUAN CHIK, BAHAU, Bahau",Bahau,Negeri Sembilan,
+21850,5.583333,102.500000,district,"Besut, Terengganu",Besut,Terengganu,
+21851,2.735972,102.226435,address,"TAMAN AMPANG TINGGI, KUALA PILAH, Kuala Pilah",Kuala Pilah,Negeri Sembilan,
+21852,1.502480,103.741186,address,"JALAN KASAWARI 1, KAMPUNG AMAN LARKIN, Johor Bahru",Johor Bahru,Johor,
+21853,1.500911,103.748852,address,"SUSUR LARKIN PERDANA 2, LARKIN PERDANA, Johor Bahru",Johor Bahru,Johor,
+21854,1.504681,103.759966,address,"JALAN SURIA 19, TAMAN SURIA, Johor Bahru",Johor Bahru,Johor,
+21855,1.458199,103.764906,district,"Johor Bahru, Johor",Johor Bahru,Johor,
+21856,4.455121,115.427188,district,"Lawas, Sarawak",Lawas,Sarawak,
+21857,1.458199,103.764906,district,"Johor Bahru, Johor",Johor Bahru,Johor,
+21858,4.455121,115.427188,district,"Lawas, Sarawak",Lawas,Sarawak,
+21860,4.455121,115.427188,district,"Lawas, Sarawak",Lawas,Sarawak,
+21861,4.455121,115.427188,district,"Lawas, Sarawak",Lawas,Sarawak,
+21862,1.458199,103.764906,district,"Johor Bahru, Johor",Johor Bahru,Johor,
+21863,1.230141,111.463814,name,ALDI SUPERMARKET,Sri Aman,Sarawak,95000
+21865,1.236942,111.462102,name,KEDAI SNEK KU,Sri Aman,Sarawak,95000
+21868,1.238101,111.457128,name,FAMILY W,Sri Aman,Sarawak,95000
+21870,1.124403,111.373907,postcode,95000,Sri Aman,Sarawak,95000
+21878,5.881448,116.065618,district,"Putatan, Sabah",Putatan,Sabah,
+21879,5.940920,116.102843,name,BATARAS HYPERMARKET BUNDUSAN,Penampang,Sabah,
+21880,5.881448,116.065618,district,"Putatan, Sabah",Putatan,Sabah,
+21882,5.962915,116.090425,address,"PHASE 3, Kota Kinabalu",Kota Kinabalu,Sabah,
+21885,5.914238,116.050044,address,"JALAN PANTAI BERAHI, PUTATAN, Putatan",Putatan,Sabah,
+21886,1.100861,110.710374,district,"Serian, Sarawak",Serian,Sarawak,
+21887,5.979558,116.127793,address,"LORONG PLAZA INANAM, INANAM, Kota Kinabalu",Kota Kinabalu,Sabah,
+21888,1.100861,110.710374,district,"Serian, Sarawak",Serian,Sarawak,
+21889,5.862623,116.113815,district,"Penampang, Sabah",Penampang,Sabah,
+21890,1.100861,110.710374,district,"Serian, Sarawak",Serian,Sarawak,
+21892,2.830483,102.330794,postcode,72200,Kuala Pilah,Negeri Sembilan,72200
+21893,2.526249,101.810616,district,"Port Dickson, Negeri Sembilan",Port Dickson,Negeri Sembilan,
+21894,1.544969,103.760939,name,ECONSAVE TAMAN DAYA,Johor Bahru,Johor,
+21895,1.547902,103.765329,name,MASLEE EXPRESS TAMAN DAYA,Johor Bahru,Johor,
+21896,1.498845,103.710773,address,"JALAN PADI EMAS 4/1, BANDAR BARU UDA, Johor Bahru",Johor Bahru,Johor,
+21897,1.458199,103.764906,district,"Johor Bahru, Johor",Johor Bahru,Johor,
+21898,1.458199,103.764906,district,"Johor Bahru, Johor",Johor Bahru,Johor,
+21899,1.549504,103.625335,address,"JALAN PULAI 21, TAMAN PULAI UTAMA, SKUDAI, Johor Bahru",Johor Bahru,Johor,
+21903,2.032347,103.319077,district,"Kluang, Johor",Kluang,Johor,
+21904,2.012614,103.299802,address,"JALAN 53A, TAMAN KLUANG BARAT, Kluang",Kluang,Johor,
+21905,1.986158,103.251163,address,"JALAN RIA, TAMAN RIA, SRI LALANG, Kluang",Kluang,Johor,
+21907,2.004630,103.356145,address,"JALAN SERI IMPIAN 1/1, BANDAR SERI IMPIAN, Kluang",Kluang,Johor,
+21909,2.032347,103.319077,district,"Kluang, Johor",Kluang,Johor,
+21911,1.838956,103.304383,address,"TAMAN HARMONI, SIMPANG RENGGAM, Kluang",Kluang,Johor,
+21912,2.049805,102.601539,name,LOTUS'S MUAR,Muar,Johor,
+21914,2.059184,102.593143,address,"JALAN HAJI ABDULLAH, Muar",Muar,Johor,
+21916,2.050000,102.566667,district,"Muar, Johor",Muar,Johor,
+21920,2.250000,102.583333,district,"Tangkak, Johor",Tangkak,Johor,
+21922,1.570877,103.612013,name,PASAR MINI NAFIYA,Pontian,Johor,13414
+21923,1.500000,103.500000,district,"Pontian, Johor",Pontian,Johor,
+21924,1.500000,103.500000,district,"Pontian, Johor",Pontian,Johor,
+21925,1.500000,103.500000,district,"Pontian, Johor",Pontian,Johor,
+21927,1.500000,103.500000,district,"Pontian, Johor",Pontian,Johor,
+21928,1.498437,103.518292,address,"JALAN MEWAH 1, TAMAN MEWAH, PEKAN NENAS, Pontian",Pontian,Johor,
+21930,2.546851,102.789589,address,"JALAN BISTARI 1/1, TAMAN YAYASAN, BULOH KASAP, Segamat",Segamat,Johor,
+21935,2.492210,102.844922,district,"Segamat, Johor",Segamat,Johor,
+21936,2.492210,102.844922,district,"Segamat, Johor",Segamat,Johor,
+21937,2.550210,102.792644,address,"JALAN BISTARI 4/9, TAMAN YAYASAN, Segamat",Segamat,Johor,
+21938,1.927373,102.939563,address,"JALAN PUTERA INDAH 1/78, BANDAR PUTERA INDAH, TONGKANG PECHAH, Batu Pahat",Batu Pahat,Johor,
+21939,2.429853,103.835494,district,"Mersing, Johor",Mersing,Johor,
+21940,2.415338,103.839843,address,"JALAN WAWASAN 3, Mersing",Mersing,Johor,
+21941,2.639849,103.630898,address,"JALAN SEJAHTERA UTAMA, TAMAN SEJAHTERA, ENDAU, Mersing",Mersing,Johor,
+21942,2.392742,103.852005,address,"TAMAN SRI PANTAI, Mersing",Mersing,Johor,
+21944,2.417811,103.838787,address,"JALAN WAWASAN 1, TAMAN WAWASAN, Mersing",Mersing,Johor,
+21945,1.733674,103.900698,district,"Kota Tinggi, Johor",Kota Tinggi,Johor,
+21946,1.733674,103.900698,district,"Kota Tinggi, Johor",Kota Tinggi,Johor,
+21948,1.737690,103.889880,address,"JALAN PULASAN, TAMAN KOTA JAYA, Kota Tinggi",Kota Tinggi,Johor,
+21949,1.733674,103.900698,district,"Kota Tinggi, Johor",Kota Tinggi,Johor,
+21950,1.733674,103.900698,district,"Kota Tinggi, Johor",Kota Tinggi,Johor,
+21956,4.243521,117.885331,address,"TAWAU, TAWAU, Tawau",Tawau,Sabah,
+21957,1.511064,103.877040,address,"BANDAR SERI ALAM, PASIR GUDANG, Johor Bahru",Johor Bahru,Johor,
+21958,4.243521,117.885331,address,"TAWAU, TAWAU, Tawau",Tawau,Sabah,
+21963,4.480894,117.407133,address,"TAWAU, TAWAU, Kalabakan",Kalabakan,Sabah,
+21965,5.291124,115.672474,district,"Beaufort, Sabah",Beaufort,Sabah,
+21966,5.345339,115.741292,address,"NEW BEAUFORT JAYA, Beaufort",Beaufort,Sabah,
+21968,5.472668,115.796693,district,"Membakut, Sabah",Membakut,Sabah,
+21969,5.440192,115.494931,district,"Kuala Penyu, Sabah",Kuala Penyu,Sabah,
+21972,5.839127,118.115860,district,"Sandakan, Sabah",Sandakan,Sabah,
+21973,5.887604,118.056212,address,"TAMAN FAJAR, BATU 7, Sandakan",Sandakan,Sabah,
+21974,5.839127,118.115860,district,"Sandakan, Sabah",Sandakan,Sabah,
+21975,5.839127,118.115860,district,"Sandakan, Sabah",Sandakan,Sabah,
+21976,5.878857,118.046385,address,"BANDAR MEGAH JAYA, Sandakan",Sandakan,Sabah,
+21981,5.859826,118.076710,address,"JALAN LINTAS UTARA, Sandakan",Sandakan,Sabah,
+21982,5.839127,118.115860,district,"Sandakan, Sabah",Sandakan,Sabah,
+21984,6.466750,116.767342,address,"JALAN LOTONG, Kota Marudu",Kota Marudu,Sabah,
+21986,6.722301,117.036687,address,"KG TAKA PITAS, PITAS, Pitas",Pitas,Sabah,
+21987,7.231645,117.171156,district,"Kudat, Sabah",Kudat,Sabah,
+21988,7.231645,117.171156,district,"Kudat, Sabah",Kudat,Sabah,
+21991,5.334414,116.154288,name,BATARAS SUPERSTORE KENINGAU,Keningau,Sabah,
+21993,5.217948,116.246315,district,"Keningau, Sabah",Keningau,Sabah,
+21995,5.217948,116.246315,district,"Keningau, Sabah",Keningau,Sabah,
+21996,5.217948,116.246315,district,"Keningau, Sabah",Keningau,Sabah,
+21999,4.685768,118.017066,district,"Kunak, Sabah",Kunak,Sabah,
+22002,4.479076,118.429773,district,"Semporna, Sabah",Semporna,Sabah,
+22003,3.147384,101.710839,address,"JALAN BERANGAN, BUKIT BINTANG, Bukit Bintang",Bukit Bintang,W.P. Kuala Lumpur,50200
+22004,4.628518,101.126126,name,99 SPEEDMART TASEK,Kinta,Perak,
+22005,3.145593,101.697390,district,"Wangsa Maju, W.P. Kuala Lumpur",Wangsa Maju,W.P. Kuala Lumpur,
+22007,5.652623,100.507557,name,99 SPEEDMART TAMAN RIA INDAH,Kuala Muda,Kedah,
+22008,2.230145,102.245307,district,"Melaka Tengah, Melaka",Melaka Tengah,Melaka,
+22009,5.707315,100.495289,district,"Kuala Muda, Kedah",Kuala Muda,Kedah,
+22010,1.553961,103.784042,address,"JALAN MUTIARA EMAS 10/19, TAMAN MOUNT AUSTIN, JOHOR BAHRU, Johor Bahru",Johor Bahru,Johor,
+22011,6.430674,100.238435,address,"JALAN ARAU, KAMPUNG JEJAWI, Arau",Arau,Perlis,
+22016,5.229470,100.493298,name,'99 SPEEDMART 2336 (PG) TAMAN GAMELAN INDAH,Seberang Perai Selatan,Pulau Pinang,
+22017,5.176456,100.489250,name,99 SPEEDMART 2504 (PG) TAMAN BUKIT PANCHOR,Seberang Perai Selatan,Pulau Pinang,
+22018,5.216964,100.480466,district,"Seberang Perai Selatan, Pulau Pinang",Seberang Perai Selatan,Pulau Pinang,
+22019,5.184352,100.485239,name,99 SPEEDMART 3035 (PG) TAMAN SUNGAI JAWI,Seberang Perai Selatan,Pulau Pinang,
+22020,5.275697,100.463872,address,"JALAN BUKIT TAMBUN, TAMAN TAMBUN INDAH, SIMPANG AMPAT, Seberang Perai Selatan",Seberang Perai Selatan,Pulau Pinang,
+22021,5.366388,100.273943,name,SURIA TIMUR,Barat Daya,Pulau Pinang,
+22022,5.318519,100.275777,address,"LEBUH SUNGAI ARA 1, KAMPUNG BARU SUNGAI ARA, BAYAN LEPAS, Barat Daya",Barat Daya,Pulau Pinang,
+22024,5.384289,100.478697,name,'99 SPEEDMART 2466 (PG) TAMAN SERI BERAPIT,Seberang Perai Tengah,Pulau Pinang,
+22025,5.335659,100.238950,district,"Barat Daya, Pulau Pinang",Barat Daya,Pulau Pinang,
+22026,5.410314,100.287031,district,"Timur Laut, Pulau Pinang",Timur Laut,Pulau Pinang,
+22027,5.328518,100.292012,address,"LORONG MAHSURI 7, BAYAN BARU, BAYAN LEPAS, PULAU PINANG, Barat Daya",Barat Daya,Pulau Pinang,
+22028,5.484788,100.490950,name,AGROBAZAAR RAKYAT,Barat Daya,Pulau Pinang,
+22029,3.145593,101.697390,district,"Segambut, W.P. Kuala Lumpur",Segambut,W.P. Kuala Lumpur,
+22030,5.385660,100.392815,name,99 SPEEDMART 2403 (PG) TAMAN CHAI LENG,Seberang Perai Tengah,Pulau Pinang,
+22031,5.350334,100.473463,name,99 SPEEDMART 2368 (PG) TAMAN TAMPOI,Seberang Perai Tengah,Pulau Pinang,
+22032,5.340011,100.459087,name,99 SPEEDMART 2422 (PG) TAMAN KOTA PERMAI,Seberang Perai Tengah,Pulau Pinang,
+22033,5.361070,100.457358,district,"Seberang Perai Tengah, Pulau Pinang",Seberang Perai Tengah,Pulau Pinang,
+22034,5.362229,100.464282,name,99 SPEEDMART 2510 (PG) TAMAN USAHANIAGA,Seberang Perai Tengah,Pulau Pinang,
+22036,5.459122,100.400896,address,"JALAN PEKAN DARAT, PERMATANG TOK JAYA, Seberang Perai Utara",Seberang Perai Utara,Pulau Pinang,
+22037,5.440434,100.423357,address,"LORONG SUNGAI DUA UTARA 1, TAMAN SUNGAI DUA UTAMA, Seberang Perai Utara",Seberang Perai Utara,Pulau Pinang,
+22038,5.536719,100.380224,address,"JALAN SERI PENAGA, PUSAT PERNIAGAAN SERI PENAGA, Seberang Perai Utara",Seberang Perai Utara,Pulau Pinang,
+22039,5.536719,100.380224,address,"JALAN SERI MUDA, PUSAT PERNIAGAAN SERI MUDA, Seberang Perai Utara",Seberang Perai Utara,Pulau Pinang,
+22040,5.499281,100.446799,district,"Seberang Perai Utara, Pulau Pinang",Seberang Perai Utara,Pulau Pinang,
+22041,5.499281,100.446799,district,"Seberang Perai Utara, Pulau Pinang",Seberang Perai Utara,Pulau Pinang,
+22042,5.499281,100.446799,district,"Seberang Perai Utara, Pulau Pinang",Seberang Perai Utara,Pulau Pinang,
+22043,5.506265,100.424002,address,"JALAN PERAK, JALAN PERAK, Seberang Perai Utara",Seberang Perai Utara,Pulau Pinang,
+22044,5.514673,100.429965,address,"JLN DATUK HAJI AHMAD BADAWI, Seberang Perai Utara",Seberang Perai Utara,Pulau Pinang,
+22048,5.291124,115.672474,district,"Beaufort, Sabah",Beaufort,Sabah,
+22049,5.291124,115.672474,district,"Beaufort, Sabah",Beaufort,Sabah,
+22050,5.115509,118.430636,district,"Lahad Datu, Sabah",Lahad Datu,Sabah,
+22051,5.115509,118.430636,district,"Lahad Datu, Sabah",Lahad Datu,Sabah,
+22052,5.115509,118.430636,district,"Lahad Datu, Sabah",Lahad Datu,Sabah,
+22053,5.115509,118.430636,district,"Lahad Datu, Sabah",Lahad Datu,Sabah,
+22054,5.115509,118.430636,district,"Lahad Datu, Sabah",Lahad Datu,Sabah,
+22055,5.115509,118.430636,district,"Lahad Datu, Sabah",Lahad Datu,Sabah,
+22056,5.115509,118.430636,district,"Lahad Datu, Sabah",Lahad Datu,Sabah,
+22057,5.978007,116.072899,district,"Kota Kinabalu, Sabah",Kota Kinabalu,Sabah,
+22058,5.978007,116.072899,district,"Kota Kinabalu, Sabah",Kota Kinabalu,Sabah,
+22059,5.978007,116.072899,district,"Kota Kinabalu, Sabah",Kota Kinabalu,Sabah,
+22060,4.695533,116.483761,district,"Nabawan, Sabah",Nabawan,Sabah,
+22062,6.265989,116.455691,postcode,89150,Kota Belud,Sabah,89150
+22063,3.000719,101.741019,name,99 SPEED MART SDN BHD,Petaling Jaya,Selangor,47301
+22064,2.912193,101.684669,district,"Wp Putrajaya, W.P. Putrajaya",Wp Putrajaya,W.P. Putrajaya,
+22067,3.833056,103.299752,name,TMG MALL BANDAR INDERA MAHKOTA,Kuantan,Pahang,
+22069,2.914883,101.669659,district,"Cyberjaya, W.P. Putrajaya",Cyberjaya,W.P. Putrajaya,
+22070,6.335638,100.372322,district,"Kubang Pasu, Kedah",Kubang Pasu,Kedah,
+22071,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,
+22122,3.198040,101.657102,address,"4 ( ) JALAN UDANG SIAR 2, TAMAN SRI SEGAMBUT, TAMAN SRI SEGAMBUT, Segambut",Segambut,W.P. Kuala Lumpur,
+22123,3.206962,101.473957,name,PASAR SEGAR MAYA,Lembah Pantai,W.P. Kuala Lumpur,
+22124,1.458199,103.764906,district,"Johor Bahru, Johor",Johor Bahru,Johor,
+22125,5.295085,103.166326,name,PASAR MINI LESONG MART,Kuala Nerus,Terengganu,
+22126,6.124196,102.276743,address,"JALAN HOSPITAL, KAMPUNG TAPANG PANJI, KOTA BHARU, Kota Bharu",Kota Bharu,Kelantan,
+22127,5.766305,102.034148,district,"Tanah Merah, Kelantan",Tanah Merah,Kelantan,
+22128,5.898031,116.669608,district,"Ranau, Sabah",Ranau,Sabah,
+22129,5.898031,116.669608,district,"Ranau, Sabah",Ranau,Sabah,
+22130,5.989587,116.717699,address,"KG LASING, RANAU, Ranau",Ranau,Sabah,
+22131,5.954491,116.666448,address,"PEKAN KUNDASANG, KUNDASANG, Ranau",Ranau,Sabah,
+22132,4.243521,117.885331,district,"Tawau, Sabah",Tawau,Sabah,
+22133,5.336140,116.152843,name,EVERWIN SUPERMARKET,Keningau,Sabah,
+22134,5.142398,116.289617,district,"Sook, Sabah",Sook,Sabah,
+22136,5.118763,115.944465,address,"ORCHARD PLAZA, Tenom",Tenom,Sabah,
+22140,3.145593,101.697390,district,"Wangsa Maju, W.P. Kuala Lumpur",Wangsa Maju,W.P. Kuala Lumpur,
+22141,5.166667,103.166667,district,"Marang, Terengganu",Marang,Terengganu,
+22142,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,
+22144,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,60173
+22145,5.352681,103.116433,address,"JALAN BUKIT TOK BENG, Kuala Nerus",Kuala Nerus,Terengganu,
+22146,5.275699,115.232815,district,"W.P Labuan, W.P. Labuan",W.P Labuan,W.P. Labuan,
+22147,5.686003,116.411959,district,"Tambunan, Sabah",Tambunan,Sabah,
+22148,2.723099,101.940060,district,"Seremban, Negeri Sembilan",Seremban,Negeri Sembilan,
+22149,6.017962,101.975522,name,MYDIN PASIR MAS,Pasir Mas,Kelantan,
+22150,3.145593,101.697390,district,"Bukit Bintang, W.P. Kuala Lumpur",Bukit Bintang,W.P. Kuala Lumpur,
+22151,6.731706,117.125405,district,"Pitas, Sabah",Pitas,Sabah,
+22152,6.124791,102.237807,district,"Kota Bharu, Kelantan",Kota Bharu,Kelantan,
+22153,6.105458,102.235696,address,"JALAN PINTU GENG, Kota Bharu",Kota Bharu,Kelantan,
+22154,2.937968,101.774316,address,"JALAN 3/69, BANDAR BARU BANGI, Hulu Langat",Hulu Langat,Selangor,
+22155,6.430728,100.271879,district,"Arau, Perlis",Arau,Perlis,
+22156,6.430728,100.271879,district,"Arau, Perlis",Arau,Perlis,
+22157,6.438931,100.194484,district,"Kangar, Perlis",Kangar,Perlis,
+22158,6.662684,100.320198,district,"Padang Besar, Perlis",Padang Besar,Perlis,
+22159,2.811358,102.403891,district,"Bahau, Negeri Sembilan",Bahau,Negeri Sembilan,
+22160,2.426219,101.931055,name,PASAR PASIR PANJANG,Port Dickson,Negeri Sembilan,
+22161,2.941936,102.070851,name,PASAR KUALA KLAWANG,Jelebu,Negeri Sembilan,
+22162,2.469827,102.232676,name,PASAR TAMPIN,Tampin,Negeri Sembilan,
+22163,2.743076,102.215488,district,"Kuala Pilah, Negeri Sembilan",Kuala Pilah,Negeri Sembilan,
+22164,2.598416,102.262165,district,"Johol, Negeri Sembilan",Johol,Negeri Sembilan,
+22165,5.525649,100.456983,address,"LORONG WAWASAN 1, BERTAM PERDANA 2, KEPALA BATAS, Seberang Perai Utara",Seberang Perai Utara,Pulau Pinang,
+22166,4.196444,101.261103,address,"JALAN BESAR, Batang Padang",Batang Padang,Perak,
+22167,5.118763,115.944465,address,"ORCHARD PLAZA, TENOM, Tenom",Tenom,Sabah,
+22168,4.455121,115.427188,district,"Lawas, Sarawak",Lawas,Sarawak,
+22169,5.531158,102.199367,district,"Kuala Krai, Kelantan",Kuala Krai,Kelantan,10002
+22170,5.767670,102.238082,district,"Machang, Kelantan",Machang,Kelantan,
+22171,6.010153,102.330033,address,"KG ARIL, PAUH LIMA, KOTA BHARU, Kota Bharu",Kota Bharu,Kelantan,
+22172,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,22051
+22173,5.686003,116.411959,district,"Tambunan, Sabah",Tambunan,Sabah,
+22176,1.458199,103.764906,district,"Johor Bahru, Johor",Johor Bahru,Johor,
+22177,2.492210,102.844922,district,"Segamat, Johor",Segamat,Johor,
+22179,3.145593,101.697390,district,"Bandar Tun Razak, W.P. Kuala Lumpur",Bandar Tun Razak,W.P. Kuala Lumpur,
+22180,3.145593,101.697390,district,"Segambut, W.P. Kuala Lumpur",Segambut,W.P. Kuala Lumpur,
+22181,3.797449,103.321919,district,"Kuantan, Pahang",Kuantan,Pahang,
+22182,4.455121,115.427188,district,"Lawas, Sarawak",Lawas,Sarawak,
+22183,4.455121,115.427188,district,"Lawas, Sarawak",Lawas,Sarawak,
+22184,5.335659,100.238950,district,"Barat Daya, Pulau Pinang",Barat Daya,Pulau Pinang,
+22186,5.395740,103.061534,district,"Kuala Nerus, Terengganu",Kuala Nerus,Terengganu,35346
+22187,1.458199,103.764906,district,"Johor Bahru, Johor",Johor Bahru,Johor,
+22214,3.362471,102.017268,district,"Bentong, Pahang",Bentong,Pahang,
+22215,2.032347,103.319077,district,"Kluang, Johor",Kluang,Johor,
+22216,5.335469,116.152010,address,"JALAN MASAK, Keningau",Keningau,Sabah,
+22232,5.995119,102.386741,district,"Bachok, Kelantan",Bachok,Kelantan,
+22233,2.240930,111.973603,district,"Sibujaya, Sarawak",Sibujaya,Sarawak,
+22234,2.299660,111.871001,district,"Sibu, Sarawak",Sibu,Sarawak,
+22235,2.299660,111.871001,district,"Sibu, Sarawak",Sibu,Sarawak,
+22236,5.531158,102.199367,district,"Kuala Krai, Kelantan",Kuala Krai,Kelantan,
+22237,3.202237,101.655595,address,"JALAN 5/40, TAMAN PUSAT KEPONG, Kepong",Kepong,W.P. Kuala Lumpur,
+22238,1.733674,103.900698,district,"Kota Tinggi, Johor",Kota Tinggi,Johor,
+22239,2.298624,102.423650,postcode,77000,Jasin,Melaka,77000
+22240,5.834617,102.382964,district,"Pasir Puteh, Kelantan",Pasir Puteh,Kelantan,
+22241,4.324251,101.908585,district,"Lipis, Pahang",Lipis,Pahang,
+22242,4.324251,101.908585,district,"Lipis, Pahang",Lipis,Pahang,
+22243,3.145593,101.697390,district,"Bandar Tun Razak, W.P. Kuala Lumpur",Bandar Tun Razak,W.P. Kuala Lumpur,
+22244,5.447973,101.297149,district,"Hulu Perak, Perak",Hulu Perak,Perak,
+22245,5.447973,101.297149,district,"Hulu Perak, Perak",Hulu Perak,Perak,
+22247,5.361070,100.457358,district,"Seberang Perai Tengah, Pulau Pinang",Seberang Perai Tengah,Pulau Pinang,
+22248,6.354870,116.427235,name,GOLDEN DRAGON CITY KOTA BELUD,Kota Belud,Sabah,
+22249,6.065921,116.319811,district,"Tuaran, Sabah",Tuaran,Sabah,
+22250,6.065921,116.319811,district,"Tuaran, Sabah",Tuaran,Sabah,
+22251,6.065921,116.319811,district,"Tuaran, Sabah",Tuaran,Sabah,
+22252,6.135809,116.268957,district,"Tamparuli, Sabah",Tamparuli,Sabah,
+22253,6.176285,116.232814,address,"TUARAN, Tuaran",Tuaran,Sabah,
+22254,4.910403,115.905095,district,"Tenom, Sabah",Tenom,Sabah,
+22255,5.374300,116.181416,address,"PHASE 1, Keningau",Keningau,Sabah,
+22256,5.334522,116.153420,address,"YUK YIN SHOPPING COMPLEX, Keningau",Keningau,Sabah,
+22257,4.695533,116.483761,district,"Nabawan, Sabah",Nabawan,Sabah,
+22258,5.142398,116.289617,district,"Sook, Sabah",Sook,Sabah,
+22259,5.217948,116.246315,district,"Keningau, Sabah",Keningau,Sabah,
+22260,5.328397,116.152842,address,"KAMPUNG LIMBAWAN, Keningau",Keningau,Sabah,
+22261,5.217948,116.246315,district,"Keningau, Sabah",Keningau,Sabah,
+22262,5.341044,116.153864,name,MEE WOO SUPERSTORE,Keningau,Sabah,
+22263,5.686003,116.411959,district,"Tambunan, Sabah",Tambunan,Sabah,
+22264,1.100861,110.710374,district,"Serian, Sarawak",Serian,Sarawak,
+22266,3.056980,103.084566,address,"JALAN MEDAN MEWAH 11, MUADZAM SHAH, Rompin",Rompin,Pahang,
+22267,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+22268,3.056980,103.084566,address,"MM 152 DAN MM 153, JALAN MEDAN MEWAH 11, MUADZAM SHAH, Rompin",Rompin,Pahang,
+22269,2.824577,103.099356,district,"Rompin, Pahang",Rompin,Pahang,
+22270,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+22271,5.329646,103.138327,district,"Kuala Terengganu, Terengganu",Kuala Terengganu,Terengganu,
+22272,2.396206,103.027216,address,"JALAN TENANG, LABIS JOHOR, Segamat",Segamat,Johor,
+22273,2.437829,103.832098,address,"JALAN SRI MERSING 2, PUSAT PERDAGANGAN SRI MERSING, Mersing",Mersing,Johor,
+22274,1.458199,103.764906,district,"Johor Bahru, Johor",Johor Bahru,Johor,
+22275,5.361070,100.457358,district,"Seberang Perai Tengah, Pulau Pinang",Seberang Perai Tengah,Pulau Pinang,
+22276,1.559756,110.345397,district,"Kuching, Sarawak",Kuching,Sarawak,
+22277,2.013903,112.935677,district,"Kapit, Sarawak",Kapit,Sarawak,
+22278,2.013903,112.935677,district,"Kapit, Sarawak",Kapit,Sarawak,
+22279,3.093278,101.723062,address,"PERSIARAN MEWAH, BANDAR TUN RAZAK, Bandar Tun Razak",Bandar Tun Razak,W.P. Kuala Lumpur,
+22280,2.912193,101.684669,district,"Wp Putrajaya, W.P. Putrajaya",Wp Putrajaya,W.P. Putrajaya,
+22282,5.865894,118.096158,address,"BANDAR TONG HUAT BATU 3, JALAN UTARA BATU 3, Sandakan",Sandakan,Sabah,
+22283,5.019814,102.038266,district,"Gua Musang, Kelantan",Gua Musang,Kelantan,18108
+22284,6.165584,102.189331,address,"KAMPUNG CHABANG EMPAT, TUMPAT, Tumpat",Tumpat,Kelantan,
+22285,6.008094,102.092513,district,"Pasir Mas, Kelantan",Pasir Mas,Kelantan,
+22286,5.839127,118.115860,district,"Sandakan, Sabah",Sandakan,Sabah,
+22287,5.839127,118.115860,district,"Sandakan, Sabah",Sandakan,Sabah,
+22288,5.839127,118.115860,district,"Sandakan, Sabah",Sandakan,Sabah,
+22289,5.859957,118.097035,address,"LOT, Sandakan",Sandakan,Sabah,
+22290,5.633639,117.824301,address,"LOT C-01, Sandakan",Sandakan,Sabah,
+22291,5.839127,118.115860,district,"Sandakan, Sabah",Sandakan,Sabah,
+22293,5.978007,116.072899,district,"Kota Kinabalu, Sabah",Kota Kinabalu,Sabah,

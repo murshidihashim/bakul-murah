@@ -1,0 +1,102 @@
+# Build the data from PriceCatcher and publish the site on GitHub Pages.
+#
+# Runs every Monday 05:17 UTC (13:17 Malaysia time), on every push to main, and by hand
+# (Actions tab -> refresh-and-deploy -> Run workflow).
+# The price data is rebuilt on each run and deployed with the site; it is not committed.
+# Only new shop map points (etl/geo/*.csv, from OpenStreetMap) are committed back.
+# One-time setup: Settings -> Pages -> Build and deployment -> Source: GitHub Actions.
+
+name: refresh-and-deploy
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # The first run looks up shop locations at 1 request per second; later runs only new shops.
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Keep downloaded months between runs
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: pricecatcher-raw-${{ github.run_id }}
+          restore-keys: pricecatcher-raw-
+
+      - name: Fetch PriceCatcher
+        run: python etl/fetch_pricecatcher.py --months 12
+
+      - name: Build
+        run: python etl/build_dataset.py --months 12
+
+      - name: Shop locations (OpenStreetMap, new shops only)
+        run: python etl/geocode_premises.py --max-new 3000
+
+      - name: Build again with shop locations
+        run: python etl/build_dataset.py --months 12
+
+      - name: Test
+        run: |
+          python -m pytest etl/tests -q
+          node --test tests/web/basket.test.js tests/web/listparse.test.js tests/web/near.test.js
+
+      - name: Size report
+        run: |
+          {
+            echo "## Bakul Murah build"
+            echo "Data date: $(python -c 'import json;print(json.load(open("web/data/meta.json"))["data_date"])')"
+            echo "District files: $(ls web/data/d/*.json | wc -l)"
+            echo "Site size: $(du -sh web | cut -f1)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save new shop locations
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add etl/geo
+          if git diff --cached --quiet; then echo "No new shop locations."; else
+            git commit -m "Shop locations: new shops $(date -u +%Y-%m-%d)"
+            git pull --rebase origin "$GITHUB_REF_NAME"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
