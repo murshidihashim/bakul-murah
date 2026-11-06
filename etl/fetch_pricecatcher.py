@@ -37,6 +37,7 @@ LOOKUPS = ["lookup_item", "lookup_premise"]
 USER_AGENT = "grocery-prototype-fetch/1.0 (personal, non-commercial prototype)"
 HERE = Path(__file__).resolve().parent
 DEFAULT_OUT = HERE.parent / "data" / "raw"
+DEADLINE_MINUTES = 10  # per file, on top of the per-read timeout
 
 
 def last_n_months(n: int, today: date | None = None) -> list[str]:
@@ -56,18 +57,27 @@ def file_url(stem: str, fmt: str = "parquet") -> str:
     return f"{BASE_URL}{stem}.{fmt}"
 
 
-def download(url: str, dest: Path, retries: int = 3, timeout: int = 120) -> int:
-    """Download url to dest atomically. Returns bytes written. Raises on failure."""
+def download(url: str, dest: Path, retries: int = 3, timeout: int = 120,
+             deadline: float = DEADLINE_MINUTES * 60) -> int:
+    """Download url to dest atomically. Returns bytes written. Raises on failure.
+
+    timeout: seconds a single read may wait. deadline: seconds for the whole file, retries
+    included, so a slow trickle cannot hang the run (it can overrun by one read timeout).
+    On failure dest is left as it was."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".part")
+    end = time.monotonic() + deadline
     last_err: Exception | None = None
     for attempt in range(1, retries + 1):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
             with urllib.request.urlopen(req, timeout=timeout) as r, open(tmp, "wb") as f:
+                read = getattr(r, "read1", None) or r.read  # read1 returns after one network read
                 total = 0
                 while True:
-                    chunk = r.read(1 << 20)
+                    if time.monotonic() > end:
+                        raise TimeoutError(f"took longer than {deadline / 60:g} minutes")
+                    chunk = read(1 << 20)
                     if not chunk:
                         break
                     f.write(chunk)
@@ -80,8 +90,10 @@ def download(url: str, dest: Path, retries: int = 3, timeout: int = 120) -> int:
             last_err = e
             if e.code == 404:
                 break  # month not published yet; no point retrying
-        except Exception as e:  # network hiccup
+        except Exception as e:  # network hiccup, or out of time
             last_err = e
+        if time.monotonic() + 2 * attempt > end:
+            break  # no time left for another try
         time.sleep(2 * attempt)
     if tmp.exists():
         tmp.unlink()
@@ -95,7 +107,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--format", default="parquet", choices=["parquet", "csv"],
                     help="parquet is much smaller; csv needs no pyarrow to read")
     ap.add_argument("--force", action="store_true", help="re-download every month")
+    ap.add_argument("--deadline", type=float, default=DEADLINE_MINUTES,
+                    help="minutes allowed per file before giving up (default 10)")
     args = ap.parse_args(argv)
+    deadline = args.deadline * 60
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -111,7 +126,7 @@ def main(argv: list[str] | None = None) -> int:
     for stem in LOOKUPS:
         dest = out / f"{stem}.{args.format}"
         try:
-            n = download(file_url(stem, args.format), dest)
+            n = download(file_url(stem, args.format), dest, deadline=deadline)
             print(f"OK   {dest.name}  {n/1e6:.1f} MB")
             log["files"].append({"file": dest.name, "bytes": n})
         except RuntimeError as e:
@@ -125,7 +140,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"skip {dest.name} (already have it)")
             continue
         try:
-            n = download(file_url(stem, args.format), dest)
+            n = download(file_url(stem, args.format), dest, deadline=deadline)
             print(f"OK   {dest.name}  {n/1e6:.1f} MB")
             log["files"].append({"file": dest.name, "bytes": n})
         except RuntimeError as e:

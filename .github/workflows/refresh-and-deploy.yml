@@ -1,9 +1,10 @@
 # Build the data from PriceCatcher and publish the site on GitHub Pages.
 #
 # Runs every Monday 05:17 UTC (13:17 Malaysia time), on every push to main, and by hand
-# (Actions tab -> refresh-and-deploy -> Run workflow).
-# The price data is rebuilt on each run and deployed with the site; it is not committed.
-# Only new shop map points (etl/geo/*.csv, from OpenStreetMap) are committed back.
+# (Actions tab -> refresh-and-deploy -> Run workflow, on any branch).
+# The price data is rebuilt on each run and deployed with the site; it is not committed on main.
+# Shop map points and the postcode table (etl/geo/) are committed back.
+# Only main deploys. A run on another branch also commits web/data there, as a preview to test.
 # One-time setup: Settings -> Pages -> Build and deployment -> Source: GitHub Actions.
 
 name: refresh-and-deploy
@@ -14,6 +15,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      geo_minutes:
+        description: "Minutes for shop location lookups (at most 100)"
+        required: false
+        default: "40"
 
 permissions:
   contents: write
@@ -21,14 +27,18 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: refresh-and-deploy-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    # The first run looks up shop locations at 1 request per second; later runs only new shops.
-    timeout-minutes: 180
+    timeout-minutes: 210
+    defaults:
+      run:
+        shell: bash
+    env:
+      GEO_MINUTES: ${{ inputs.geo_minutes || '40' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -49,21 +59,77 @@ jobs:
           restore-keys: pricecatcher-raw-
 
       - name: Fetch PriceCatcher
+        timeout-minutes: 20
         run: python etl/fetch_pricecatcher.py --months 12
 
+      # Optional: without a fresh table the old one (or district centres) is used.
+      - name: Fetch postcodes (GeoNames)
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python etl/fetch_postcodes.py
+
       - name: Build
+        id: build
+        timeout-minutes: 15
         run: python etl/build_dataset.py --months 12
 
-      - name: Shop locations (OpenStreetMap, new shops only)
-        run: python etl/geocode_premises.py --max-new 3000
+      # Optional: new shops first, then retries of weak points, until the minutes run out.
+      - name: Shop locations (OpenStreetMap)
+        continue-on-error: true
+        timeout-minutes: 120
+        run: |
+          m="$GEO_MINUTES"
+          case "$m" in ''|*[!0-9]*) m=40 ;; esac
+          if [ "$m" -gt 100 ]; then m=100; fi
+          python etl/geocode_premises.py --max-minutes "$m" | tee "$RUNNER_TEMP/geo.log"
+          echo "Shop locations: \`$(tail -n 1 "$RUNNER_TEMP/geo.log")\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build again with shop locations
+        id: build2
+        timeout-minutes: 15
         run: python etl/build_dataset.py --months 12
 
       - name: Test
+        timeout-minutes: 10
         run: |
           python -m pytest etl/tests -q
           node --test tests/web/basket.test.js tests/web/listparse.test.js tests/web/near.test.js
+
+      # Runs even if an optional step or the tests failed, but only after a good build.
+      # Off main, web/data goes in its own commit: drop that commit when merging into main.
+      - name: Save new shop locations
+        if: ${{ !cancelled() && steps.build2.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          saved=no
+          git add etl/geo
+          if ! git diff --cached --quiet; then
+            git commit -m "Shop locations: new shops $(date -u +%Y-%m-%d)"
+            saved=yes
+          fi
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            git add -f web/data
+            if ! git diff --cached --quiet; then
+              git commit -m "Preview data $(date -u +%Y-%m-%d) (to test this branch; do not merge into main)"
+              saved=yes
+            fi
+          fi
+          if [ "$saved" = yes ]; then
+            git pull --rebase origin "$GITHUB_REF_NAME"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          else
+            echo "Nothing new to save."
+          fi
+
+      # A failure here stops the deploy, so the last good site stays live.
+      - name: Check data
+        timeout-minutes: 5
+        run: |
+          curl -fsS https://murshidihashim.github.io/bakul-murah/data/meta.json -o "$RUNNER_TEMP/prev_meta.json" || true
+          python etl/check_data.py --previous "$RUNNER_TEMP/prev_meta.json" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Size report
         run: |
@@ -74,25 +140,17 @@ jobs:
             echo "Site size: $(du -sh web | cut -f1)"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Save new shop locations
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add etl/geo
-          if git diff --cached --quiet; then echo "No new shop locations."; else
-            git commit -m "Shop locations: new shops $(date -u +%Y-%m-%d)"
-            git pull --rebase origin "$GITHUB_REF_NAME"
-            git push origin "HEAD:$GITHUB_REF_NAME"
-          fi
-
       - uses: actions/configure-pages@v5
+        if: github.ref == 'refs/heads/main'
 
       - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main'
         with:
           path: web
 
   deploy:
     needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
