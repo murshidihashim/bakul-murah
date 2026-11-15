@@ -186,6 +186,9 @@
   var NUMWORDS = { satu: 1, se: 1, one: 1, a: 1, dua: 2, two: 2, tiga: 3, three: 3, empat: 4, four: 4,
                    lima: 5, five: 5, enam: 6, six: 6, tujuh: 7, seven: 7, lapan: 8, eight: 8,
                    sembilan: 9, nine: 9, sepuluh: 10, ten: 10, setengah: 0.5, separuh: 0.5, half: 0.5 };
+  var HALF = /^(setengah|separuh)$/;              // "dua setengah kilo", "sekilo setengah" = and a half
+  var MEASURED = { kg: true, g: true, l: true, ml: true };
+  var MAX_QTY = 50;
   var UNITS = {
     kg: ["kg", "kgs", "kilo", "kilos", "kilogram", "kilograms", "kilogramme"],
     g: ["g", "gm", "gr", "gram", "grams", "gramme"],
@@ -198,7 +201,7 @@
           "tin", "tins", "can", "cans", "botol", "bottle", "bottles", "btl", "kotak", "box", "boxes", "kotak2",
           "x", "unit", "units", "ikat", "bundle", "set", "balang", "jar", "jars", "tube", "batang", "uncang"]
   };
-  var UNIT_OF = {};
+  var UNIT_OF = Object.create(null);   // no inherited keys: "constructor" is not a unit
   Object.keys(UNITS).forEach(function (u) { UNITS[u].forEach(function (w) { UNIT_OF[w] = u; }); });
   // "sekilo", "sepapan", "sebotol"... = 1 of that unit
   function seWord(w) {
@@ -224,37 +227,88 @@
       .filter(function (l) { return l && /[a-zA-Z]/.test(l) && !/:\s*$/.test(l); });   // "Barang dapur:" is a heading
   }
 
+  // Fractions people write: "1/2", "1 1/2", "½", "1½". norm() drops "/", so they become decimals first.
+  var VULGAR = { "½": "1/2", "⅓": "1/3", "⅔": "2/3", "¼": "1/4", "¾": "3/4", "⅛": "1/8" };
+  function fractions(s) {
+    return String(s || "")
+      .replace(/[½⅓⅔¼¾⅛]/g, function (c) { return " " + VULGAR[c] + " "; })
+      .replace(/[⁄∕]/g, "/")
+      .replace(/(^|[^\d.])(?:(\d+)\s+)?(\d{1,2})\s*\/\s*(\d{1,2})(?![\d.])/g, function (all, pre, whole, a, b) {
+        if (!Number(b)) return all;
+        return pre + String(Math.round(((whole ? Number(whole) : 0) + Number(a) / Number(b)) * 1000) / 1000);
+      });
+  }
+
+  function isCount(v) { return v >= 1 && v <= 99 && v % 1 === 0; }
+
+  // An amount that starts at toks[i]: "10 kg", "2", "2 x", "dua tin", "sekilo", "1 setengah kg", "dua kilo setengah".
+  // Returns {v, unit, end} (end = index of its last token) or null.
+  function amountAt(toks, i) {
+    var w = toks[i] || "", v, j = i + 1, unit = seWord(w);
+    if (unit) { v = 1; j = i; }
+    else {
+      if (/^\d+(\.\d+)?$/.test(w)) v = Number(w);
+      else if (typeof NUMWORDS[w] === "number" && w !== "a" && w !== "se") v = NUMWORDS[w];
+      else return null;
+      if (v % 1 === 0 && v >= 1 && HALF.test(toks[j] || "")) { v += 0.5; j++; }
+      unit = UNIT_OF[toks[j]] || null;
+      if (toks[j] === "x" && /^\d/.test(toks[j + 1] || "")) unit = null;   // "30 x 2" is 30 times 2, not 30 packs
+      if (!unit && !/^\d/.test(w)) return null;                          // number words count only before a unit
+      if (!unit) j--;
+    }
+    if (MEASURED[unit] && v % 1 === 0 && HALF.test(toks[j + 1] || "")) { v += 0.5; j++; }
+    return { v: v, unit: unit, end: j };
+  }
+
   /**
    * Read the amount from one line.
-   * Returns {words: [remaining words], n: number|null, unit: "kg"|"g"|"l"|"ml"|"biji"|"papan"|"ekor"|"pek"|null}
+   * Returns {words: [remaining words], n: number|null, unit: "kg"|"g"|"l"|"ml"|"biji"|"papan"|"ekor"|"pek"|null,
+   *          times?: how many of that amount ("beras 10kg x 2", "2 beg beras 10kg"), only when more than 1,
+   *          count?: a plain number between the name and the amount ("beras 2 10kg"), left out of words. It is
+   *                  a pack count, or part of a name ("beras super 5 10kg"); matchLine checks the item names.}
    */
   function parseQty(line) {
-    var s = norm(line)
+    var s = norm(fractions(String(line || "").replace(/(\d),(\d)/g, "$1.$2"))   // "1,5 kg", as splitLines does
+                   .replace(/[×✕]/g, " x ").replace(/\*\s*(?=\d)/g, " x "))
       .replace(/\b100\s*plus\b/g, "100plus").replace(/\b3\s*in\s*1\b/g, "3in1")
-      .replace(/(\d)\s*(kg|g|gm|gr|ml|l|ltr|lt|kilo|biji|pcs|x)\b/g, "$1 $2")   // 10kg -> 10 kg
-      .replace(/\bx\s*(\d)/g, "x $1")
-      .replace(/(\d)\s*x\b/g, "$1 x");
-    var toks = s.replace(/[,']/g, " ").split(/\s+/).filter(Boolean);
-    var n = null, unit = null, rest = [], i;
+      .replace(/(\d)x(?=\d)/g, "$1 x ")                                                                 // 2x10kg
+      .replace(/(\d\s*)([a-z]+)x(?=\s*\d)/g, function (all, d, u) { return UNIT_OF[u] ? d + u + " x " : all; })   // 10kgx2
+      .replace(/(\d)([a-z]+)\b/g, function (all, d, u) { return UNIT_OF[u] ? d + " " + u : all; })        // 10kg -> 10 kg
+      .replace(/\bx\s*(\d)/g, "x $1");
+    var toks = s.replace(/[,'-]/g, " ").split(/\s+/)
+      .map(function (w) { return w.replace(/^\.(?=\d)/, "0.").replace(/^\.+|\.+$/g, ""); })   // "kg." -> kg, ".5" -> 0.5
+      .filter(Boolean);
+    var n = null, unit = null, times = 1, count = null, bare = null, rest = [], i, a;
     for (i = 0; i < toks.length; i++) {
-      var w = toks[i], num = /^\d+(\.\d+)?$/.test(w) ? Number(w) : null;
-      if (num == null && /^\d+\/\d+$/.test(w)) { var f = w.split("/"); num = Number(f[0]) / Number(f[1]); }
-      if (num == null && NUMWORDS[w] != null && (UNIT_OF[toks[i + 1]] || /^(kilo|kg)$/.test(toks[i + 1] || "")) && w !== "a" && w !== "se") num = NUMWORDS[w];
-      if (num != null && n == null) {
-        var nx = toks[i + 1];
-        if (nx === "x") { n = num; unit = "pek"; i++; continue; }           // "2 x milo"
-        if (nx && UNIT_OF[nx]) { n = num; unit = UNIT_OF[nx]; i++; continue; }
-        n = num; continue;                                                 // bare number
+      var w = toks[i];
+      a = amountAt(toks, i) || (w === "x" ? amountAt(toks, i + 1) : null);   // "x 2", "x 2 beg"
+      // "milo x2", "milo x 2 pek": a pack count. "beras x 10kg" is an amount; "x2 biji sawi" keeps "biji" as a word.
+      if (w === "x" && n == null && /^\d+(\.\d+)?$/.test(toks[i + 1] || "") && !MEASURED[a.unit]) {
+        n = Number(toks[i + 1]); unit = "pek"; i = a.unit === "pek" ? a.end : i + 1; continue;
       }
-      if (w === "x" && toks[i + 1] && /^\d+(\.\d+)?$/.test(toks[i + 1]) && n == null) { n = Number(toks[i + 1]); unit = "pek"; i++; continue; }
-      var se = seWord(w);
-      if (se && n == null) { n = 1; unit = se; continue; }
-      if (unit == null && n != null && UNIT_OF[w] && w !== "x") { unit = UNIT_OF[w]; continue; }
-      if (w === "half" && toks[i + 1] === "kg") { n = 0.5; unit = "kg"; i++; continue; }
+      if (a && n == null) {
+        n = a.v; unit = a.unit; i = a.end;
+        // A plain number. Where it stands matters if a weight or volume comes after it.
+        if (!unit) bare = { w: w, at: rest.length, lead: rest.every(function (r) { return FILLER.test(r); }) };
+        continue;
+      }
+      // A second amount after the first. "10kg x 2", "10kg 2 beg": that many packs of it.
+      if (a && (a.unit === "pek" || (w === "x" && !a.unit)) && isCount(a.v)) { times *= a.v; i = a.end; continue; }
+      // A weight or volume after a pack count or a plain number is the amount.
+      if (a && MEASURED[a.unit] && (unit == null || unit === "pek")) {
+        if (isCount(n) && (unit === "pek" || w === "x" || (bare && bare.lead))) times *= n;   // "2 x beras 10kg", "2 beras 10kg"
+        else if (bare && isCount(n)) count = n;                                              // "beras 2 10kg", "beras super 5 10kg"
+        else if (bare) rest.splice(bare.at, 0, bare.w);                                      // "dutch lady 123 850g"
+        n = a.v; unit = a.unit; i = a.end; bare = null; continue;
+      }
+      if (unit == null && n != null && UNIT_OF[w] && w !== "x") { unit = UNIT_OF[w]; bare = null; continue; }
+      if (w === "x") continue;   // a stray "x" without a number says nothing
       rest.push(w);
     }
-    // "setengah kilo" / "half kg" after other words
-    return { words: rest, n: n, unit: unit };
+    var out = { words: rest, n: n, unit: unit };
+    if (times !== 1) out.times = times;
+    if (count) out.count = count;
+    return out;
   }
 
   // ---------- catalogue ----------
@@ -268,7 +322,7 @@
     this.byCode = new Map();
     var self = this;
     items.forEach(function (it) {
-      var u = parseUnitLite(it.unit);
+      var u = parseUnit(it.unit);
       self.byCode.set(it.code, { it: it, size: u, hay: " " + words(it.item + " " + it.item_category + " " + it.item_group).join(" ") + " " });
     });
     // Longest keys first so "bawang putih" wins over "bawang".
@@ -282,8 +336,12 @@
     this.keys.sort(function (a, b) { return b.k.length - a.k.length || b.k.join(" ").length - a.k.join(" ").length; });
   }
 
-  function parseUnitLite(u) {
-    // Same rules as Basket.parseUnit, repeated so this file has no dependency.
+  /**
+   * Pack size from a PriceCatcher unit string: "10 kg" -> {amt: 10000, base: "g"}, "1.5 liter" -> {1500, "ml"},
+   * "30 biji" -> {30, "pc"}, "5 X 79g" -> {395, "g"}. Unknown (e.g. diaper sizes) -> null.
+   * Same rules as Basket.parseUnit, repeated so this file has no dependency.
+   */
+  function parseUnit(u) {
     if (!u) return null;
     var s = String(u).toLowerCase().replace(/\+-|±/g, "").replace(/,/g, ".").trim();
     var mult = 1, mm = s.match(/^(\d+)\s*x\s*(.+)$/);
@@ -370,21 +428,43 @@
     return out;
   };
 
+  function isPerKg(size) { return !!size && size.base === "g" && size.amt === 1000; }
+
+  /**
+   * How many packs of `size` cover the wanted amount, rounded the way the reader rounds:
+   * 1 kg items (sold per kg) in 0.5 steps, other packs in whole packs, at most 50.
+   * want: an amount in the size's base unit, or {amt, base} (then null when the bases differ).
+   * size: {amt, base} from parseUnit(). Returns null when either is missing.
+   */
   function packsFor(want, size) {
-    // How many packs of `size` cover `want` (same base). Fresh 1 kg items allow halves.
-    var r = want / size.amt;
-    if (size.base === "g" && size.amt === 1000) return Math.max(0.5, Math.round(r * 2) / 2);
-    return Math.max(1, Math.ceil(r - 0.03));
+    var obj = want != null && typeof want === "object", amt = obj ? want.amt : want;
+    if (!size || !(size.amt > 0) || !(amt > 0) || (obj && want.base && want.base !== size.base)) return null;
+    var r = amt / size.amt;
+    if (isPerKg(size)) return Math.min(MAX_QTY, Math.max(0.5, Math.round(r * 2) / 2));
+    return Math.min(MAX_QTY, Math.max(1, Math.ceil(r - 0.03)));
   }
+
+  // Items whose one pack holds the amount: the same size, or close enough ("Milo 1kg" vs the 900 g pack).
+  function onePack(cands, want) {
+    var exact = cands.filter(function (v) { return sameSize(v.size, want); });
+    if (exact.length) return exact;
+    return cands.filter(function (v) { return v.size && v.size.base === want.base && Math.abs(v.size.amt - want.amt) <= want.amt * 0.15 && v.size.amt !== 1000; });
+  }
+
+  function amountCopy(a) { return a ? { amt: Math.round(a.amt * 1000) / 1000, base: a.base } : null; }
 
   /**
    * Match one line of a shopping list.
-   * Returns {raw, status: "ok"|"pick"|"none", code, alt:[codes], qty, flex, options:[codes], note}
+   * Returns {raw, status: "ok"|"pick"|"none", code, alt:[codes], qty, flex, options:[codes], note, want, size}
    *   ok:   a confident match. pick: a guess, the shopper should check. none: nothing found.
+   *   want: the total amount asked for, {amt, base: "g"|"ml"|"pc"}, or null when the line gives no amount (or only
+   *         a pack count such as "2 botol") or nothing matched. When the chosen packs only come close to it
+   *         (the 900 g Milo for "milo 1kg"), it is what those packs hold. Either way packsFor(want, size) = qty.
+   *   size: the chosen item's pack size, {amt, base}, or null when its unit cannot be read.
    */
   Catalogue.prototype.matchLine = function (raw) {
-    var q = parseQty(raw), ws = q.words, self = this;
-    var res = { raw: raw, status: "none", code: null, alt: [], qty: 1, flex: false, options: [], note: "" };
+    var q = parseQty(raw), ws = q.words, self = this, times = q.times || 1;
+    var res = { raw: raw, status: "none", code: null, alt: [], qty: 1, flex: false, options: [], note: "", want: null, size: null };
     if (!ws.length) return res;
 
     var found = this.findConcept(ws), cands, extra;
@@ -410,6 +490,14 @@
     }
     if (!cands.length) return res;
 
+    // A plain number between the name and the amount: part of the name when an item here has it
+    // ("beras super 5 10kg", "dugro 3 850g"), else the pack count ("beras 2 10kg").
+    if (q.count) {
+      var cw = String(q.count);
+      if (cands.some(function (v) { return hasWord(v.hay, cw); })) extra.push(cw);
+      else times *= q.count;
+    }
+
     // Extra words narrow the choice (brand, grade, origin): "beras jasmine", "telur gred b", "minyak saji".
     if (extra.length) {
       var narrowed = cands.filter(function (v) {
@@ -422,9 +510,12 @@
       }
     }
 
-    // Wanted amount, in the item's base unit where possible.
+    // Wanted amount as written, in the item's base unit where possible. "beras 10kg x 2": 10 kg, times 2.
     var want = null;
-    if (found && found.c.id === "telur" && q.unit == null && q.n != null && q.n >= 6) q.unit = "biji";
+    if (found && found.c.id === "telur" && q.unit == null && q.n != null) {
+      if (q.n < 6 && times >= 6) { var t = q.n; q.n = times; times = t; }   // "telur 2 x 30": 2 trays of 30
+      if (q.n >= 6) q.unit = "biji";
+    }
     if (q.unit === "kg" && q.n != null) want = { amt: q.n * 1000, base: "g" };
     else if (q.unit === "g" && q.n != null) want = { amt: q.n, base: "g" };
     else if (q.unit === "l" && q.n != null) want = { amt: q.n * 1000, base: "ml" };
@@ -435,32 +526,31 @@
       want = { amt: (q.n || 1) * found.c.kgEach * 1000, base: "g" };
       res.note = "ekor";
     }
+    var total = want && { amt: want.amt * times, base: want.base };
 
-    // Choose the pack size.
-    var pool = cands, chosenSize = null, exactHit = false;
+    // Choose the pack size. packs > 0: the amount is that many of one pack size.
+    var pool = cands, chosenSize = null, packs = 0, exact;
     if (want) {
-      var exact = cands.filter(function (v) { return sameSize(v.size, want); });
-      if (!exact.length) {
-        // Close enough to one pack (e.g. "Milo 1kg" vs the 900 g pack): treat as one pack.
-        exact = cands.filter(function (v) { return v.size && v.size.base === want.base && Math.abs(v.size.amt - want.amt) <= want.amt * 0.15 && v.size.amt !== 1000; });
-      }
-      if (exact.length) { pool = exact; chosenSize = exact[0].size; want = { amt: chosenSize.amt, base: chosenSize.base }; exactHit = true; }
+      exact = onePack(cands, want);
+      if (exact.length) packs = times;                                            // "beras 10kg x 2": two 10 kg bags
+      else if (times > 1 && (exact = onePack(cands, total)).length) packs = 1;    // "maggi 5 x 79g": one 395 g pack
+      if (packs) { pool = exact; chosenSize = exact[0].size; }
       else {
         // Biggest pack that divides the amount evenly, else the 1 kg / per-kg item, else the biggest pack below it.
-        var fit = cands.filter(function (v) { return v.size && v.size.base === want.base && v.size.amt <= want.amt + 1e-9; })
+        var fit = cands.filter(function (v) { return v.size && v.size.base === total.base && v.size.amt <= total.amt + 1e-9; })
                        .sort(function (a, b) { return b.size.amt - a.size.amt; });
-        var even = fit.filter(function (v) { var r = want.amt / v.size.amt; return Math.abs(r - Math.round(r)) < 0.03; });
+        var even = fit.filter(function (v) { var r = total.amt / v.size.amt; return Math.abs(r - Math.round(r)) < 0.03; });
         var pickF = even[0] || fit[0];
         if (pickF) { chosenSize = pickF.size; pool = cands.filter(function (v) { return sameSize(v.size, chosenSize); }); }
         else {
-          var up = cands.filter(function (v) { return v.size && v.size.base === want.base; })
+          var up = cands.filter(function (v) { return v.size && v.size.base === total.base; })
                         .sort(function (a, b) { return a.size.amt - b.size.amt; });
           if (up[0]) { chosenSize = up[0].size; pool = cands.filter(function (v) { return sameSize(v.size, chosenSize); }); }
         }
       }
     }
     if (!chosenSize && found && found.c.size) {
-      var def = parseUnitLite(found.c.size), dp = cands.filter(function (v) { return sameSize(v.size, def); });
+      var def = parseUnit(found.c.size), dp = cands.filter(function (v) { return sameSize(v.size, def); });
       if (dp.length) { pool = dp; chosenSize = def; }
     }
     if (!chosenSize) {
@@ -491,16 +581,23 @@
     }
 
     // Quantity in packs.
-    if (want && chosenSize && chosenSize.base === want.base) res.qty = packsFor(want.amt, chosenSize);
-    else if (q.n != null && (q.unit === "pek" || q.unit === "biji" || q.unit == null)) res.qty = q.n;
-    else if (q.n != null && q.unit === "ekor") res.qty = q.n;
-    res.qty = Math.max(0.5, Math.min(50, res.qty));
-    if (chosenSize && !(chosenSize.base === "g" && chosenSize.amt === 1000)) res.qty = Math.max(1, Math.round(res.qty));
+    if (want && chosenSize && chosenSize.base === want.base) res.qty = packs || packsFor(total.amt, chosenSize) || 1;
+    else if (q.n != null && (q.unit === "pek" || q.unit === "biji" || q.unit === "ekor" || q.unit == null)) res.qty = q.n * times;
+    else res.qty = times;
+    // Half kilos for an item sold by the kilo, whole packs for the rest (also when the pack size is unknown).
+    res.qty = Math.min(MAX_QTY, isPerKg(main.size) ? Math.max(0.5, Math.round(res.qty * 2) / 2) : Math.max(1, Math.round(res.qty)));
+
+    // For the review screen, to redo the quantity when the shopper picks another item.
+    res.size = amountCopy(main.size);
+    if (total && total.amt > 0) {
+      var held = main.size && main.size.base === total.base && packsFor(total, main.size) !== res.qty;
+      res.want = amountCopy(held ? { amt: main.size.amt * res.qty, base: total.base } : total);
+    }
 
     res.status = found && (cands.length === 1 || found.c.flex || found.c.prefer || extra.length || found.brand) ? "ok" : "pick";
-    if (want && chosenSize && !exactHit && !(chosenSize.base === "g" && chosenSize.amt === 1000) && !res.note) {
-      var ratio = want.amt / chosenSize.amt;
-      if (chosenSize.base !== want.base || Math.abs(ratio - Math.round(ratio)) > 0.03 || ratio < 1) res.note = "size";
+    if (want && chosenSize && !packs && !isPerKg(chosenSize) && !res.note) {
+      var ratio = total.amt / chosenSize.amt;
+      if (chosenSize.base !== total.base || Math.abs(ratio - Math.round(ratio)) > 0.03 || ratio < 1) res.note = "size";
     }
     return res;
   };
@@ -511,5 +608,6 @@
     return splitLines(text).map(function (l) { return self.matchLine(l); });
   };
 
-  return { Catalogue: Catalogue, splitLines: splitLines, parseQty: parseQty, CONCEPTS: CONCEPTS, near: near };
+  return { Catalogue: Catalogue, splitLines: splitLines, parseQty: parseQty, parseUnit: parseUnit, packsFor: packsFor,
+           CONCEPTS: CONCEPTS, near: near };
 });
