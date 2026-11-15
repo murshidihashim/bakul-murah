@@ -82,5 +82,5 @@ Offline sample instead of real data: `python etl/make_synthetic.py` then `python
 ```
 python -m pytest etl/tests -q
 node --test tests/web/basket.test.js tests/web/listparse.test.js tests/web/near.test.js
-node tests/web/e2e.js        # Playwright, needs built data in web/data
+node tests/web/e2e.js        # Playwright, needs a real build in web/data (the sample has fewer items, so some list checks fail on it)
 ```

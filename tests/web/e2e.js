@@ -227,12 +227,13 @@ const PHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isM
   const nm = await l.$$eval("#matchList li", x => x.length);
   const nNone = await l.$$eval("#matchList li.none", x => x.length);
   const nGuess = await l.$$eval("#matchList li.guess", x => x.length);
-  const qtyOf = i => l.$eval(`#matchList li:nth-child(${i}) input[type=number]`, x => x.value);
+  const qtyOf = i => l.$$eval(`#matchList li:nth-child(${i}) input[type=number]`, xs => xs.length ? xs[0].value : null);
   check("pasted list splits into 11 lines", nm === 11, nm + " lines");
   check("unknown item is marked not found", nNone === 1, nNone + " not found");
   check("vague line ('ikan') is marked Check this", nGuess >= 1, nGuess + " guesses");
   check("'beras 10kg x 2' reads as 2 bags", (await qtyOf(1)) === "2", "qty " + (await qtyOf(1)));
-  check("'beras 10kg x 2' keeps any brand on", await l.$eval("#matchList li:nth-child(1) input[type=checkbox]", x => x.checked));
+  const flex1 = await l.$$eval("#matchList li:nth-child(1) input[type=checkbox]", xs => xs.length ? xs[0].checked : null);
+  check("'beras 10kg x 2' keeps any brand on", flex1 === true, flex1 === null ? "no other brand in this data" : "");
   check("'telur 2 papan' reads as 2 trays of 30", (await qtyOf(2)) === "2");
   check("'ayam 2 ekor' reads as 3 kg", (await qtyOf(4)) === "3");
   check("'gula 1kg x2' reads as 2", (await qtyOf(10)) === "2", "qty " + (await qtyOf(10)));
@@ -382,7 +383,7 @@ const PHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isM
   // ---------- near me ----------
   // Uses the real shop locations when the data has them; otherwise a temporary copy with made-up
   // test locations around Petaling, so the feature is always tested end to end.
-  let NEAR_URL = URL, tmpWeb = null;
+  let NEAR_URL = URL, tmpWeb = null, testPostcodes = null;
   if (!meta.geo) {
     const os = require("os");
     tmpWeb = fs.mkdtempSync(path.join(os.tmpdir(), "bakul-geo-"));
@@ -395,6 +396,9 @@ const PHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isM
       fs.writeFileSync(f, txt); fs.writeFileSync(f.replace(/\.json$/, ".js"), `(window.PCDATA=window.PCDATA||{})[${JSON.stringify(key)}]=${txt};\n`);
     };
     const tm = read(path.join(tmpWeb, "data/meta.json"));
+    // One postcode per test centre, so the postcode step works even when the addresses have none.
+    const centrePcs = { "selangor--petaling": "40100", "selangor--petaling-jaya": "46000",
+                        "selangor--klang": "41000", "selangor--hulu-langat": "43000" };
     const postcodes = {};
     Object.entries(centres).forEach(([slug, c]) => {
       const f = path.join(tmpWeb, "data/d", slug + ".json"); if (!fs.existsSync(f)) return;
@@ -406,11 +410,13 @@ const PHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isM
         return [p[0], p[1], p[2], p[3], lat, lon, i % 9 === 8 ? "district" : "address"];
       });
       d.centre = c;
+      if (!postcodes[centrePcs[slug]]) postcodes[centrePcs[slug]] = [c[0], c[1]];
       write(f, "d/" + slug, d);
       const s2 = Object.keys(tm.areas).find(k => tm.areas[k].some(a => a.slug === slug));
       tm.areas[s2].find(a => a.slug === slug).geo = [c[0], c[1], 6];
     });
     tm.geo = { shops_located: 0, source: "test", source_url: "https://www.openstreetmap.org/copyright", postcodes };
+    testPostcodes = postcodes;
     write(path.join(tmpWeb, "data/meta.json"), "meta", tm);
     NEAR_URL = "file://" + path.join(tmpWeb, "index.html");
   }
@@ -456,7 +462,7 @@ const PHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isM
   check("a wider radius includes more located shops", n10 >= nearInfo.located, `${nearInfo.located} -> ${n10}`);
   await shot(n, "mobile-13-near.png", { fullPage: true });
   // Postcode instead of GPS, including one that is not in the table exactly.
-  const pcs = Object.keys((meta.geo || {}).postcodes || {});
+  const pcs = Object.keys((meta.geo ? meta.geo.postcodes : testPostcodes) || {});
   const pc = pcs[0] || "40100";
   await n.fill("#pcIn", pc);
   await n.click("#pcForm button");
