@@ -10,6 +10,9 @@
     set: function (k, v) { try { localStorage.setItem("bakul." + k, JSON.stringify(v)); } catch (e) { /* private mode */ } }
   };
 
+  // A radius saved by an older version may be text or a value no longer offered.
+  function okRadius(r) { r = Number(r); return [3, 5, 10, 20].indexOf(r) >= 0 ? r : 5; }
+
   var S = {
     lang: store.get("lang", (navigator.language || "en").toLowerCase().indexOf("ms") === 0 ? "ms" : "en"),
     theme: store.get("theme", null),
@@ -19,7 +22,7 @@
     stopCost: store.get("stopCost", 5), planK: null, planOpen: null, avgOpen: false, lists: store.get("lists", []),
     // "Near me": the mode and radius are remembered; the location itself stays in memory only.
     // mode is null on a first visit and is set once the data has loaded ("near" when shop locations exist).
-    mode: store.get("mode", null), radius: store.get("radius", 5), near: null, nearMsg: "",
+    mode: store.get("mode", null), radius: okRadius(store.get("radius", 5)), near: null, nearMsg: "",
     meta: null, items: new Map(), d: null, idx: null, dlgCode: null, cat: null, matches: [], shared: null,
     seq: 0, retry: null, undo: null, resultsInView: false
   };

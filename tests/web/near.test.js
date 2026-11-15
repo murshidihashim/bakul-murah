@@ -246,3 +246,13 @@ test("mergeNear does not copy the user's location into its result", () => {
   const s = JSON.stringify(m);
   assert.ok(s.indexOf("3.0004321") < 0 && s.indexOf("101.5004321") < 0);
 });
+
+test("mergeNear and districtsWithin treat a radius given as text as a number", () => {
+  // "3" + 5 would be "35" (km) if the radius stayed text; the home-district reach must stay 3 + 5 km.
+  const Q = () => ({ district: "Q", premises: [[61, "Q unloc", "T", "x", 3.03, 101.5, "district"]], prices: {} });
+  assert.deepEqual(N.mergeNear([Q()], 2.956, LON, "3").near.home, null);   // centre 8.2 km away
+  assert.equal(N.mergeNear([Q()], 2.96, LON, "3").near.home, "Q");          // 7.8 km away
+  assert.deepEqual(N.mergeNear(files2(), LAT, LON, "5").near,
+    { radius: 5, districts: ["One", "Two"], located: 2, unlocated: 2, home: "One" });
+  assert.deepEqual(N.districtsWithin(areas, 3.0, 101.5, "5").map(x => x.slug), ["a--one"]);
+});

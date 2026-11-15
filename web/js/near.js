@@ -16,6 +16,7 @@
 
   /** District slugs whose shops could be within radiusKm. areas: meta.areas ({state: [{slug, geo:[lat, lon, r]}]}). */
   function districtsWithin(areas, lat, lon, radiusKm) {
+    radiusKm = Number(radiusKm);
     var out = [];
     Object.keys(areas).forEach(function (st) {
       areas[st].forEach(function (a) {
@@ -78,6 +79,7 @@
    * History, the price feed and the months come from the home district (else the first file).
    */
   function mergeNear(files, lat, lon, radiusKm) {
+    radiusKm = Number(radiusKm);              // a radius read back as text must not become "5" + 5 = "55"
     var shops = [];
     files.forEach(function (f, fi) {
       (f.premises || []).forEach(function (p, pi) {
