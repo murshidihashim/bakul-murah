@@ -63,6 +63,19 @@
   }
 
   /**
+   * Like-for-like totals for two shops: only the basket lines that both shops price (any brand aware).
+   * Returns {n: lines both price, a: shop pA's total for them, b: shop pB's total for them}.
+   */
+  function sharedTotals(idx, basket, pA, pB) {
+    var n = 0, a = 0, b = 0;
+    for (var i = 0; i < basket.length; i++) {
+      var ea = priceAt(idx, basket[i], pA), eb = priceAt(idx, basket[i], pB);
+      if (ea && eb) { n++; a += ea.p * basket[i].qty; b += eb.p * basket[i].qty; }
+    }
+    return { n: n, a: round2(a), b: round2(b) };
+  }
+
+  /**
    * Headline numbers. Compares shops that have every item.
    * Returns {kind: "save"|"only"|"none"|"empty", best, median, max, save, fullCount}
    */
@@ -143,8 +156,12 @@
   /**
    * Plans for 1, 2 and 3 stops, and which one to recommend.
    * stopCost: what the shopper says one extra stop is worth (RM).
+   * A plan with more stops is kept only when it covers more items than the best kept plan with fewer
+   * stops, or the same number of items for at least RM 0.01 less. Other plans are not returned, so an
+   * extra stop is never offered when it buys less or saves nothing. Look options up by k, not by position.
    * Recommends the plan that covers the most items; among those, the lowest total + (stops - 1) x stopCost.
    * Returns {options: [{k, shops, total, have, assign, saving}], rec: k}
+   * saving: RM saved against the 1-stop plan when the plan covers the same items, else null (covers more).
    */
   function planOptions(idx, nPremises, basket, rows, stopCost, maxShops) {
     if (!rows || !rows.length || !basket.length) return { options: [], rec: 0 };
@@ -153,14 +170,19 @@
     var options = [{ k: 1, shops: [r0.pidx], total: r0.total, have: r0.have, assign: assign1 }];
     [2, 3].forEach(function (k) {
       var pl = bestPlan(idx, nPremises, basket, rows, k, maxShops);
-      if (pl) { pl.k = k; options.push(pl); }
+      // Each kept plan beats the ones before it, so the last kept plan is the best with fewer stops.
+      var last = options[options.length - 1];
+      if (pl && (pl.have > last.have || (pl.have === last.have && round2(last.total - pl.total) >= 0.01))) {
+        pl.k = k; options.push(pl);
+      }
     });
     options.forEach(function (o) { o.saving = o.have === r0.have ? round2(r0.total - o.total) : null; });
     var cost = stopCost == null ? 5 : stopCost, rec = options[0];
     options.forEach(function (o) {
       var score = o.total + (o.k - 1) * cost, rs = rec.total + (rec.k - 1) * cost;
-      // A plan with fewer stops wins ties, and an extra stop must save at least RM 1.
-      if (o.have > rec.have || (o.have === rec.have && score < rs - 1e-9 && rec.total - o.total >= 1)) rec = o;
+      // A plan with fewer stops wins ties, and an extra stop must save at least RM 1
+      // (rounded, so RM 2.01 against RM 1.01 counts as RM 1.00).
+      if (o.have > rec.have || (o.have === rec.have && score < rs - 1e-9 && round2(rec.total - o.total) >= 1)) rec = o;
     });
     return { options: options, rec: rec.k };
   }
@@ -252,6 +274,7 @@
   }
 
   return { indexDistrict: indexDistrict, lineCodes: lineCodes, priceAt: priceAt, rankStores: rankStores,
+           sharedTotals: sharedTotals,
            summarise: summarise, bestPlan: bestPlan, bestSplit: bestSplit, planOptions: planOptions,
            averageRank: averageRank, parseUnit: parseUnit, unitPrice: unitPrice,
            cheapestFor: cheapestFor, median: median, round2: round2 };

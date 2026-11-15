@@ -39,7 +39,8 @@ test("bestSplit picks the cheapest covering pair", () => {
   const rows = B.rankStores(idx, 3, basket);
   const sp = B.bestSplit(idx, 3, basket, rows);
   // Best pair: B for item 10 (4), A for item 20 (2x2=4), C for item 30 (8) -> needs 3 shops.
-  // Pairs: A+B = 4+4+9 = 17 ; A+C = 5+4+8 = 17 ; B+C = 4+5+8 = 17. Tie -> first found (A+B).
+  // Pairs: A+B = 4+4+9 = 17 ; A+C = 5+4+8 = 17 ; B+C = 4+5+8 = 17. Tie -> the first pair tried
+  // (candidates follow the ranking A, C, B, so A+C).
   assert.equal(sp.have, 3);
   assert.equal(sp.total, 17);
   assert.equal(sp.saving, 1);
@@ -121,6 +122,137 @@ test("planOptions prefers a plan that covers more items", () => {
   const po = B.planOptions(i, 2, bk, B.rankStores(i, 2, bk), 50);
   assert.equal(po.rec, 2);
   assert.equal(po.options[1].saving, null);
+});
+
+test("planOptions drops a 2-stop plan that covers fewer items than 1 stop", () => {
+  // Shop 0 sells items 1, 2, 3 at RM 1 each. Shop 1 sells item 1 at RM 2, shop 2 sells item 2 at RM 3.
+  // The only 2-shop plan that uses both shops is 1 + 2: 2 items for RM 5. It used to be offered as "Save RM 0.00".
+  const d = { premises: [[1], [2], [3]],
+              prices: { 1: [[0, 1, 0], [1, 2, 0]], 2: [[0, 1, 0], [2, 3, 0]], 3: [[0, 1, 0]] } };
+  const i = B.indexDistrict(d), bk = [{ code: 1, qty: 1 }, { code: 2, qty: 1 }, { code: 3, qty: 1 }];
+  const rows = B.rankStores(i, 3, bk);
+  assert.deepEqual(B.bestPlan(i, 3, bk, rows, 2), { shops: [1, 2], total: 5, have: 2, assign: { 1: 1, 2: 2 } });
+  const po = B.planOptions(i, 3, bk, rows, 0);
+  assert.deepEqual(po.options.map(o => [o.k, o.have, o.total, o.saving]), [[1, 3, 3, 0]]);
+  assert.equal(po.rec, 1);
+});
+
+test("planOptions drops an extra stop that saves nothing", () => {
+  // Shop 0 has both items for RM 2. Shops 1 and 2 have one each for RM 1: the same 2 items for the same RM 2.
+  const d = { premises: [[1], [2], [3]], prices: { 1: [[0, 1, 0], [1, 1, 0]], 2: [[0, 1, 0], [2, 1, 0]] } };
+  const i = B.indexDistrict(d), bk = [{ code: 1, qty: 1 }, { code: 2, qty: 1 }];
+  const rows = B.rankStores(i, 3, bk);
+  assert.equal(B.bestPlan(i, 3, bk, rows, 2).total, 2);
+  const po = B.planOptions(i, 3, bk, rows, 0);
+  assert.deepEqual(po.options.map(o => o.k), [1]);
+  assert.equal(po.rec, 1);
+});
+
+test("planOptions keeps a same-coverage plan that is at least RM 0.01 cheaper", () => {
+  const d = { premises: [[1], [2]], prices: { 1: [[0, 1.0, 0], [1, 0.99, 0]], 2: [[0, 1.0, 0]] } };
+  const i = B.indexDistrict(d), bk = [{ code: 1, qty: 1 }, { code: 2, qty: 1 }];
+  const po = B.planOptions(i, 2, bk, B.rankStores(i, 2, bk), 0);
+  assert.deepEqual(po.options.map(o => [o.k, o.total, o.saving]), [[1, 2, 0], [2, 1.99, 0.01]]);
+  assert.equal(po.rec, 1);                   // saves under RM 1, so one stop is still recommended
+});
+
+test("planOptions drops a 3-stop plan that covers fewer items than the 2-stop plan", () => {
+  // Shop 0 has all 4 items at RM 1; shop 1 has item 1 at RM 0.50; shops 2-4 have one dear item each.
+  // Best 3 shops that all get used: 1 + 2 + 3, only 3 items.
+  const d = { prices: { 1: [[0, 1, 0], [1, 0.5, 0]], 2: [[0, 1, 0], [2, 3, 0]],
+                        3: [[0, 1, 0], [3, 3, 0]], 4: [[0, 1, 0], [4, 3, 0]] } };
+  const i = B.indexDistrict(d), bk = [1, 2, 3, 4].map(code => ({ code, qty: 1 }));
+  const rows = B.rankStores(i, 5, bk);
+  assert.equal(B.bestPlan(i, 5, bk, rows, 3).have, 3);
+  const po = B.planOptions(i, 5, bk, rows, 0);
+  assert.deepEqual(po.options.map(o => [o.k, o.have, o.total, o.saving]), [[1, 4, 4, 0], [2, 4, 3.5, 0.5]]);
+  assert.equal(po.rec, 1);                   // RM 0.50 is under the RM 1 minimum for an extra stop
+});
+
+test("planOptions drops a 3-stop plan that costs the same as the 2-stop plan", () => {
+  // 2 stops (shops 0 + 1) buy all 3 items for RM 5. Shops 1 + 3 + 4 also buy all 3 for RM 5.
+  const d = { prices: { 1: [[0, 2, 0], [1, 1, 0], [2, 1, 0]], 2: [[0, 2, 0], [3, 2, 0]], 3: [[0, 2, 0], [4, 2, 0]] } };
+  const i = B.indexDistrict(d), bk = [1, 2, 3].map(code => ({ code, qty: 1 }));
+  const rows = B.rankStores(i, 5, bk);
+  assert.deepEqual(B.bestPlan(i, 5, bk, rows, 3).shops, [1, 3, 4]);
+  assert.equal(B.bestPlan(i, 5, bk, rows, 3).total, 5);
+  const po = B.planOptions(i, 5, bk, rows, 0);
+  assert.deepEqual(po.options.map(o => [o.k, o.have, o.total, o.saving]), [[1, 3, 6, 0], [2, 3, 5, 1]]);
+  assert.equal(po.rec, 2);
+});
+
+test("planOptions counts a RM 1.00 saving as RM 1 despite float maths", () => {
+  // 8.11 - 7.11 is 0.9999999999999991 in floating point; the extra stop still saves RM 1.00.
+  const d = { premises: [[1], [2]], prices: { 1: [[0, 3.61, 0], [1, 2.61, 0]], 2: [[0, 4.5, 0]] } };
+  const i = B.indexDistrict(d), bk = [{ code: 1, qty: 1 }, { code: 2, qty: 1 }];
+  const po = B.planOptions(i, 2, bk, B.rankStores(i, 2, bk), 0);
+  assert.deepEqual(po.options.map(o => [o.k, o.total, o.saving]), [[1, 8.11, 0], [2, 7.11, 1]]);
+  assert.equal(po.rec, 2);
+});
+
+test("planOptions can drop the 2-stop plan and keep the 3-stop plan", () => {
+  // 0.3 kg of each item. Shops 1-3 each sell one item for RM 0.99 a kg, against RM 1 at shop 0.
+  // 2 stops save RM 0.003, which rounds to nothing; 3 stops (shops 1-3) save RM 0.009, which rounds to RM 0.01.
+  const d = { prices: { 1: [[0, 1, 0], [1, 0.99, 0]], 2: [[0, 1, 0], [2, 0.99, 0]], 3: [[0, 1, 0], [3, 0.99, 0]] } };
+  const i = B.indexDistrict(d), bk = [1, 2, 3].map(code => ({ code, qty: 0.3 }));
+  const rows = B.rankStores(i, 4, bk);
+  assert.equal(B.bestPlan(i, 4, bk, rows, 2).total, 0.9);
+  const po = B.planOptions(i, 4, bk, rows, 0);
+  // There is no 2-stop option, so the screen must look options up by k, not by position.
+  assert.deepEqual(po.options.map(o => [o.k, o.have, o.total, o.saving]), [[1, 3, 0.9, 0], [3, 3, 0.89, 0.01]]);
+  assert.equal(po.rec, 1);
+});
+
+test("planOptions keeps each plan that covers more items, with no saving figure", () => {
+  // Shop 0 has items 1 and 2; shop 1 has item 3; shop 2 has item 4.
+  const d = { prices: { 1: [[0, 1, 0]], 2: [[0, 1, 0]], 3: [[1, 1, 0]], 4: [[2, 1, 0]] } };
+  const i = B.indexDistrict(d), bk = [1, 2, 3, 4].map(code => ({ code, qty: 1 }));
+  const po = B.planOptions(i, 3, bk, B.rankStores(i, 3, bk), 5);
+  assert.deepEqual(po.options.map(o => [o.k, o.have, o.total, o.saving]), [[1, 2, 2, 0], [2, 3, 3, null], [3, 4, 4, null]]);
+  assert.equal(po.rec, 3);                   // the most items wins, whatever one stop is worth
+});
+
+test("planOptions compares a 3-stop plan with a 2-stop plan that covers more than 1 stop", () => {
+  // 1 stop (shop 0) buys 2 of the 3 items for RM 10; 2 stops (shops 0 + 1) buy all 3 for RM 11.
+  // 3 stops also buy all 3, for RM 8 (item 1 at shop 2). Kept, and its saving is null: it covers more than 1 stop.
+  const d = { prices: { 1: [[0, 5, 0], [2, 2, 0]], 2: [[0, 5, 0]], 3: [[1, 1, 0]] } };
+  const i = B.indexDistrict(d), bk = [1, 2, 3].map(code => ({ code, qty: 1 }));
+  const rows = B.rankStores(i, 3, bk);
+  let po = B.planOptions(i, 3, bk, rows, 0);
+  assert.deepEqual(po.options.map(o => [o.k, o.have, o.total, o.saving]), [[1, 2, 10, 0], [2, 3, 11, null], [3, 3, 8, null]]);
+  assert.equal(po.rec, 3);                   // RM 8 beats RM 11
+  assert.equal(B.planOptions(i, 3, bk, rows, 5).rec, 2);   // 11 + 5 = 16 beats 8 + 10 = 18
+  // With item 1 at RM 4.50, 3 stops still beat 2 stops (RM 10.50 vs RM 11), but by under RM 1.
+  const d2 = { prices: { 1: [[0, 5, 0], [2, 4.5, 0]], 2: [[0, 5, 0]], 3: [[1, 1, 0]] } };
+  const i2 = B.indexDistrict(d2);
+  po = B.planOptions(i2, 3, bk, B.rankStores(i2, 3, bk), 0);
+  assert.deepEqual(po.options.map(o => [o.k, o.have, o.total]), [[1, 2, 10], [2, 3, 11], [3, 3, 10.5]]);
+  assert.equal(po.rec, 2);
+});
+
+test("planOptions with no rows or an empty basket", () => {
+  assert.deepEqual(B.planOptions(idx, 3, [{ code: 10, qty: 1 }], [], 5), { options: [], rec: 0 });
+  assert.deepEqual(B.planOptions(idx, 3, [], B.rankStores(idx, 3, []), 5), { options: [], rec: 0 });
+});
+
+test("sharedTotals compares two shops on the lines both of them price", () => {
+  const basket = [{ code: 10, qty: 1 }, { code: 20, qty: 2 }, { code: 30, qty: 1 }];
+  // Shop B (1) lacks item 30, so only items 10 and 20 are compared: A = 5 + 2x2, B = 4 + 2x3.
+  assert.deepEqual(B.sharedTotals(idx, basket, 0, 1), { n: 2, a: 9, b: 10 });
+  assert.deepEqual(B.sharedTotals(idx, basket, 1, 0), { n: 2, a: 10, b: 9 });
+  assert.deepEqual(B.sharedTotals(idx, basket, 0, 2), { n: 3, a: 18, b: 19 });
+  assert.deepEqual(B.sharedTotals(idx, basket, 2, 2), { n: 3, a: 19, b: 19 });
+  assert.deepEqual(B.sharedTotals(idx, [{ code: 99, qty: 1 }], 0, 1), { n: 0, a: 0, b: 0 });
+  assert.deepEqual(B.sharedTotals(idx, [], 0, 1), { n: 0, a: 0, b: 0 });
+});
+
+test("sharedTotals is any-brand aware and rounds to 2 decimals", () => {
+  // Item 40 is another brand of item 10; shop 1 sells only item 40.
+  const d = { premises: [[1], [2]], prices: { 10: [[0, 5.1, 0]], 40: [[1, 3.3, 2]], 20: [[0, 0.1, 0], [1, 0.2, 0]] } };
+  const i = B.indexDistrict(d);
+  assert.deepEqual(B.sharedTotals(i, [{ code: 10, qty: 1 }, { code: 20, qty: 3 }], 0, 1), { n: 1, a: 0.3, b: 0.6 });
+  assert.deepEqual(B.sharedTotals(i, [{ code: 10, qty: 1, alt: [40] }, { code: 20, qty: 3 }], 0, 1),
+                   { n: 2, a: 5.4, b: 3.9 });
 });
 
 test("averageRank uses each shop's monthly prices and counts cheapest months", () => {
