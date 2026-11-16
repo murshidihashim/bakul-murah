@@ -10,6 +10,8 @@ The shopper's own location is never stored here or anywhere else: it stays in th
 | `district_geo.csv` | `etl/geocode_premises.py` | One centre per district, used as a search anchor |
 | `postcodes_my.csv` | `etl/fetch_postcodes.py` | Malaysian postcodes with a place name and a point |
 | `postcodes_my.json` | `etl/fetch_postcodes.py` | When the postcode table was downloaded, row count, source, licence |
+| `places_my.csv` | `etl/fetch_places.py` | Malaysian towns and villages (GeoNames gazetteer), each with its own point |
+| `places_my.json` | `etl/fetch_places.py` | When the place list was downloaded, row count, source, licence |
 
 ## premise_geo.csv
 
@@ -115,6 +117,17 @@ In the GeoNames table of 2026-11-16, 17 of 2,757 postcodes and 50 of 460 town na
 The table is downloaded again when it is older than 90 days, or when `postcodes_my.json` (which
 holds the download date) is missing or unreadable. File times are not used: in GitHub Actions
 every file is as new as the checkout. If the download fails, the old table is kept.
+
+## places_my.csv
+
+Columns: `geonameid, name, asciiname, alt, lat, lon, code, state, population`, sorted by state, then
+name. These are the populated places of the GeoNames gazetteer for Malaysia (towns, villages and
+parts of towns), each at its own point, so they are an independent check on the postcode table's
+town points above. Abandoned, historical and destroyed places are left out. `alt` holds the place's
+other Latin-script names joined by `|` ("Sri Manjung"), `code` is the GeoNames feature code (PPLA,
+PPLA2... for state and district capitals, PPL for other places, PPLX for a part of a town), and
+`state` is GeoNames' name of the state ("Penang"; compare states with `state_key()`). The list is
+downloaded again after 90 days, like the postcode table; if the download fails, the old list is kept.
 
 ## How a shop gets its point
 
@@ -256,4 +269,6 @@ rows in `upgraded_offline` and `corrected_offline`.
   results cached here, and credit shown in the app.
 - Postcodes: GeoNames postal code data (https://download.geonames.org/export/zip/MY.zip),
   licence CC BY 4.0: https://creativecommons.org/licenses/by/4.0/. Credit: GeoNames, https://www.geonames.org/.
+- Places: GeoNames gazetteer (https://download.geonames.org/export/dump/MY.zip), licence CC BY 4.0.
+  Credit: GeoNames, https://www.geonames.org/.
 - Shop names and addresses: PriceCatcher, KPDN via OpenDOSM, licence CC BY 4.0.

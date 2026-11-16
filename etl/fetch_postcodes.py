@@ -80,7 +80,7 @@ def read_zip(data: bytes, member: str = "MY.txt") -> str:
         return z.read(names[0]).decode("utf-8-sig")
 
 
-def download(url: str = URL, timeout: int = 60, deadline: float = 180.0) -> bytes:
+def download(url: str = URL, timeout: int = 60, deadline: float = 180.0, max_bytes: int = MAX_BYTES) -> bytes:
     """The file's bytes. Raises on a network error, a slow download or an oversized file."""
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     end = time.monotonic() + deadline
@@ -94,7 +94,7 @@ def download(url: str = URL, timeout: int = 60, deadline: float = 180.0) -> byte
             if not chunk:
                 break
             size += len(chunk)
-            if size > MAX_BYTES:
+            if size > max_bytes:
                 raise ValueError("download is far bigger than expected")
             parts.append(chunk)
     return b"".join(parts)

@@ -3,7 +3,7 @@
 # Runs every Monday 05:17 UTC (13:17 Malaysia time), on every push to main, and by hand
 # (Actions tab -> refresh-and-deploy -> Run workflow, on any branch).
 # The price data is rebuilt on each run and deployed with the site; it is not committed on main.
-# Shop map points and the postcode table (etl/geo/) are committed back.
+# Shop map points, the postcode table and the place list (etl/geo/) are committed back.
 # Only main deploys. A run on another branch also commits web/data there, as a preview to test.
 # One-time setup: Settings -> Pages -> Build and deployment -> Source: GitHub Actions.
 
@@ -67,6 +67,12 @@ jobs:
         continue-on-error: true
         timeout-minutes: 5
         run: python etl/fetch_postcodes.py
+
+      # Optional: towns and villages with their own points, to check the postcode table's towns.
+      - name: Fetch places (GeoNames)
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python etl/fetch_places.py
 
       - name: Build
         id: build

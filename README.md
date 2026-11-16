@@ -58,7 +58,7 @@ it starts faster next time.
 ## How it is built
 
 Static files in `web/` (plain JavaScript, no build step). The GitHub Action `refresh-and-deploy` downloads
-PriceCatcher and the GeoNames postcode list, builds small JSON files per district (`etl/build_dataset.py`), adds
+PriceCatcher and the GeoNames postcode and place lists, builds small JSON files per district (`etl/build_dataset.py`), adds
 shop locations (`etl/geocode_premises.py`, cached in `etl/geo/`), runs the tests and data checks
 (`etl/check_data.py`), and publishes `web/` to GitHub Pages. If a check fails, the last good site stays live.
 
