@@ -11,8 +11,9 @@ Live site: https://murshidihashim.github.io/bakul-murah/
   minyak masak 5kg, ayam 2 ekor, bawang putih 1/2 kg"), open a text file, or read a screenshot. You check each
   match before it is added; lines the reader is unsure of are marked "Check this".
 - **Near me first.** On a first visit the app asks where you are: use your location or type a postcode, and pick
-  3, 5, 10 or 20 km. Shops across district borders, with the distance to each. Your location stays in the page:
-  it is never saved or sent. Or choose a district.
+  3, 5, 10 or 20 km. Shops across district borders, with the distance to each. Your location and postcode stay on
+  your phone and are never saved or sent; the app only downloads the price files of the districts around you
+  (see [Privacy](#privacy)). Or choose a district.
 - **Whole-list answer.** Shops ranked by the total for your list. "Cheapest" only goes to a shop that has every
   item; otherwise the top shop is marked "Most items", and shops missing items are compared on the items they have.
 - **1, 2 or 3 shops.** A 2- or 3-shop plan is only offered when it is really cheaper or covers more items, and the
@@ -45,9 +46,14 @@ Always check in store.
 
 ## Privacy
 
-No accounts, no cookies, no analytics, no third-party scripts or fonts. Your lists, district, language and theme
-are kept in your browser on your device. Location and postcode are used only inside the page and never stored or
-sent. Screenshots are read on your phone (Tesseract, served from this site) and never uploaded.
+No accounts, no cookies, no analytics, no third-party scripts or fonts. Your lists and settings (such as district,
+radius, language and theme) are kept in your browser on your device. Your location and postcode never leave your
+phone and are never saved. To find shops near you, the app downloads the price files of the districts around you,
+so the site's host (GitHub Pages) can see which districts' files were loaded, as when you choose a district.
+A typed postcode gives the app only your area, not your exact place. So with a postcode, every distance is shown as
+approximate ("~2 km"), also to shops placed at street level. Screenshots are read on your phone (Tesseract, served
+from this site) and never uploaded. The screenshot reader keeps only its English language file in your browser, so
+it starts faster next time.
 
 ## How it is built
 
@@ -62,7 +68,7 @@ shop locations (`etl/geocode_premises.py`, cached in `etl/geo/`), runs the tests
 | `web/js/listparse.js` | BM/English shopping-list reader |
 | `web/js/near.js` | distances, nearby shops across districts, postcodes |
 | `web/js/app.js` | the page |
-| `web/vendor/tesseract/` | screenshot reader (Apache-2.0) |
+| `web/vendor/tesseract/` | screenshot reader: tesseract.js (Apache-2.0). Inside it: Leptonica, libjpeg, libpng, zlib, libtiff, libwebp, giflib, OpenLibm, the Emscripten runtime and a few small JavaScript modules; their licences are in `THIRD-PARTY-NOTICES.txt` there |
 | `etl/` | data download, build, shop locations, postcodes, checks, tests |
 
 ### Run it yourself
