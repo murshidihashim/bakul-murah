@@ -38,7 +38,12 @@ Live site: https://murshidihashim.github.io/bakul-murah/
   © OpenStreetMap contributors, [ODbL](https://www.openstreetmap.org/copyright). Each shop is placed at street or
   shop level where possible ("1.2 km"), else at its postcode or town ("~2 km"). Shops that can only be placed in
   their district are listed as "location unknown" and are never counted inside the radius.
-- **Postcode locations:** [GeoNames](https://www.geonames.org/) postal codes for Malaysia, CC BY 4.0.
+- **Postcode locations:** [GeoNames](https://www.geonames.org/) postal codes for Malaysia, CC BY 4.0, checked
+  against the shops OpenStreetMap found. A postcode with 2 or more of those shops close together is placed where
+  they are. A postcode whose GeoNames point is more than 30 km from the other postcodes of its town (when those
+  are not all on one point), or more than 15 km from those of a compact town, is left out; the app then places it
+  by the postcodes that share its first digits.
+  The exact rules are in `etl/geo/README.md`.
 
 Bakul Murah is an independent project. It is not affiliated with or endorsed by KPDN, DOSM or any retailer.
 Prices are collected for price monitoring and can be days or weeks old; shelf prices and promotions differ.

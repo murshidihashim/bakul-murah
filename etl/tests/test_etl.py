@@ -915,8 +915,11 @@ def test_build_adds_locations(tmp_path, built):
     assert g["shops_located"] == 3
     assert g["precision"] == {"name": 1, "address": 1, "postcode": 0, "town": 1,
                               "district": meta["stats"]["premises"] - 3}
-    assert g["postcodes"] == {"01000": [6.44, 100.2], "40100": [3.07, 101.52]}
-    assert g["postcode_source"] == "GeoNames (CC BY 4.0)"
+    # 40100 has 2 shops found by address or name that agree (pet[0], pet[1]): it is placed at their
+    # median, 6.8 km from its GeoNames point. 01000 keeps its GeoNames point.
+    assert g["postcodes"] == {"01000": [6.44, 100.2], "40100": [3.01, 101.51]}
+    assert g["postcode_checks"] == {"from_shops": 1, "moved": 1, "set_aside": 0}
+    assert g["postcode_source"] == "GeoNames (CC BY 4.0), checked against shops found by OpenStreetMap"
     assert g["postcode_source_url"] == "https://www.geonames.org/"
     assert "OpenStreetMap" in g["source"] and g["source_url"].startswith("https://www.openstreetmap.org/")
 
@@ -925,6 +928,7 @@ def test_build_adds_locations(tmp_path, built):
     g = read_json(out / "meta.json")["geo"]
     assert g["postcodes"] == {"40100": [3.01, 101.51]}
     assert g["postcode_source"] == "shop addresses" and "postcode_source_url" not in g
+    assert "postcode_checks" not in g
 
 
 def test_build_never_uses_a_shared_district_point(tmp_path):
@@ -1021,7 +1025,8 @@ def test_synthetic_build_skips_the_default_location_files(tmp_path, monkeypatch,
     # Paths given (even the default ones) are used.
     bd.build(raw, tmp_path / "b", geo_path=bd.GEO_DEFAULT, postcodes_path=pcs, district_geo_path=dgeo)
     g, areas = geo_of(tmp_path / "b")
-    assert g["shops_located"] == 3 and g["postcode_source"] == "GeoNames (CC BY 4.0)"
+    assert g["shops_located"] == 3
+    assert g["postcode_source"] == "GeoNames (CC BY 4.0), checked against shops found by OpenStreetMap"
     assert sum(a is not None for a in areas) == 2      # Petaling (its shops) and Klang (district point)
     assert "synthetic sample" not in capsys.readouterr().out
     assert bd.main(["--raw", str(raw), "--out", str(tmp_path / "c"), "--geo", str(geo)]) == 0

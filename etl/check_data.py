@@ -14,10 +14,13 @@ Warns (exit 0) when:
   - a shop's location precision is not name, address, postcode, town or district
   - a located shop lies outside Malaysia (latitude 0..8, longitude 99..120)
   - the postcode table has fewer than 2,000 postcodes
+  - the build's postcode check set aside more than 5% of the GeoNames postcodes (a broken postcode
+    table or shop location cache), or meta.json's geo.postcode_checks cannot be read
   - the data date is more than 10 days before the build date
   - fewer than 10 located shops lie within 5 km of one of the towns in TOWNS
   - price rows are older than 30 days
 
+Notes say what the build's postcode check did (geo.postcode_checks in meta.json), when it ran.
 Prints a short markdown report; the workflow adds it to the run summary.
 
 Run:  python etl/check_data.py [--data web/data] [--previous prev_meta.json]
@@ -41,6 +44,7 @@ MAX_PREMISE_DROP = 0.15     # vs the live build
 MAX_ROWS_DROP = 0.25
 MAX_UNLOCATED_SHARE = 0.30
 MIN_POSTCODES = 2000
+MAX_ASIDE_SHARE = 0.05      # GeoNames postcodes the build set aside as far from their place
 MAX_DATA_AGE_DAYS = 10      # data date vs build date
 FRESH_DAYS = 30             # price rows older than this should not be in the build
 TOWN_KM, MIN_TOWN_SHOPS = 5.0, 10
@@ -103,6 +107,11 @@ def _date(x) -> date | None:
         return date.fromisoformat(str(x)[:10])
     except ValueError:
         return None
+
+
+def _count(x):
+    """A whole number of 0 or more, else None."""
+    return x if isinstance(x, int) and not isinstance(x, bool) and x >= 0 else None
 
 
 def _col(cols: list, name: str, default: int) -> int:
@@ -273,6 +282,28 @@ def check(data_dir: Path, previous: Path | None = None, today: date | None = Non
     f["postcodes"] = n_pc
     if n_pc < MIN_POSTCODES:
         warn(f"The postcode table has {n_pc:,} postcodes (expected at least {MIN_POSTCODES:,}).")
+    # The build checks the GeoNames points against shops found by OpenStreetMap (postcode_checks).
+    # Any shape is read without a crash: the report must reach the summary. A build without the check
+    # (no GeoNames table or no shop locations, or an older build) gets no note.
+    checks = (meta.get("geo") if isinstance(meta.get("geo"), dict) else {}).get("postcode_checks")
+    if checks is not None and not isinstance(checks, dict):
+        warn("geo.postcode_checks in meta.json is not an object, so the postcode check cannot be read.")
+    elif checks is not None:
+        keys = ("from_shops", "moved", "set_aside")
+        c = {k: _count(checks.get(k)) for k in keys}
+        f["postcode_checks"] = c
+        shown = {k: "?" if v is None else f"{v:,}" for k, v in c.items()}
+        note(f"Postcode check: {shown['from_shops']} postcode(s) placed at the shops OpenStreetMap found there "
+             f"({shown['moved']} moved more than 2 km), {shown['set_aside']} set aside as far from the other "
+             "postcodes of their place.")
+        bad = [k for k in keys if c[k] is None]
+        if bad:
+            warn(f"geo.postcode_checks in meta.json has counts that are not whole numbers of 0 or more: "
+                 f"{', '.join(bad)}.")
+        aside, table = c["set_aside"], n_pc + (c["set_aside"] or 0)
+        if aside and aside / table > MAX_ASIDE_SHARE:
+            warn(f"The postcode check set aside {aside:,} of {table:,} GeoNames postcodes ({aside / table:.1%}, "
+                 f"more than {MAX_ASIDE_SHARE:.0%}): the postcode table or the shop location cache may be broken.")
     if data_date and (built - data_date).days > MAX_DATA_AGE_DAYS:
         warn(f"The data date {data_date} is {(built - data_date).days} days before the build ({built}).")
     if stale_rows:

@@ -261,6 +261,54 @@ rows in `upgraded_offline` and `corrected_offline`.
   `district_rejected` counts district answers not used because they lie outside the district's
   state; `district_requeried` counts districts searched again.
 
+## The shoppers' postcode table
+
+When a shopper types a postcode, the app places them at that postcode's point in `meta.json`
+(`geo.postcodes`, `{postcode: [lat, lon]}`). `etl/build_dataset.py` makes this table from
+`postcodes_my.csv` and checks it against the shops OpenStreetMap found: precision `name` or
+`address` in `premise_geo.csv`, by their `postcode` column. Every row counts, also shops that are
+not in this build.
+
+1. A postcode with 2 or more such shops that agree is placed at the median of those that agree.
+   They agree when at least 2 of them, and more than half, lie within 10 km of the median of them
+   all (the rule the shop geocoder uses for its own postcode points).
+   One exception: when only 2 shops agree and they lie more than 10 km apart, the middle of the two
+   can be in neither town. If one of them is within 5 km of the GeoNames point, that shop backs the
+   point: the postcode keeps it, and step 2 never leaves it out.
+2. Any other postcode is left out when its point (the average of its rows) is more than 30 km from
+   the median of the other postcodes of its place (same state and place name; at least 3 others,
+   on at least 2 different points at the table's 4 decimals, each at its point after step 1). Other
+   postcodes that all share one point are a single guess, and that guess can be the wrong one, so
+   they judge nothing. In a compact place, with at least 10 other postcodes of which 9 in 10 lie
+   within 7.5 km of their median, a point more than 15 km from that median is left out too:
+   Kota Kinabalu's city-centre postcode 88000 lay 18.4 km out, and the app showed shoppers there
+   the shops of Putatan. The app places a postcode that was left out from the postcodes that
+   share its first 4, 3 or 2 digits.
+3. Every other postcode keeps its GeoNames point, also one whose rows lie more than 20 km apart.
+
+No postcode is added. `geo.postcode_checks` counts the postcodes placed from shops (`from_shops`),
+those of them moved more than 2 km (`moved`) and those left out (`set_aside`). The build prints
+the 10 largest moves, every postcode it left out and every postcode a shop kept at its GeoNames
+point, with the reason. `etl/check_data.py` warns when more than 5% of the GeoNames postcodes were
+left out (a broken table or shop cache).
+
+With the table and shop cache of 2026-11-16:
+- 84 postcodes are placed from shops, 66 of them moved more than 2 km (Bintulu 97000 by 120 km,
+  Muar 84000 by 29 km).
+- 2 keep their GeoNames point by the exception in step 1: 30200 Ipoh (one shop in Ipoh, one in
+  Batu Gajah; the middle of the two was about 10 km from Ipoh's shops) and 98107 Lutong.
+- 46 are left out. GeoNames had 37 of them 32 to 631 km from the other postcodes of their place
+  (79570 Nusajaya sat in Kedah), and 9 of them 15.6 to 28.6 km out of a compact place: 88000 Kota
+  Kinabalu, 93100 and 93582 Kuching, 15608 Kota Bharu, 20582 Kuala Terengganu, 30632 Ipoh, 40517
+  and 40612 Shah Alam, and 70632 Seremban. For the 42 of them whose place name is in the address
+  of located shops of the same state, the app's own placement lies nearer the median of those
+  shops than the GeoNames point did: within 6 km for 38, and at most 21.4 km away (26060
+  Kuantan). For the 9 in compact places, GeoNames lay 17 to 29 km from those shops, and the app's
+  placement lies within 9 km of them (88000: 2 to 5 km).
+- 3 more would have been left out, but the other postcodes of their place all share one point, so
+  they are not judged and keep their GeoNames point: 98050 Baram (its 3 others share a point 445 km
+  from Marudi, where its shops are), 98700 Limbang and 89950 Nabawan.
+
 ## Sources and licences
 
 - Shop and district points: OpenStreetMap, via the Nominatim search service.

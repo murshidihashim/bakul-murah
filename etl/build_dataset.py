@@ -28,7 +28,8 @@ Steps:
      cheapest shop and at a typical shop, per district. Added up in whole sen as the app
      adds up a list, so the figures match the app's for the same list.
   9. Shop locations from etl/geo/ (made by geocode_premises.py): each shop's map point,
-     a centre and radius per district, and a postcode -> location table for "near me".
+     a centre and radius per district, and a postcode -> location table for "near me": the GeoNames
+     points checked against the shops OpenStreetMap found (see check_postcodes).
      A district point shared with another district of the state is never a centre.
  10. Write web/data/meta.json plus one web/data/d/<state>--<district>.json per
      district. Each JSON also gets a .js twin so the app works from file://.
@@ -481,15 +482,26 @@ def load_district_points(path: Path | None) -> dict[str, tuple[float, float]]:
     return out
 
 
-def load_postcodes(path: Path | None) -> dict[str, list[float]]:
-    """Postcode -> [lat, lon] from postcodes_my.csv (GeoNames): the average of that postcode's rows."""
-    acc: dict[str, list] = {}
+def load_postcode_rows(path: Path | None) -> dict[str, list[tuple[str, str, tuple[float, float]]]]:
+    """Postcode -> its rows in postcodes_my.csv (GeoNames) that have a usable point, as
+    (place key, place name, (lat, lon)), sorted by postcode. The place key is 'state|place' in lower
+    case ('' when the row has no place name); the place name reads 'Place (State)'. No file: {}."""
+    out: dict[str, list] = {}
     for r in _rows(path):
         pc, pt = _postcode(r.get("postcode")), _point(r.get("lat"), r.get("lon"))
-        if pc and pt:
-            acc.setdefault(pc, []).append(pt)
-    return {pc: [round(sum(p[0] for p in v) / len(v), 4), round(sum(p[1] for p in v) / len(v), 4)]
-            for pc, v in sorted(acc.items())}
+        if not (pc and pt):
+            continue
+        place, state = (" ".join(str(r.get(c) or "").split()) for c in ("place", "state"))
+        name = f"{place} ({state})" if place and state else place or state
+        out.setdefault(pc, []).append((f"{state}|{place}".lower() if place else "", name, pt))
+    return dict(sorted(out.items()))
+
+
+def load_postcodes(path: Path | None) -> dict[str, list[float]]:
+    """Postcode -> [lat, lon] from postcodes_my.csv (GeoNames): the average of that postcode's rows.
+    These are the GeoNames points before check_postcodes."""
+    return {pc: [round(p[0], 4), round(p[1], 4)]
+            for pc, p in ((pc, _mean_point([r[2] for r in v])) for pc, v in load_postcode_rows(path).items())}
 
 
 def km(a_lat: float, a_lon: float, b_lat: float, b_lon: float) -> float:
@@ -532,18 +544,158 @@ def postcode_table(geo: dict) -> dict[str, list[float]]:
             for pc, v in sorted(acc.items())}
 
 
-def geo_summary(geo: dict, listed: set, precision: dict, postcodes_path: Path | None) -> dict | None:
-    """meta.geo: located shop counts, the postcode table and credits. None without shop locations."""
+# ---------- the shoppers' postcode table ----------
+
+ANCHOR_KM = 10.0   # shops that agree lie this close to the median of them all (as in the geocoder)
+MOVED_KM = 2.0     # a postcode placed at its shops this far from its GeoNames point counts as moved
+BACKED_KM = 5.0    # only 2 shops agree, more than ANCHOR_KM apart: one this close to the GeoNames point backs it
+PLACE_KM = 30.0    # a GeoNames point further than this from the other postcodes of its place is set aside
+PLACE_MIN = 3      # ... judged only when the place has at least this many other postcodes
+PLACE_POINTS = 2   # ... on at least this many different points (postcodes on one shared point are one guess)
+COMPACT_MIN = 10       # a place with at least this many other postcodes ...
+COMPACT_SHARE = 0.9    # ... this share of them within COMPACT_KM / 2 of their median is compact:
+COMPACT_KM = 15.0      # ... there a point further than this from that median is set aside too
+POSTCODE_SOURCE = "GeoNames (CC BY 4.0), checked against shops found by OpenStreetMap"
+
+
+def _mean_point(points) -> tuple[float, float]:
+    return sum(p[0] for p in points) / len(points), sum(p[1] for p in points) / len(points)
+
+
+def _median_point(points) -> tuple[float, float]:
+    return statistics.median(p[0] for p in points), statistics.median(p[1] for p in points)
+
+
+def _agreeing(points) -> list | None:
+    """The points within ANCHOR_KM of the median of them all, when at least 2 and more than half of
+    them are that close (they agree); else None."""
+    if len(points) < 2:
+        return None
+    mid = _median_point(points)
+    close = [p for p in points if km(*p, *mid) <= ANCHOR_KM]
+    return close if len(close) >= 2 and 2 * len(close) > len(points) else None
+
+
+def agreed_point(points) -> tuple[float, float] | None:
+    """The median of the points that agree (_agreeing), else None. The rule the shop geocoder uses
+    for its own postcode anchors (_agreed in etl/geocode_premises.py); the build keeps its own copy
+    so that the two scripts stay separate."""
+    close = _agreeing(points)
+    return _median_point(close) if close else None
+
+
+def _compact_core(points, mid) -> float | None:
+    """The distance from mid within which COMPACT_SHARE of the points lie, when the place is compact:
+    at least COMPACT_MIN points, and that distance at most COMPACT_KM / 2. Else None."""
+    if len(points) < COMPACT_MIN:
+        return None
+    ds = sorted(km(*p, *mid) for p in points)
+    core = ds[math.ceil(round(COMPACT_SHARE * len(ds), 6)) - 1]
+    return core if core <= COMPACT_KM / 2 else None
+
+
+def check_postcodes(rows: dict, geo: dict) -> dict:
+    """The postcode table the app places a shopper at: GeoNames points checked against the shops
+    OpenStreetMap found.
+
+    rows: load_postcode_rows(); geo: load_geo(), every row of the shop location cache, not only the
+    shops in this build.
+      1. From shops: a postcode with 2 or more shops found by name or address (the cache's postcode
+         column) that agree (agreed_point) is placed at the median of those that agree.
+         Except when only 2 shops agree and they lie more than ANCHOR_KM apart: their middle can be
+         in neither town. If one of the 2 lies within BACKED_KM of the GeoNames point, that shop
+         backs the point, and the postcode keeps it and is never set aside ("kept").
+      2. Set aside: any other postcode is left out when its point (the average of its rows) is more
+         than PLACE_KM from the median of the other postcodes of its place (same state and place
+         name; at least PLACE_MIN others, on at least PLACE_POINTS different points at 4 decimals,
+         each at its point after step 1). Others that all share one point are one guess, not a
+         place to judge by. In a compact place (at least COMPACT_MIN others, COMPACT_SHARE of them
+         within COMPACT_KM / 2 of their median) a point more than COMPACT_KM from that median is
+         left out too. The app then places a postcode left out from the postcodes that share its
+         first 4, 3 or 2 digits.
+      3. Every other postcode keeps the average of its rows, also when the rows lie far apart.
+    No postcode is added: a shop's postcode that GeoNames does not have is not used.
+    In the 2026-11-16 GeoNames table, 66 of the 84 postcodes placed from shops lay more than 2 km
+    from their shops (Muar 84000 by 29 km, Bintulu 97000 by 120 km), and 79570 Nusajaya (Johor)
+    lay in Kedah. Kept: 30200 Ipoh, whose 2 shops (Ipoh, Batu Gajah) would have put it about 10 km
+    from Ipoh, and 98107 Lutong. Not judged: 98050 Baram, whose 3 other postcodes share one point
+    445 km from Marudi, where its shops are. Compact: 88000 Kota Kinabalu, the city centre, lay
+    18.4 km from the median of the city's 205 other postcodes, 90% of which lie within 4.5 km of
+    it, and the app showed shoppers there the shops of Putatan.
+    Returns {"postcodes": {postcode: [lat, lon]} (4 decimals, sorted), "checks": {"from_shops",
+    "moved" (more than MOVED_KM), "set_aside"}, "moves": [(km, postcode, place)] largest first,
+    "set_aside": [(postcode, place, reason)], "kept": [(postcode, place, reason)]}.
+    """
+    found: dict[str, list] = {}
+    for lat, lon, prec, pc in geo.values():
+        if prec in ("name", "address") and pc in rows:
+            found.setdefault(pc, []).append((lat, lon))
+    average = {pc: _mean_point([r[2] for r in v]) for pc, v in rows.items()}
+    shops, backed = {}, {}
+    for pc, v in found.items():
+        close = _agreeing(v)
+        if not close:
+            continue
+        apart = km(*close[0], *close[1]) if len(close) == 2 else 0.0
+        near = min(km(*p, *average[pc]) for p in close)
+        if apart > ANCHOR_KM and near <= BACKED_KM:
+            backed[pc] = (f"its 2 shops lie {apart:.1f} km apart and one of them is {near:.1f} km "
+                          f"from that point")
+        else:
+            shops[pc] = _median_point(close)
+    point = {pc: shops.get(pc, average[pc]) for pc in rows}
+    places: dict[str, set] = {}
+    for pc, v in rows.items():
+        for key, _, _ in v:
+            if key:
+                places.setdefault(key, set()).add(pc)
+    out, moves, aside, kept = {}, [], [], []
+    for pc, v in sorted(rows.items()):
+        name = " / ".join(sorted({r[1] for r in v if r[1]}))
+        if pc in shops:
+            d = km(*average[pc], *shops[pc])
+            if d > MOVED_KM:
+                moves.append((d, pc, name))
+        elif pc in backed:
+            kept.append((pc, name, backed[pc]))
+        else:
+            others = set().union(*(places[r[0]] for r in v if r[0])) - {pc}
+            pts = [point[o] for o in sorted(others)]
+            # Different points are counted at the table's 4 decimals: the average of rows on one point
+            # can differ from it in the last bit (3 x 112.3837 / 3 = 112.38370000000002).
+            if len(others) >= PLACE_MIN and len({(round(p[0], 4), round(p[1], 4)) for p in pts}) >= PLACE_POINTS:
+                mid = _median_point(pts)
+                d = km(*average[pc], *mid)
+                why = f"{d:.1f} km from the median of the {len(others)} other postcodes of its place"
+                core = _compact_core(pts, mid)
+                if d > PLACE_KM:
+                    aside.append((pc, name, why))
+                    continue
+                if core is not None and d > COMPACT_KM:
+                    aside.append((pc, name, f"{why}, {COMPACT_SHARE:.0%} of which lie within {core:.1f} km of it"))
+                    continue
+        out[pc] = [round(point[pc][0], 4), round(point[pc][1], 4)]
+    moves.sort(key=lambda m: (-m[0], m[1]))
+    return {"postcodes": dict(sorted(out.items())),
+            "checks": {"from_shops": len(shops), "moved": len(moves), "set_aside": len(aside)},
+            "moves": moves, "set_aside": aside, "kept": kept}
+
+
+def geo_summary(geo: dict, listed: set, precision: dict, postcodes: dict | None) -> dict | None:
+    """meta.geo: located shop counts, the postcode table and credits. None without shop locations.
+
+    postcodes: check_postcodes() of the GeoNames table. When it holds no postcode (no table), the
+    table is made from the shops of this build found by name or address (postcode_table).
+    """
     if not geo:
         return None
-    postcodes = load_postcodes(postcodes_path)
-    if postcodes:
-        src = {"postcode_source": "GeoNames (CC BY 4.0)", "postcode_source_url": "https://www.geonames.org/"}
+    if postcodes and postcodes["postcodes"]:
+        pcs = {"postcodes": postcodes["postcodes"], "postcode_source": POSTCODE_SOURCE,
+               "postcode_source_url": "https://www.geonames.org/", "postcode_checks": postcodes["checks"]}
     else:
-        postcodes = postcode_table({c: g for c, g in geo.items() if c in listed})
-        src = {"postcode_source": "shop addresses"}
-    return {"shops_located": sum(precision[p] for p in LOCATED), "precision": precision,
-            "postcodes": postcodes, **src,
+        pcs = {"postcodes": postcode_table({c: g for c, g in geo.items() if c in listed}),
+               "postcode_source": "shop addresses"}
+    return {"shops_located": sum(precision[p] for p in LOCATED), "precision": precision, **pcs,
             "source": "© OpenStreetMap contributors (ODbL), via Nominatim",
             "source_url": "https://www.openstreetmap.org/copyright"}
 
@@ -713,6 +865,8 @@ def build(raw: Path, out: Path, months_keep: int = 12, state: str | None = None,
                 old.unlink()
 
     listed = {int(c) for c in latest_d["premise_code"].unique()}
+    # Without shop locations there is no meta.geo, so no postcode table to check.
+    checked = check_postcodes(load_postcode_rows(postcodes_path), geo) if geo else None
     meta = {
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "data_date": data_date.strftime("%Y-%m-%d"),
@@ -726,7 +880,7 @@ def build(raw: Path, out: Path, months_keep: int = 12, state: str | None = None,
         "items": [[int(r.item_code), r.item, r.unit, r.item_group, r.item_category, int(shops.get(r.item_code, 0))]
                   for r in items.itertuples()],
         "areas": {st: sorted(v, key=lambda d: d["district"]) for st, v in sorted(areas.items())},
-        "geo": geo_summary(geo, listed, precision, postcodes_path),
+        "geo": geo_summary(geo, listed, precision, checked),
         "proof": proof_figure(latest_d, items, shops),
         "national_history": nat_hist,
         "national_feed": nat_feed,
@@ -736,7 +890,7 @@ def build(raw: Path, out: Path, months_keep: int = 12, state: str | None = None,
     sizes["meta"] = write_json(out / "meta.json", "meta", meta)
     return {"sizes": sizes, "stats": meta["stats"], "data_date": meta["data_date"],
             "months": months, "months_with_data": with_data, "proof": meta["proof"],
-            "synthetic": synthetic}
+            "synthetic": synthetic, "postcode_check": checked if checked and checked["postcodes"] else None}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -771,6 +925,18 @@ def main(argv: list[str] | None = None) -> int:
           f"{s['items']} items, {s['districts']} districts; {s['prices_set_aside']} prices set aside")
     p = res["proof"]
     print(f"proof figure: {len(p['items'])} items, example {p['example']}" if p else "proof figure: none")
+    pc = res["postcode_check"]
+    if pc:
+        c = pc["checks"]
+        print(f"postcode table: {len(pc['postcodes']):,} postcodes from GeoNames, checked against shops found by "
+              f"OpenStreetMap: {c['from_shops']} placed at those shops ({c['moved']} moved more than "
+              f"{MOVED_KM:g} km), {c['set_aside']} set aside")
+        for d, code, name in pc["moves"][:10]:
+            print(f"  moved {code} {name}: {d:.1f} km")
+        for code, name, why in pc["set_aside"]:
+            print(f"  set aside {code} {name}: {why}")
+        for code, name, why in pc["kept"]:
+            print(f"  kept {code} {name} at its GeoNames point: {why}")
     big = {k: v for k, v in res["sizes"].items() if v > args.max_kb * 1024}
     total = sum(res["sizes"].values())
     print(f"wrote {len(res['sizes'])} JSON files, {total/1024:.0f} KB total, "
