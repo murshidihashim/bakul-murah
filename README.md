@@ -42,12 +42,24 @@ Live site: https://murshidihashim.github.io/bakul-murah/
   town has only one rough point in that table takes the town's point from the list. Shops that can only be placed
   in their district are listed as "location unknown" and are never counted inside the radius. Details:
   [etl/geo/README.md](etl/geo/README.md).
-- **Postcode and town locations:** [GeoNames](https://www.geonames.org/) postal codes and populated places for
-  Malaysia, CC BY 4.0. The postcode you type is placed by the postal codes, checked against the shops
-  OpenStreetMap found. A postcode with 2 or more of those shops close together is placed where they are. A
-  postcode whose GeoNames point is more than 30 km from the other postcodes of its town (when those are not all on
-  one point), or more than 15 km from those of a compact town, is left out; the app then places it by the
-  postcodes that share its first digits. The exact rules are in `etl/geo/README.md`.
+- **Postcode locations:** [GeoNames](https://www.geonames.org/) postal codes for Malaysia, CC BY 4.0, checked
+  against the shops OpenStreetMap found and against the GeoNames list of towns and villages (also CC BY 4.0),
+  where each town has its own point. A postcode with 2 or more of those shops close together is placed where
+  they are. A postcode more than 10 km from its town's point in that list is moved there when its town's
+  GeoNames points are one rough point for the whole town, when it lies far from the town's other postcodes, or
+  when its only shop agrees with the town's point, but only when that point is nearer the town's shops than its
+  own. The town's shops are those of its postcodes, else those whose address names the town, unless GeoNames
+  gives their postcode to another town only ("84600 PAGOH, MUAR" is a shop in Pagoh). The town's point counts
+  only when the town's shops are within 35 km of it, or, for a town without such shops, when the list has only
+  one place of that name and it is notable (it has a population or is a seat of government). Old and new
+  spellings, such as Tanjong and Tanjung, are one name.
+  A postcode still more than 30 km from the other postcodes of its town (when those are not all on one point),
+  or more than 15 km from those of a compact town, is left out; the app then places it by the postcodes that
+  share its first digits. Postcodes moved to the town's point do not make a town compact.
+  A rural postcode that GeoNames names after its post town goes to that town: 21610, the village of Merchang,
+  is placed in Marang, 18 km away, and the 8 postcodes of Pekan that lie 12 to 42 km from the town go to it.
+  Nothing in these lists tells such a delivery area from a wrong point.
+  The exact rules and the known misses are in `etl/geo/README.md`.
 
 Bakul Murah is an independent project. It is not affiliated with or endorsed by KPDN, DOSM or any retailer.
 Prices are collected for price monitoring and can be days or weeks old; shelf prices and promotions differ.
@@ -86,6 +98,7 @@ shop locations (`etl/geocode_premises.py`, cached in `etl/geo/`), runs the tests
 pip install -r requirements.txt
 python etl/fetch_pricecatcher.py --months 12
 python etl/fetch_postcodes.py
+python etl/fetch_places.py
 python etl/build_dataset.py --months 12
 python -m http.server -d web 8000      # then open http://localhost:8000
 ```

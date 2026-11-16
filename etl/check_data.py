@@ -20,7 +20,9 @@ Warns (exit 0) when:
   - fewer than 10 located shops lie within 5 km of one of the towns in TOWNS
   - price rows are older than 30 days
 
-Notes say what the build's postcode check did (geo.postcode_checks in meta.json), when it ran.
+Notes say what the build's postcode check did (geo.postcode_checks in meta.json), when it ran: postcodes
+placed at shops, moved to their place's point in the GeoNames place list (to_place, when the build used the
+place list) and set aside.
 Prints a short markdown report; the workflow adds it to the run summary.
 
 Run:  python etl/check_data.py [--data web/data] [--previous prev_meta.json]
@@ -289,13 +291,17 @@ def check(data_dir: Path, previous: Path | None = None, today: date | None = Non
     if checks is not None and not isinstance(checks, dict):
         warn("geo.postcode_checks in meta.json is not an object, so the postcode check cannot be read.")
     elif checks is not None:
-        keys = ("from_shops", "moved", "set_aside")
+        # to_place is there only when the build also checked against the GeoNames place list.
+        keys = ("from_shops", "moved", "to_place", "set_aside") if "to_place" in checks else (
+            "from_shops", "moved", "set_aside")
         c = {k: _count(checks.get(k)) for k in keys}
         f["postcode_checks"] = c
         shown = {k: "?" if v is None else f"{v:,}" for k, v in c.items()}
+        to_place = (f"{shown['to_place']} moved to their place's point in the GeoNames place list, "
+                    if "to_place" in c else "")
         note(f"Postcode check: {shown['from_shops']} postcode(s) placed at the shops OpenStreetMap found there "
-             f"({shown['moved']} moved more than 2 km), {shown['set_aside']} set aside as far from the other "
-             "postcodes of their place.")
+             f"({shown['moved']} moved more than 2 km), {to_place}{shown['set_aside']} set aside as far from the "
+             "other postcodes of their place.")
         bad = [k for k in keys if c[k] is None]
         if bad:
             warn(f"geo.postcode_checks in meta.json has counts that are not whole numbers of 0 or more: "

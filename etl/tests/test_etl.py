@@ -884,7 +884,8 @@ def test_build_adds_locations(tmp_path, built):
     pcs = tmp_path / "postcodes_my.csv"
     pcs.write_text("postcode,place,state,lat,lon,accuracy\n40100,Shah Alam,Selangor,3.07,101.52,4\n"
                    "01000,Kangar,Perlis,6.44,100.2,4\n", encoding="utf-8")
-    bd.build(raw, out, months_keep=12, geo_path=geo, postcodes_path=pcs, district_geo_path=dgeo)
+    bd.build(raw, out, months_keep=12, geo_path=geo, postcodes_path=pcs, district_geo_path=dgeo,
+             places_path=None)   # shops only; the place list is tested in test_postcodes.py
     meta = read_json(out / "meta.json")
     sel = {a["district"]: a for a in meta["areas"]["Selangor"]}
 
@@ -1012,6 +1013,7 @@ def test_synthetic_build_skips_the_default_location_files(tmp_path, monkeypatch,
     monkeypatch.setattr(bd, "GEO_DEFAULT", geo)
     monkeypatch.setattr(bd, "DISTRICT_GEO_DEFAULT", dgeo)
     monkeypatch.setattr(bd, "POSTCODES_DEFAULT", pcs)
+    monkeypatch.setattr(bd, "PLACES_DEFAULT", tmp_path / "places_my.csv")   # this stand-in has no place list
 
     def geo_of(out):
         meta = read_json(out / "meta.json")
