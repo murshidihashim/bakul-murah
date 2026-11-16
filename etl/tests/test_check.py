@@ -171,3 +171,77 @@ def test_report_lists_problems(tmp_path):
     assert text.startswith("## Data check: FAIL")
     assert "**Problems (deploy stopped):**" in text and "- Only 10 districts" in text
     assert "No live build to compare with" in text
+
+
+def test_wrong_types_fail_with_a_message_not_a_crash(tmp_path, monkeypatch, capsys):
+    def broken(name, meta=None, district=None):
+        root = make_build(tmp_path / name)
+        if meta:
+            edit_json(root / "meta.json", meta)
+        if district:
+            edit_json(root / "d" / "state-1--district-1.json", district)
+        return root
+
+    fails = cd.check(broken("areas", lambda m: m.update(areas=[1, 2])))["fails"]
+    assert any("no areas object" in f for f in fails) and any("Only 0 districts" in f for f in fails)
+    fails = cd.check(broken("stats", lambda m: m.update(stats=[1])))["fails"]
+    assert any("stats is not an object" in f for f in fails) and any("no shop count" in f for f in fails)
+    assert cd.check(broken("state", lambda m: m["areas"].update({"State 0": 5})))["fails"] == [
+        "Only 140 districts (expected at least 150)."]
+    assert cd.check(broken("slug", lambda m: m["areas"]["State 1"][0].update(slug=["x"])))["fails"] == [
+        "1 district file(s) missing: State 1 / District 1"]
+    assert cd.check(broken("months", district=lambda d: d.update(shop_months=[[0, 4.4, 4.5, 4.6]])))["fails"] == [
+        "1 district file(s) unreadable: state-1--district-1"]
+    res = cd.check(broken("geo", lambda m: m["geo"].update(postcodes=7)))
+    assert res["fails"] == [] and any("has 0 postcodes" in w for w in res["warns"])
+    prev = tmp_path / "prev.json"
+    prev.write_text(json.dumps({"data_date": "2026-11-01", "stats": [1]}), encoding="utf-8")
+    assert cd.check(make_build(tmp_path / "good"), prev)["fails"] == []
+    # From the command line the report still reaches the summary, with exit 1.
+    assert cd.main(["--data", str(tmp_path / "areas")]) == 1
+    assert capsys.readouterr().out.startswith("## Data check: FAIL")
+    # Even a shape nobody foresaw is a FAIL with a report, never a traceback.
+    monkeypatch.setattr(cd, "_col", lambda *a: 1 / 0)
+    assert cd.main(["--data", str(tmp_path / "good")]) == 1
+    out = capsys.readouterr().out
+    assert out.startswith("## Data check: FAIL") and "ZeroDivisionError" in out
+
+
+def test_odd_precision_values_warn_and_never_crash(tmp_path, monkeypatch, capsys):
+    """A number (5) or null as geo_precision: a report with a warning, never a traceback."""
+    root = make_build(tmp_path / "odd")
+
+    def odd(d):
+        d["premises"][0][6] = 5
+        d["premises"][1][6] = None
+
+    edit_json(root / "d" / "state-1--district-1.json", odd)
+    res = cd.check(root)
+    assert res["fails"] == [] and res["locations"]["5"] == 1 and res["locations"]["none"] == 1
+    assert any("not name, address, postcode, town or district: 5, None" in w for w in res["warns"])
+    assert cd.main(["--data", str(root)]) == 0
+    out, err = capsys.readouterr()
+    assert out.startswith("## Data check: PASS (1 warning)") and "| 5 | 1 | 0% |" in out and err == ""
+    # Mixed key types from any other caller still print.
+    assert "| 5 | 1 |" in cd.report({"fails": [], "warns": [], "notes": [], "facts": {}, "towns": [],
+                                     "locations": cd.Counter({"exact": 3, 5: 1, None: 1})})
+    # A crash while writing the report is still a FAIL with a report and exit 1.
+    real = cd.report
+
+    def flaky(res):
+        if not res["fails"]:
+            raise TypeError("boom")
+        return real(res)
+
+    monkeypatch.setattr(cd, "report", flaky)
+    assert cd.main(["--data", str(make_build(tmp_path / "good"))]) == 1
+    out, err = capsys.readouterr()
+    assert out.startswith("## Data check: FAIL") and "TypeError: boom" in out and err == ""
+
+
+def test_workflow_live_meta_download_is_optional_and_time_limited():
+    """A stalled GitHub Pages reply must not hold the Check data step until its timeout."""
+    workflow = Path(__file__).resolve().parents[2] / ".github" / "workflows" / "refresh-and-deploy.yml"
+    curl = [x.strip() for x in workflow.read_text(encoding="utf-8").splitlines() if x.strip().startswith("curl ")]
+    assert len(curl) == 1 and "prev_meta.json" in curl[0]
+    assert "--max-time 30" in curl[0] and "--retry 2" in curl[0] and curl[0].endswith("|| true")

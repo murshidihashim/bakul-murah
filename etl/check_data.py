@@ -1,14 +1,15 @@
 """Sanity checks on a built web/data folder, run after the build and before the deploy.
 
 Fails (exit 1), so the live site keeps its last good data, when:
-  - meta.json is missing or unreadable, has no data date, or is marked synthetic
+  - meta.json is missing, unreadable or the wrong shape, has no data date, or is marked synthetic
   - there are fewer than 150 districts, 1,900 shops (stats.premises) or 300 items
-  - a district in meta.json has no d/<slug>.json, or a district file cannot be read
+  - a district in meta.json has no d/<slug>.json, or a district file cannot be read (or has the wrong shape)
   - a price row points at a shop index that is not in its file (every file is checked)
   - with --previous (the live meta.json; skipped when missing or empty): shops down more than
     15%, kept price rows down more than 25%, or a data date older than the live one
 Warns (exit 0) when:
   - more than 30% of shops have no real location (precision "district", or none at all)
+  - a shop's location precision is not name, address, postcode, town or district
   - the postcode table has fewer than 2,000 postcodes
   - the data date is more than 10 days before the build date
   - fewer than 10 located shops lie within 5 km of one of the towns in TOWNS
@@ -23,6 +24,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 from collections import Counter
 from datetime import date
@@ -47,6 +49,7 @@ TOWNS = [("Kuala Lumpur", 3.139, 101.687), ("Shah Alam", 3.073, 101.518),
          ("Seremban", 2.726, 101.938), ("George Town", 5.414, 100.329), ("Kota Bharu", 6.125, 102.238),
          ("Alor Setar", 6.121, 100.367), ("Kuala Terengganu", 5.330, 103.137)]
 EXACT, APPROX = ("name", "address"), ("postcode", "town")
+PRECISIONS = EXACT + APPROX + ("district",)
 
 
 def km(a_lat, a_lon, b_lat, b_lon) -> float:
@@ -57,9 +60,13 @@ def km(a_lat, a_lon, b_lat, b_lon) -> float:
 
 def _read_json(path: Path):
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, ValueError):
         return None
+
+
+def _dict(x) -> dict:
+    return x if isinstance(x, dict) else {}
 
 
 def _num(x):
@@ -94,8 +101,14 @@ def check(data_dir: Path, previous: Path | None = None, today: date | None = Non
         fail(f"meta.json is missing or unreadable in {data_dir}.")
         return res
 
-    areas = [(st, a) for st, v in (meta.get("areas") or {}).items() for a in (v or []) if isinstance(a, dict)]
-    stats = meta.get("stats") or {}
+    # Wrong types are failures with a message, never a crash: the report must reach the summary.
+    if not isinstance(meta.get("areas"), dict):
+        fail("meta.json has no areas object ({state: [districts]}).")
+    if meta.get("stats") is not None and not isinstance(meta.get("stats"), dict):
+        fail("meta.json stats is not an object.")
+    areas = [(st, a) for st, v in _dict(meta.get("areas")).items() if isinstance(v, list)
+             for a in v if isinstance(a, dict)]
+    stats = _dict(meta.get("stats"))
     premises = _num(stats.get("premises"))
     items = len(meta["items"]) if isinstance(meta.get("items"), list) else _num(stats.get("items"))
     data_date = _date(meta.get("data_date"))
@@ -123,14 +136,16 @@ def check(data_dir: Path, previous: Path | None = None, today: date | None = Non
     missing, unreadable = [], []
     bad_rows = stale_rows = n_rows = 0
     located = []
+    odd = Counter()  # precision values outside the contract, as text
     for st, a in areas:
-        slug = a.get("slug") or ""
+        slug = a.get("slug") if isinstance(a.get("slug"), str) and re.fullmatch(r"[\w-]+", a["slug"]) else ""
         d = _read_json(data_dir / "d" / f"{slug}.json") if slug else None
         if d is None:
             (missing if not slug or not (data_dir / "d" / f"{slug}.json").exists() else unreadable).append(
                 slug or f"{st} / {a.get('district')}")
             continue
-        if not isinstance(d, dict) or not isinstance(d.get("premises"), list) or not isinstance(d.get("prices"), dict):
+        if (not isinstance(d, dict) or not isinstance(d.get("premises"), list) or not isinstance(d.get("prices"), dict)
+                or not isinstance(d.get("shop_months") or {}, dict) or not isinstance(d.get("premise_cols") or [], list)):
             unreadable.append(slug)
             continue
         n = len(d["premises"])
@@ -150,12 +165,16 @@ def check(data_dir: Path, previous: Path | None = None, today: date | None = Non
         for p in d["premises"]:
             get = (lambda i: p[i] if isinstance(p, list) and len(p) > i else None)
             lat, lon, prec = _num(get(ilat)), _num(get(ilon)), get(iprec)
+            if prec not in PRECISIONS:
+                odd[str(prec)] += 1
             if prec == "district":
                 res["locations"]["district"] += 1
             elif lat is None or lon is None or not prec:
                 res["locations"]["none"] += 1
             else:
-                res["locations"]["exact" if prec in EXACT else "approximate" if prec in APPROX else prec] += 1
+                # str(): a number or other odd value must not break sorting in report()
+                kind = "exact" if prec in EXACT else "approximate" if prec in APPROX else str(prec)
+                res["locations"][kind] += 1
                 located.append((lat, lon))
     f.update(price_rows=n_rows, located=len(located))
     if missing:
@@ -172,7 +191,7 @@ def check(data_dir: Path, previous: Path | None = None, today: date | None = Non
         if not isinstance(prev, dict):
             note("No live build to compare with (previous meta.json missing or empty).")
         else:
-            ps = prev.get("stats") or {}
+            ps = _dict(prev.get("stats"))
             pp, pr, pd_ = _num(ps.get("premises")), _num(ps.get("rows_kept")), _date(prev.get("data_date"))
             f["previous"] = {"data_date": prev.get("data_date"), "premises": pp, "rows_kept": pr}
             if pp and premises is not None and premises < pp * (1 - MAX_PREMISE_DROP):
@@ -189,8 +208,11 @@ def check(data_dir: Path, previous: Path | None = None, today: date | None = Non
     if total and unlocated / total > MAX_UNLOCATED_SHARE:
         warn(f"{unlocated / total:.0%} of shops ({unlocated:,} of {total:,}) have no real location "
              f"(more than {MAX_UNLOCATED_SHARE:.0%}).")
-    geo = meta.get("geo") if isinstance(meta.get("geo"), dict) else {}
-    n_pc = len(geo.get("postcodes") or {})
+    if odd:
+        warn(f"{sum(odd.values()):,} shop(s) have a location precision that is not name, address, postcode, "
+             f"town or district: {', '.join(sorted(odd)[:5])}{' ...' if len(odd) > 5 else ''}.")
+    pcs = _dict(meta.get("geo")).get("postcodes")
+    n_pc = len(pcs) if isinstance(pcs, (dict, list)) else 0
     f["postcodes"] = n_pc
     if n_pc < MIN_POSTCODES:
         warn(f"The postcode table has {n_pc:,} postcodes (expected at least {MIN_POSTCODES:,}).")
@@ -228,7 +250,7 @@ def report(res: dict) -> str:
         labels = [("exact", "exact (name or address)"), ("approximate", "approximate (postcode or town)"),
                   ("district", "district only"), ("none", "none")]
         known = {k for k, _ in labels}
-        labels += [(k, k) for k in sorted(res["locations"]) if k not in known]
+        labels += [(k, str(k)) for k in sorted(res["locations"], key=str) if k not in known]
         for key, label in labels:
             if res["locations"][key]:
                 out.append(f"| {label} | {res['locations'][key]:,} | {res['locations'][key] / total:.0%} |")
@@ -253,9 +275,15 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--min-premises", type=int, default=MIN_PREMISES)
     ap.add_argument("--min-items", type=int, default=MIN_ITEMS)
     args = ap.parse_args(argv)
-    res = check(Path(args.data), Path(args.previous) if args.previous else None,
-                min_districts=args.min_districts, min_premises=args.min_premises, min_items=args.min_items)
-    print(report(res), end="")
+    try:
+        res = check(Path(args.data), Path(args.previous) if args.previous else None,
+                    min_districts=args.min_districts, min_premises=args.min_premises, min_items=args.min_items)
+        text = report(res)
+    except Exception as e:  # a shape we did not foresee: still a failure with a report, not a traceback
+        res = {"fails": [f"The check could not finish ({type(e).__name__}: {e})."], "warns": [],
+               "notes": [], "facts": {}, "locations": Counter(), "towns": []}
+        text = report(res)
+    print(text, end="")
     return 1 if res["fails"] else 0
 
 

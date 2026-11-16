@@ -78,8 +78,9 @@ jobs:
         continue-on-error: true
         timeout-minutes: 120
         run: |
+          # Whole minutes only: anything else (or 4+ digits) means the default 40; at most 100.
           m="$GEO_MINUTES"
-          case "$m" in ''|*[!0-9]*) m=40 ;; esac
+          case "$m" in ''|*[!0-9]*|????*) m=40 ;; esac
           if [ "$m" -gt 100 ]; then m=100; fi
           python etl/geocode_premises.py --max-minutes "$m" | tee "$RUNNER_TEMP/geo.log"
           echo "Shop locations: \`$(tail -n 1 "$RUNNER_TEMP/geo.log")\`" >> "$GITHUB_STEP_SUMMARY"
@@ -125,10 +126,11 @@ jobs:
           fi
 
       # A failure here stops the deploy, so the last good site stays live.
+      # The live meta.json is optional: a slow or failed download only skips the comparison.
       - name: Check data
         timeout-minutes: 5
         run: |
-          curl -fsS https://murshidihashim.github.io/bakul-murah/data/meta.json -o "$RUNNER_TEMP/prev_meta.json" || true
+          curl -fsS --max-time 30 --retry 2 https://murshidihashim.github.io/bakul-murah/data/meta.json -o "$RUNNER_TEMP/prev_meta.json" || true
           python etl/check_data.py --previous "$RUNNER_TEMP/prev_meta.json" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Size report

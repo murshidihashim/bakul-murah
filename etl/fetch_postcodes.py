@@ -10,8 +10,10 @@ sorted by postcode then place, and etl/geo/postcodes_my.json (when it was fetche
 source, licence). geocode_premises.py and build_dataset.py read the table.
 
 The table changes rarely, so the download is skipped while it is younger than 90 days
-(--force fetches anyway). A failed download never fails the run: the old table is kept and
-the script still exits 0. Standard library only.
+(--force fetches anyway). Its age comes from postcodes_my.json only: file times are no use,
+because a git checkout resets them. Without a readable postcodes_my.json the table is fetched
+again. A failed download never fails the run: the old table is kept and the script still
+exits 0. Standard library only.
 
 Run:  python etl/fetch_postcodes.py [--force]
 """
@@ -26,7 +28,7 @@ import sys
 import time
 import urllib.request
 import zipfile
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -48,6 +50,8 @@ def parse(text: str) -> list[dict]:
     admin name1, admin code1, admin name2, admin code2, admin name3, admin code3, latitude,
     longitude, accuracy) as dicts with FIELDS, sorted by postcode then place. Bad rows are skipped."""
     rows, seen = [], set()
+    if text.startswith("\ufeff"):  # a byte-order mark would hide the first row's country code
+        text = text[1:]
     for line in text.splitlines():
         f = [x.strip() for x in line.split("\t")]
         if len(f) < 11 or f[0].upper() != "MY" or not re.fullmatch(r"\d{4,5}", f[1]):
@@ -73,7 +77,7 @@ def read_zip(data: bytes, member: str = "MY.txt") -> str:
         names = [n for n in z.namelist() if n.split("/")[-1].lower() == member.lower()]
         if not names:
             raise ValueError(f"{member} not found in the zip")
-        return z.read(names[0]).decode("utf-8")
+        return z.read(names[0]).decode("utf-8-sig")
 
 
 def download(url: str = URL, timeout: int = 60, deadline: float = 180.0) -> bytes:
@@ -101,19 +105,25 @@ def info_path(out: Path) -> Path:
 
 
 def age_days(out: Path, today: date) -> float | None:
-    """Age of the table: from the fetch date in postcodes_my.json (a git checkout resets file
-    times), else from the file time. None when there is no table."""
+    """Age of the table in days, from the fetch date in postcodes_my.json. None means fetch it:
+    no table, no readable postcodes_my.json (it is rewritten on every good fetch), a fetch date
+    in the future, or a table without our header. File times are not used: in GitHub Actions
+    every file is as new as the checkout, so the table would never look old."""
     if not out.exists():
         return None
     try:
-        fetched = date.fromisoformat(json.loads(info_path(out).read_text(encoding="utf-8"))["fetched"])
-        return float((today - fetched).days)
-    except (OSError, ValueError, KeyError, TypeError):
-        return (datetime.combine(today, datetime.min.time()).timestamp() - out.stat().st_mtime) / 86400
+        fetched = date.fromisoformat(json.loads(info_path(out).read_text(encoding="utf-8-sig"))["fetched"])
+        header, _ = _header_and_rows(out)
+    except (OSError, ValueError, KeyError, TypeError, csv.Error):
+        return None
+    age = float((today - fetched).days)
+    if header != FIELDS or age < -1:  # -1: fetched "tomorrow" in another time zone is fine
+        return None
+    return age
 
 
 def _header_and_rows(path: Path) -> tuple[list[str], int]:
-    with path.open(encoding="utf-8", newline="") as f:
+    with path.open(encoding="utf-8-sig", newline="") as f:
         r = csv.reader(f)
         return next(r, []), sum(1 for _ in r)
 
