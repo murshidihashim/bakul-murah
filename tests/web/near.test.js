@@ -59,6 +59,21 @@ test("locatePostcode: null when nothing shares 2 digits, or the input is not a p
   assert.equal(N.locatePostcode("40100", {}), null);
 });
 
+test("locatePostcode: a group with a far-off point is placed in its main cluster, not between them", () => {
+  // Three Johor Bahru postcodes and two wrong ones in Sabah: 80000 must land in Johor Bahru, not in the sea.
+  const t = { "80300": [1.4716, 103.767], "80350": [1.5016, 103.742], "80400": [1.4787, 103.7749],
+              "80838": [5.2804, 115.2455], "80883": [5.2786, 115.2424] };
+  const hit = N.locatePostcode("80000", t);
+  assert.equal(hit.level, 2);
+  assert.equal(hit.exact, false);
+  assert.ok(near(hit.lat, (1.4716 + 1.5016 + 1.4787) / 3) && near(hit.lon, (103.767 + 103.742 + 103.7749) / 3), JSON.stringify(hit));
+  assert.ok(N.km(hit.lat, hit.lon, 1.4927, 103.7414) < 5, "within 5 km of Johor Bahru");
+  // A group of one far point and one near point still gives a real place, never the middle between them.
+  const two = N.locatePostcode("12999", { "12000": [5.4037, 100.3692], "12085": [6.1294, 102.3155] });
+  const d0 = N.km(two.lat, two.lon, 5.4037, 100.3692), d1 = N.km(two.lat, two.lon, 6.1294, 102.3155);
+  assert.ok(Math.min(d0, d1) < 1e-6, JSON.stringify(two));
+});
+
 test("locatePostcode skips postcodes that have no point", () => {
   const t = { "40100": null, "40150": [3.09, 101.54] };
   assert.deepEqual(N.locatePostcode("40100", t), { lat: 3.09, lon: 101.54, exact: false, level: 3 });

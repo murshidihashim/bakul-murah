@@ -29,10 +29,30 @@
     return out;
   }
 
+  // Postcodes of one area lie within this distance of each other; a point further away is another place.
+  var CLUSTER_KM = 30;
+
+  /**
+   * The middle of a group of postcode points [[lat, lon], ...]: the average of the points within CLUSTER_KM of the
+   * most central point (the one nearest to all the others in total). Points far away are left out: one wrong or far
+   * postcode in a group must not move the middle into the sea between them (80000 between Johor Bahru and Sabah).
+   */
+  function groupCentre(pts) {
+    var mid = null, bestSum = Infinity;
+    pts.forEach(function (p) {
+      var s = 0;
+      pts.forEach(function (q) { s += km(p[0], p[1], q[0], q[1]); });
+      if (s < bestSum - 1e-9) { bestSum = s; mid = p; }
+    });
+    var la = 0, lo = 0, c = 0;
+    pts.forEach(function (q) { if (km(mid[0], mid[1], q[0], q[1]) <= CLUSTER_KM) { la += q[0]; lo += q[1]; c++; } });
+    return [la / c, lo / c];
+  }
+
   /**
    * Postcode -> {lat, lon, exact, level}. table: {"50100": [lat, lon] or [lat, lon, accuracy]}.
-   * An exact match has level 5. Otherwise the average of the postcodes that share the first 4, then 3,
-   * then 2 digits (Malaysian postcodes are grouped by area); level is the number of digits shared.
+   * An exact match has level 5. Otherwise the middle of the postcodes that share the first 4, then 3,
+   * then 2 digits (Malaysian postcodes are grouped by area; see groupCentre); level is the number of digits shared.
    * Returns null for anything that is not 5 digits, or when no postcode shares even the first 2 digits.
    */
   function locatePostcode(pc, table) {
@@ -41,12 +61,12 @@
     if (hasPoint(table[pc])) return { lat: table[pc][0], lon: table[pc][1], exact: true, level: 5 };
     var keys = Object.keys(table);
     for (var n = 4; n >= 2; n--) {
-      var pre = pc.slice(0, n), la = 0, lo = 0, c = 0;
+      var pre = pc.slice(0, n), pts = [];
       keys.forEach(function (k) {
         var v = table[k];
-        if (k.slice(0, n) === pre && hasPoint(v)) { la += v[0]; lo += v[1]; c++; }
+        if (k.slice(0, n) === pre && hasPoint(v)) pts.push([Number(v[0]), Number(v[1])]);
       });
-      if (c) return { lat: la / c, lon: lo / c, exact: false, level: n };
+      if (pts.length) { var c = groupCentre(pts); return { lat: c[0], lon: c[1], exact: false, level: n }; }
     }
     return null;
   }

@@ -20,8 +20,34 @@
     return out;
   }
 
+  // The same numbers as a table that only screen readers see (the chart is mouse and touch only).
+  // Built with textContent, so names and labels never become markup.
+  function srTable(host, opts) {
+    var t = opts.table, box = document.createElement("div"), tb = document.createElement("table");
+    var cap = document.createElement("caption"), head = document.createElement("tr"), body = document.createElement("tbody");
+    box.className = "sr-only";
+    cap.textContent = opts.label || "";
+    tb.appendChild(cap);
+    [t.month].concat(opts.series.map(function (s) { return s.label || s.name; })).forEach(function (h) {
+      var th = document.createElement("th"); th.scope = "col"; th.textContent = h; head.appendChild(th);
+    });
+    var thead = document.createElement("thead"); thead.appendChild(head); tb.appendChild(thead);
+    (t.labels || opts.labels).forEach(function (lab, i) {
+      var tr = document.createElement("tr"), th = document.createElement("th");
+      th.scope = "row"; th.textContent = lab; tr.appendChild(th);
+      opts.series.forEach(function (s) {
+        var td = document.createElement("td"), v = s.values[i];
+        td.textContent = v == null ? (t.none || "-") : (opts.fmt ? opts.fmt(v) : String(v));
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    });
+    tb.appendChild(body); box.appendChild(tb); host.appendChild(box);
+  }
+
   /**
-   * opts: {labels:[...], series:[{name, values:[num|null], cls}], fmt:fn(v), label: aria text}
+   * opts: {labels:[...], series:[{name, label?, values:[num|null], cls}], fmt:fn(v), label: aria text,
+   *        table?: {month: column head, labels?: [long month names], none: text for a month with no price}}
    */
   function lineChart(host, opts) {
     host.innerHTML = "";
@@ -101,6 +127,7 @@
     hit.addEventListener("touchstart", show, { passive: true });
     hit.addEventListener("touchmove", show, { passive: true });
     hit.addEventListener("mouseleave", hide);
+    if (opts.table) srTable(host, opts);
   }
 
   window.MiniChart = { lineChart: lineChart, niceTicks: niceTicks };

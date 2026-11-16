@@ -190,17 +190,231 @@ test("planOptions counts a RM 1.00 saving as RM 1 despite float maths", () => {
   assert.equal(po.rec, 2);
 });
 
-test("planOptions can drop the 2-stop plan and keep the 3-stop plan", () => {
+test("planOptions: each line is rounded to the sen, so a difference under a sen offers no extra stop", () => {
   // 0.3 kg of each item. Shops 1-3 each sell one item for RM 0.99 a kg, against RM 1 at shop 0.
-  // 2 stops save RM 0.003, which rounds to nothing; 3 stops (shops 1-3) save RM 0.009, which rounds to RM 0.01.
+  // Each line costs RM 0.30 at every shop once rounded to the sen (0.297 -> 0.30), so no extra stop saves anything.
+  // (Before lines were rounded, the 3-stop plan "saved" RM 0.009, shown as RM 0.01, and the 2-stop plan was dropped.)
   const d = { prices: { 1: [[0, 1, 0], [1, 0.99, 0]], 2: [[0, 1, 0], [2, 0.99, 0]], 3: [[0, 1, 0], [3, 0.99, 0]] } };
   const i = B.indexDistrict(d), bk = [1, 2, 3].map(code => ({ code, qty: 0.3 }));
   const rows = B.rankStores(i, 4, bk);
-  assert.equal(B.bestPlan(i, 4, bk, rows, 2).total, 0.9);
+  assert.equal(rows[0].total, 0.9);
   const po = B.planOptions(i, 4, bk, rows, 0);
-  // There is no 2-stop option, so the screen must look options up by k, not by position.
-  assert.deepEqual(po.options.map(o => [o.k, o.have, o.total, o.saving]), [[1, 3, 0.9, 0], [3, 3, 0.89, 0.01]]);
+  assert.deepEqual(po.options.map(o => [o.k, o.have, o.total, o.saving]), [[1, 3, 0.9, 0]]);
   assert.equal(po.rec, 1);
+});
+
+test("every total is the sum of its lines rounded to the sen", () => {
+  // 0.5 kg at RM 4.99 is RM 2.495: shown as RM 2.50 on its line, so the total must add RM 2.50, not RM 2.495.
+  assert.equal(B.lineTotal(4.99, 0.5), 2.5);
+  assert.equal(B.lineTotal(1.15, 0.5), 0.58);           // 57.5 sen rounds up, despite 1.15 being 1.1499... in floating point
+  assert.equal(B.lineTotal(12.2, 3), 36.6);
+  const d = { prices: { 1: [[0, 4.99, 0], [1, 5.01, 0]], 2: [[0, 1.15, 0], [1, 1.13, 0]], 3: [[0, 3.33, 0], [1, 3.35, 0]] } };
+  const i = B.indexDistrict(d), bk = [{ code: 1, qty: 0.5 }, { code: 2, qty: 0.5 }, { code: 3, qty: 1 }];
+  const rows = B.rankStores(i, 2, bk);
+  rows.forEach(r => {
+    const sum = bk.reduce((s, b) => s + Math.round(B.lineTotal(r.lines[b.code].p, b.qty) * 100), 0) / 100;
+    assert.equal(r.total, sum, "shop " + r.pidx);
+  });
+  assert.deepEqual(rows.map(r => [r.pidx, r.total]), [[0, 6.41], [1, 6.43]]);   // 2.50 + 0.58 + 3.33; 2.51 + 0.57 + 3.35
+  const pl = B.bestPlan(i, 2, bk, rows, 2);
+  assert.equal(pl.total, 6.4);                           // 2.50 (shop 0) + 0.57 (shop 1) + 3.33 (shop 0); 6.39 unrounded
+  assert.deepEqual(pl.assign, { 1: 0, 2: 1, 3: 0 });
+  assert.deepEqual(B.sharedTotals(i, bk, 0, 1), { n: 3, a: 6.41, b: 6.43 });
+});
+
+test("summarise: the typical total is rounded first, and the saving is the gap between the figures shown", () => {
+  // Petaling Jaya case: 4 shops with every item. The typical total is the mean of the middle two, RM 147.865,
+  // shown as RM 147.87; the saving shown must then be 147.87 - 140.52 = 7.35 (it used to say 7.34).
+  const rows = [140.52, 143.37, 152.36, 155.87].map((t, p) => ({ pidx: p, total: t, have: 2, n: 2 }));
+  const s = B.summarise(rows, 2);
+  assert.equal(s.median, 147.87);
+  assert.equal(s.save, 7.35);
+  assert.equal(s.max, 155.87);
+  assert.equal(B.round2(s.median - s.best.total), s.save);
+});
+
+// ---------- the plan card's message (planNote) ----------
+
+const note = (po, k, c, n) => { const x = B.planNote(po, k, c, n); return x && [x.key, x.vars]; };
+
+test("planNote words each option against the recommended plan", () => {
+  const rows = B.rankStores(i4, 4, bask3);            // plans: 1 shop RM 22, 2 shops RM 17, 3 shops RM 12
+  let po = B.planOptions(i4, 4, bask3, rows, 2);
+  assert.equal(po.rec, 3);
+  assert.deepEqual(note(po, 1, 2, 3), ["planFewer", { k: 3, x: 10 }]);
+  assert.deepEqual(note(po, 2, 2, 3), ["planFewer", { k: 3, x: 5 }]);
+  assert.deepEqual(note(po, 3, 2, 3), ["planSaveRec", { x: 10, c: 2 }]);
+  po = B.planOptions(i4, 4, bask3, rows, 5);           // RM 5 a stop: every plan scores RM 22, so 1 shop wins the tie
+  assert.equal(po.rec, 1);
+  assert.deepEqual(note(po, 1, 5, 3), ["planOneLow", { x: 5, c: 5 }]);     // RM 5 is not more than RM 5
+  assert.deepEqual(note(po, 2, 5, 3), ["planMoreNot", { x: 5, c: 5 }]);
+  assert.deepEqual(note(po, 3, 5, 3), ["planMoreNot", { x: 10, c: 5 }]);   // RM 10 over 2 extra shops
+  po = B.planOptions(i4, 4, bask3, rows, 0);
+  assert.equal(po.rec, 3);
+  assert.deepEqual(note(po, 3, 0, 3), ["planSaveRec0", { x: 10 }]);         // no "beats RM 0 per extra shop"
+});
+
+test("planNote explains the RM 1 minimum instead of 'less than RM 0'", () => {
+  // 2 shops save RM 0.01. With RM 0 a stop, the hidden RM 1 minimum keeps 1 shop.
+  const d = { premises: [[1], [2]], prices: { 1: [[0, 1.0, 0], [1, 0.99, 0]], 2: [[0, 1.0, 0]] } };
+  const i = B.indexDistrict(d), bk = [{ code: 1, qty: 1 }, { code: 2, qty: 1 }];
+  const po = B.planOptions(i, 2, bk, B.rankStores(i, 2, bk), 0);
+  assert.equal(po.rec, 1);
+  assert.deepEqual(note(po, 1, 0, 2), ["planOneTiny", { x: 0.01 }]);
+  assert.deepEqual(note(po, 2, 0, 2), ["planMoreTiny", { x: 0.01 }]);
+});
+
+test("planNote with plans that cover more items", () => {
+  // Shop 0 has items 1 and 2; shop 1 has item 3; shop 2 has item 4: 3 shops have all 4 items.
+  let d = { prices: { 1: [[0, 1, 0]], 2: [[0, 1, 0]], 3: [[1, 1, 0]], 4: [[2, 1, 0]] } };
+  let i = B.indexDistrict(d), bk = [1, 2, 3, 4].map(code => ({ code, qty: 1 }));
+  let po = B.planOptions(i, 3, bk, B.rankStores(i, 3, bk), 5);
+  assert.equal(po.rec, 3);
+  assert.deepEqual(note(po, 1, 5, 4), ["planFewerCover", { k: 3, h: 4, n: 4 }]);   // not "One shop is the best plan"
+  assert.deepEqual(note(po, 2, 5, 4), ["planFewerCover", { k: 3, h: 4, n: 4 }]);
+  assert.deepEqual(note(po, 3, 5, 4), ["planCover", { h: 4, n: 4 }]);
+  // 1 shop: 2 of 3 items for RM 10. 2 shops: all 3 for RM 11. 3 shops: all 3 for RM 8.
+  d = { prices: { 1: [[0, 5, 0], [2, 2, 0]], 2: [[0, 5, 0]], 3: [[1, 1, 0]] } };
+  i = B.indexDistrict(d); bk = [1, 2, 3].map(code => ({ code, qty: 1 }));
+  const rows = B.rankStores(i, 3, bk);
+  po = B.planOptions(i, 3, bk, rows, 5);
+  assert.equal(po.rec, 2);
+  assert.deepEqual(note(po, 1, 5, 3), ["planFewerCover", { k: 2, h: 3, n: 3 }]);
+  assert.deepEqual(note(po, 2, 5, 3), ["planCover", { h: 3, n: 3 }]);
+  assert.deepEqual(note(po, 3, 5, 3), ["planMoreNot", { x: 3, c: 5 }]);
+  po = B.planOptions(i, 3, bk, rows, 0);
+  assert.equal(po.rec, 3);
+  assert.deepEqual(note(po, 2, 0, 3), ["planFewer", { k: 3, x: 3 }]);
+  assert.deepEqual(note(po, 3, 0, 3), ["planCover", { h: 3, n: 3 }]);
+});
+
+test("planNote looks plans up by k, and copes with odd input", () => {
+  // A hand-made result with no 2-shop option: 1 shop recommended, 3 shops RM 0.50 cheaper.
+  const po = { rec: 1, options: [{ k: 1, total: 10, have: 3 }, { k: 3, total: 9.5, have: 3 }] };
+  assert.deepEqual(note(po, 1, 5, 3), ["planOneLow3", { x: 0.5, c: 5 }]);
+  assert.deepEqual(note(po, 1, 0, 3), ["planOneTiny3", { x: 0.5 }]);
+  assert.deepEqual(note(po, 3, 0, 3), ["planMoreTiny", { x: 0.5 }]);
+  assert.deepEqual(note(po, 1, "<b>", 3), ["planOneLow3", { x: 0.5, c: 5 }]);   // a bad stop value counts as RM 5
+  assert.equal(B.planNote(po, 2, 5, 3), null);
+  assert.equal(B.planNote({ options: [], rec: 0 }, 1, 5, 3), null);
+  assert.equal(B.planNote(null, 1, 5, 3), null);
+  assert.deepEqual([B.stopValue(null), B.stopValue(""), B.stopValue("x"), B.stopValue(-2), B.stopValue("10"), B.stopValue(0)], [5, 5, 5, 5, 10, 0]);
+});
+
+// Checks one plan card message against the plan totals directly: right side of the recommendation, and
+// every stated comparison true. Returns a problem, or "" when the message is honest.
+function noteProblem(po, k, c, n) {
+  const nt = B.planNote(po, k, c, n);
+  const by = kk => po.options.find(o => o.k === kk), o = by(k), r = by(po.rec), one = po.options[0];
+  const cs = Math.round(c * 100), sen = x => Math.round(x * 100), xs = nt && nt.vars.x != null ? sen(nt.vars.x) : null;
+  if (!nt) return "no note";
+  const key = nt.key, v = nt.vars;
+  if (k < po.rec) {
+    if (key === "planFewer") return v.k === po.rec && r.have === o.have && xs === sen(o.total) - sen(r.total) && xs > 0 ? "" : "planFewer wrong";
+    if (key === "planFewerCover") return v.k === po.rec && r.have > o.have && v.h === r.have ? "" : "planFewerCover wrong";
+    return "k < rec but " + key;
+  }
+  if (k > po.rec) {
+    if (o.have !== r.have || xs !== sen(r.total) - sen(o.total) || xs <= 0) return key + ": wrong amount";
+    if (key === "planMoreNot") return xs <= (k - po.rec) * cs ? "" : "planMoreNot: saving is more than the stop value";
+    if (key === "planMoreTiny") return xs < 100 ? "" : "planMoreTiny: saving is RM 1 or more";
+    return "k > rec but " + key;
+  }
+  if (k === 1) {
+    const alt = by(2) || by(3);
+    if (!alt) return key === "planOne" ? "" : "no alternative but " + key;
+    if (xs !== sen(one.total) - sen(alt.total) || alt.have !== one.have) return key + ": wrong amount";
+    if (/^planOneLow/.test(key)) return xs <= (alt.k - 1) * cs && (alt.k === 3) === /3$/.test(key) ? "" : key + ": not true";
+    if (/^planOneTiny/.test(key)) return xs < 100 && (alt.k === 3) === /3$/.test(key) ? "" : key + ": not true";
+    return "rec 1 but " + key;
+  }
+  if (key === "planCover") return o.have > one.have && v.h === o.have ? "" : "planCover wrong";
+  if (key === "planSaveRec" || key === "planSaveRec0") {
+    if (o.have !== one.have || xs !== sen(one.total) - sen(o.total)) return key + ": wrong amount";
+    if (xs < 100 || xs <= (k - 1) * cs) return key + ": does not beat the stop value";
+    return (key === "planSaveRec0") === (c === 0) ? "" : key + " with c " + c;
+  }
+  return "rec but " + key;
+}
+
+// Small seeded random numbers, so a failure can be repeated.
+function rng(seed) { return () => { seed = (seed + 0x6D2B79F5) | 0; let x = Math.imul(seed ^ (seed >>> 15), 1 | seed); x ^= x + Math.imul(x ^ (x >>> 7), 61 | x); return ((x ^ (x >>> 14)) >>> 0) / 4294967296; }; }
+const COSTS = [0, 2, 5, 10, 20];
+
+test("planNote never contradicts the recommendation or states a false comparison (random lists)", () => {
+  const rand = rng(7);
+  let cards = 0;
+  for (let trial = 0; trial < 400; trial++) {
+    const nShops = 2 + Math.floor(rand() * 8), nItems = 2 + Math.floor(rand() * 6), prices = {};
+    for (let c = 1; c <= nItems; c++) {
+      prices[c] = [];
+      for (let p = 0; p < nShops; p++) if (rand() < 0.75) prices[c].push([p, Math.round((1 + rand() * 20) * 100) / 100, 0]);
+    }
+    const i = B.indexDistrict({ prices });
+    const bk = Array.from({ length: nItems }, (_, j) => ({ code: j + 1, qty: [0.5, 1, 1, 1.5, 2, 3][Math.floor(rand() * 6)] }));
+    const rows = B.rankStores(i, nShops, bk);
+    COSTS.forEach(c => {
+      const po = B.planOptions(i, nShops, bk, rows, c);
+      if (po.options.length < 2) return;
+      cards++;
+      po.options.forEach(o => assert.equal(noteProblem(po, o.k, c, bk.length), "", JSON.stringify({ trial, c, k: o.k, po })));
+    });
+  }
+  assert.ok(cards > 300, cards + " plan cards");
+});
+
+// The same check on real district files, when a build is present (CI builds web/data before the tests).
+// Set BAKUL_DATA to another build's data folder to use that instead.
+const fs = require("fs");
+const DATA = process.env.BAKUL_DATA || path.join(__dirname, "../../web/data");
+const dFiles = fs.existsSync(path.join(DATA, "d")) ? fs.readdirSync(path.join(DATA, "d")).filter(f => f.endsWith(".json")).sort() : [];
+test("planNote is honest on real district files (random lists)", { skip: dFiles.length ? false : "no built data in " + DATA }, () => {
+  const rand = rng(11);
+  let cards = 0, keys = {};
+  const pick = dFiles.filter(() => rand() < Math.min(1, 40 / dFiles.length));
+  pick.forEach(f => {
+    const d = JSON.parse(fs.readFileSync(path.join(DATA, "d", f), "utf8")), i = B.indexDistrict(d);
+    // Items priced at 3 or more shops, so plans exist.
+    const codes = Object.keys(d.prices).filter(c => d.prices[c].length >= 3).map(Number);
+    if (codes.length < 3) return;
+    for (let trial = 0; trial < 3; trial++) {
+      const n = 3 + Math.floor(rand() * 8), bk = [];
+      while (bk.length < Math.min(n, codes.length)) {
+        const c = codes[Math.floor(rand() * codes.length)];
+        if (!bk.some(b => b.code === c)) bk.push({ code: c, qty: [0.5, 1, 1, 2, 3][Math.floor(rand() * 5)] });
+      }
+      const rows = B.rankStores(i, d.premises.length, bk);
+      COSTS.forEach(c => {
+        const po = B.planOptions(i, d.premises.length, bk, rows, c, 60);
+        if (po.options.length < 2) return;
+        cards++;
+        po.options.forEach(o => {
+          assert.equal(noteProblem(po, o.k, c, bk.length), "", JSON.stringify({ f, c, k: o.k, bk }));
+          const key = B.planNote(po, o.k, c, bk.length).key; keys[key] = (keys[key] || 0) + 1;
+        });
+      });
+    }
+  });
+  assert.ok(cards > 50, cards + " plan cards");
+  // The scan reaches the messages that used to go wrong: fewer shops than recommended, and more.
+  assert.ok(keys.planFewer && keys.planMoreNot, JSON.stringify(keys));
+});
+
+test("every plan message exists in English and BM with the values it is given", () => {
+  global.window = {};
+  require(path.join(__dirname, "../../web/js/i18n.js"));
+  const I = global.window.I18N;
+  // planCover also names where its shops are ({d}: "within 5 km of you", "in Petaling"): the page adds that value.
+  const filled = { planOne: [], planOneLow: ["x", "c"], planOneLow3: ["x", "c"], planOneTiny: ["x"], planOneTiny3: ["x"],
+                   planSaveRec: ["x", "c"], planSaveRec0: ["x"], planFewer: ["k", "x"], planFewerCover: ["k", "h", "n"],
+                   planMoreNot: ["x", "c"], planMoreTiny: ["x"], planCover: ["h", "n", "d"] };
+  ["en", "ms"].forEach(lang => Object.keys(filled).forEach(key => {
+    const s = I[lang][key];
+    assert.equal(typeof s, "string", lang + "." + key);
+    const used = (s.match(/\{(\w+)\}/g) || []).map(m => m.slice(1, -1)).sort();
+    assert.deepEqual(used, filled[key].slice().sort(), lang + "." + key + ": " + s);
+    assert.ok(!/berharga|hentian|barangan/i.test(s), lang + "." + key);
+  }));
 });
 
 test("planOptions keeps each plan that covers more items, with no saving figure", () => {
@@ -279,4 +493,31 @@ test("parseUnit and unitPrice read PriceCatcher units", () => {
   assert.equal(B.parseUnit("S80, M60, L58, XL50"), null);
   assert.deepEqual(B.unitPrice(29.9, "5 kg"), { v: 5.98, per: "kg" });
   assert.equal(B.unitPrice(15, "30 biji").v, 0.5);
+});
+
+test("ageToday counts a price's age from today, not from the data date", () => {
+  // days_old counts back from the data date. Opened 11 days after a 2026-11-05 build, a price that was
+  // 1 day old then is 12 days old now ("prices this week" would be wrong).
+  assert.equal(B.ageToday(1, "2026-11-05", "2026-11-16"), 12);
+  assert.equal(B.ageToday(0, "2026-11-05", "2026-11-05"), 0);
+  assert.equal(B.ageToday(17, "2026-11-05", "2026-11-15"), 27);
+  assert.equal(B.ageToday(3, "2026-10-27", "2026-11-16"), 23);       // across a month end
+  assert.equal(B.ageToday(5, "2026-12-30", "2027-01-02"), 8);        // across a year end
+  // A phone clock set before the data date adds nothing; missing dates add nothing.
+  assert.equal(B.ageToday(4, "2026-11-05", "2026-11-01"), 4);
+  assert.equal(B.ageToday(4, null, "2026-11-16"), 4);
+  assert.equal(B.ageToday(4, "2026-11-05", ""), 4);
+  assert.equal(B.ageToday(4, "not a date", "2026-11-16"), 4);
+});
+
+test("every label exists in English and BM with the same placeholders, and BM avoids the banned words", () => {
+  global.window = global.window || {};
+  require(path.join(__dirname, "../../web/js/i18n.js"));
+  const I = global.window.I18N, ph = s => (String(s).match(/\{\w+\}/g) || []).sort().join(",");
+  assert.deepEqual(Object.keys(I.ms).sort(), Object.keys(I.en).sort());
+  Object.keys(I.en).forEach(k => assert.equal(ph(I.ms[k]), ph(I.en[k]), "placeholders of " + k));
+  // The whole BM text, not only what one screen shows (the glossary at the top of i18n.js).
+  Object.keys(I.ms).forEach(k => assert.ok(!/berharga|hentian|barangan/i.test(I.ms[k]), "ms." + k + ": " + I.ms[k]));
+  // An English singular label (key ending in "1") never says "1 shops", "1 items" and the like.
+  Object.keys(I.en).filter(k => /1$/.test(k) && I.en[k.slice(0, -1)]).forEach(k => assert.ok(!/\b1 (shops|items|days|months|areas)\b/.test(I.en[k]), k));
 });
