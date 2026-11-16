@@ -22,15 +22,26 @@ Near means 35 km. Only when nothing in the address is that near may strong evide
 after the district ("KUALA ROMPIN" in district Rompin), and only when shops OpenStreetMap found
 vouch for its point. Else the district centre.
 Where a postcode or town is: the median of the shops OpenStreetMap found that name it, when 2 or
-more agree (GeoNames' points are often 10-80 km off); else its GeoNames point, and then the
-district's own town (or a postcode whose own place it is) only within 15 km.
+more agree (the postcode table's points are often 10-80 km off); else, for a town, its own point
+in the GeoNames place list (etl/geo/places_my.csv, when present: the place of that name in the
+state nearest where the district's shops are, within 35 km, or 80 km for the district's own town
+when it is the only place of that name, or up to 35 km from the town's postcode-table point when
+that lies within 15 km of the district's shops and the place is the state's only one of that name;
+none when two near ones are 10 km apart); else its postcode-table point, and then the district's
+own town (or a postcode whose own place it is) only within 15 km. A postcode whose town has one
+rough point for all its postcodes (all the town's rows within 10 km of each other) gives the shop
+the town's own point in the place list instead, as a town, when that is more than 10 km from the
+postcode's point; an old postcode row is judged by this only when the town's rows lie within 5 km
+of each other.
 A name or postcode whose GeoNames rows lie more than 20 km apart names several places: only its
 rows within 10 km of where the district's shops are count (a postcode: those of its own place
-written right after it, for strong evidence).
+written right after it, for strong evidence); then the shops OpenStreetMap found that name it,
+then its place-list point, but neither when those found shops are all in another district, more
+than 10 km away ("SIBU" in a Sibu Jaya address: Sibu town is 16-24 km off).
 
 Every run first gives each shop still at district precision its anchor, if that is a postcode or
 town (no search needed), so a run with no time for searches still improves those shops; a
-postcode or town point that found shops say is wrong is corrected then too.
+postcode or town point that found shops or the place list say is wrong is corrected then too.
 
 Then at most 3 searches in a box around the anchor, stopping at the first good hit:
   1. "<shop name>, <town or district>"   -> precision "name"
@@ -52,6 +63,8 @@ credit OpenStreetMap (ODbL). This script does all four. Standard library only.
 
 Run (GitHub Actions does this between the two builds):
   python etl/geocode_premises.py --max-minutes 40
+(--places '' leaves the place list out; without the file, or with a broken one, the run says so
+and places towns as before it existed.)
 """
 from __future__ import annotations
 
@@ -76,6 +89,8 @@ ROOT = HERE.parent
 CACHE = HERE / "geo" / "premise_geo.csv"
 DCACHE = HERE / "geo" / "district_geo.csv"
 POSTCODES = HERE / "geo" / "postcodes_my.csv"
+PLACES = HERE / "geo" / "places_my.csv"
+PLACE_COLUMNS = ("name", "asciiname", "lat", "lon", "state")  # what the place list needs (fetch_places.py)
 URL = "https://nominatim.openstreetmap.org/search"
 UA = "BakulMurah/1.1 (+https://github.com/murshidihashim/bakul-murah)"
 FIELDS = ["premise_code", "lat", "lon", "precision", "query", "district", "state", "postcode",
@@ -95,11 +110,17 @@ BOX_DISTRICT = 0.3     # ... and around a district centre
 SHARED_KM = 0.5        # district centres this close together are a fallback answer, not real
 TOWN_SPREAD_KM = 20.0  # a town name with two points further apart than this names several places
 SPREAD_NEAR_KM = ANCHOR_KM  # ... then only its rows this close to where the district's shops are count
+ONE_POINT_KM = 10.0    # a town whose postal rows all lie this close together is a small town with rough
+#                        points (Putatan's five postcodes share one), not a big one with a point per
+#                        postcode: see Places.postcode_town
+ONE_POINT_ROW_KM = 5.0  # ... this close, to judge an old postcode row by it (see wrong_by): an old row may be
+#                        OpenStreetMap's point for a village in the postcode's area (shop 17730)
 MAX_ERRORS = 10        # errors in a row before the run stops calling Nominatim
 MAX_TRIES = 2          # lookups per shop before we stop hoping for a better answer
 RETRY_DAYS = 20        # a shop is looked up again only more than this many days after the last time
 RETRY_AFTER_CAP = 120  # longest wait (seconds) we accept from a 429/503 Retry-After
 RETRY_AFTER_DEFAULT = 30
+CHECKED = ("found", "place")  # a town point from found shops or the place list (see Places.town_point)
 EXACT = ("name", "address")                   # found by OpenStreetMap
 LOCATED = EXACT + ("postcode", "town")        # any real point
 RANK = {"name": 0, "address": 0, "postcode": 1, "town": 2, "district": 3}  # lower is better
@@ -116,9 +137,11 @@ NEIGHBOURS = {"putrajaya": ("selangor",), "kuala lumpur": ("selangor",)}
 STATE_SPELLINGS = {"pulau pinang": ("PENANG",), "melaka": ("MALACCA",),
                    "negeri sembilan": ("N SEMBILAN", "NEGRI SEMBILAN"), "johor": ("JOHORE",),
                    "terengganu": ("TRENGGANU",)}
-# Towns GeoNames files under another name: (state key, town) -> (GeoNames place, its postcodes).
-# GeoNames names George Town's postcodes (10xxx) after the state, "Pulau Pinang".
-ALIASES = {("pulau pinang", "George Town"): ("Pulau Pinang", r"10\d{3}")}
+# Towns GeoNames files under another name: (state key, town) -> (GeoNames place, its postcodes, the
+# districts where the town is). GeoNames names George Town's postcodes (10xxx) after the state,
+# "Pulau Pinang"; George Town is on the island (districts Timur Laut and Barat Daya), so on the
+# mainland "GEORGETOWN" in an address is not where the shop is.
+ALIASES = {("pulau pinang", "George Town"): ("Pulau Pinang", r"10\d{3}", ("Timur Laut", "Barat Daya"))}
 # A town name right after one of these words is a road name: "JALAN KUALA KRAI".
 STREET_WORDS = {"JALAN", "JLN", "LORONG", "LRG", "PERSIARAN", "LEBUH", "LEBUHRAYA"}
 DASH = r"\s*-\s*"
@@ -164,10 +187,16 @@ def _int(x) -> int:
 
 
 def _point(row) -> tuple[float, float] | None:
+    """(lat, lon) of a row, or None unless both are numbers that can be a place on Earth: an empty,
+    'nan', 'inf' or '1e400' value (inf to Python), or one outside -90..90 / -180..180, is no point.
+    (A row with 'inf' used to stop the whole run with a math error.)"""
     try:
-        return float(row["lat"]), float(row["lon"])
+        lat, lon = float(row["lat"]), float(row["lon"])
     except (TypeError, KeyError, ValueError):
         return None
+    if not (math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90 and -180 <= lon <= 180):
+        return None
+    return lat, lon
 
 
 # ---------- names ----------
@@ -311,21 +340,62 @@ def _reach(strong: bool, vouched: bool, reach: float = STRONG_KM, own: bool = Fa
     return min(GUESS_KM, CHECK_KM) if own else CHECK_KM
 
 
-def _agreed(points):
-    """The median of the points within ANCHOR_KM of the median of them all, when at least 2 and
-    more than half of them are that close (they agree); else None."""
-    if len(points) < 2:
+def _agreeing(items):
+    """For items [(point, district)]: (median, districts) of those whose points lie within ANCHOR_KM
+    of the median of them all, when at least 2 and more than half of them are that close (they
+    agree); else None."""
+    if len(items) < 2:
         return None
-    mid = _median(points)
-    close = [p for p in points if km(*p, *mid) <= ANCHOR_KM]
-    return _median(close) if len(close) >= 2 and 2 * len(close) > len(points) else None
+    mid = _median([p for p, _ in items])
+    close = [(p, d) for p, d in items if km(*p, *mid) <= ANCHOR_KM]
+    if len(close) >= 2 and 2 * len(close) > len(items):
+        return _median([p for p, _ in close]), {d for _, d in close}
+    return None
+
+
+def _agreed(points):
+    """The median of the points that agree (see _agreeing), or None."""
+    got = _agreeing([(p, "") for p in points])
+    return got[0] if got else None
+
+
+def read_places(path) -> list[dict] | None:
+    """The rows of the GeoNames place list (etl/geo/places_my.csv, made by fetch_places.py) that have
+    a name, a state and a point (see _point), or None, with a warning, when the file is missing,
+    unreadable, lacks a column (PLACE_COLUMNS) or has no such row. Without the list, towns are
+    placed as before it existed: from the postcode table and the shops OpenStreetMap found."""
+    if not path:
+        return None
+    p = Path(path)
+    why = None
+    if not p.is_file():
+        why = "is missing"
+    else:
+        try:
+            with p.open(encoding="utf-8-sig", newline="") as f:
+                reader = csv.DictReader(f)
+                missing = [c for c in PLACE_COLUMNS if c not in (reader.fieldnames or [])]
+                rows = [] if missing else [r for r in reader
+                                           if _point(r) and (r.get("name") or r.get("asciiname")) and r.get("state")]
+            if missing:
+                why = f"has no {', '.join(missing)} column"
+            elif not rows:
+                why = "has no usable rows"
+        except (OSError, UnicodeDecodeError, csv.Error) as e:
+            why = f"cannot be read ({type(e).__name__})"
+    if why:
+        print(f"  place list {p} {why}: town points come from the postcode table only", file=sys.stderr)
+        return None
+    return rows
 
 
 class Places:
-    """Postcode and town points from etl/geo/postcodes_my.csv (postcode, place, state, lat, lon).
-    learn() then places a postcode or town at the shops OpenStreetMap found there, when they agree."""
+    """Postcode and town points from etl/geo/postcodes_my.csv (postcode, place, state, lat, lon),
+    and, when given, the GeoNames place list (etl/geo/places_my.csv: each town or village at its
+    own point; see place_point). learn() then places a postcode or town at the shops OpenStreetMap
+    found there, when they agree."""
 
-    def __init__(self, rows):
+    def __init__(self, rows, place_rows=None):
         pcs, pc_names, pc_states, towns = {}, {}, {}, {}
         self.states: set[str] = set()                # state keys the table knows
         self.state_points: dict[str, list] = {}      # state key -> points of its rows
@@ -333,9 +403,14 @@ class Places:
         self.names: set[str] = set()                 # every place name (WORDS), any state
         self.postcode_places: dict[str, list] = {}   # postcode -> its place names, as word lists
         self.postcode_rows: dict[str, dict] = {}     # postcode -> {place WORDS: [points]}
+        self.postal_points: dict[tuple, list] = {}   # (state key, place WORDS) -> points of its rows
+        self.place_label: dict[tuple, Counter] = {}  # (state key, place WORDS) -> its names as written
         self.found_pc: dict[tuple, tuple] = {}       # (state key, postcode) -> point vouched by found shops
         self.found_town: dict[tuple, tuple] = {}     # (state key, town WORDS) -> point (see learn)
-        aliases = {(sk, words(src), pat): (sk, name) for (sk, name), (src, pat) in ALIASES.items()}
+        self.found_town_districts: dict[tuple, set] = {}  # ... -> districts of the shops that agree
+        self.alias_names: set[str] = set()           # names (WORDS) made from ALIASES, also as one word
+        self.alias_districts: dict[tuple, set] = {}  # (state key, alias WORDS) -> its districts (WORDS)
+        aliases = {(sk, words(src), pat): (sk, name, dists) for (sk, name), (src, pat, dists) in ALIASES.items()}
         alias_points: dict[tuple, dict] = {}
         for r in rows:
             p = _point(r)
@@ -350,6 +425,8 @@ class Places:
             if w:
                 self.names.add(w)
                 self.state_names.setdefault(sk, set()).add(w)
+                self.postal_points.setdefault((sk, w), []).append(p)
+                self.place_label.setdefault((sk, w), Counter())[place] += 1
             if re.fullmatch(r"\d{5}", pc):
                 pcs.setdefault(pc, []).append(p)
                 pc_states.setdefault(pc, set()).add(sk)
@@ -363,14 +440,17 @@ class Places:
             if sum(c.isalpha() for c in w) >= 4 and w.split()[0] not in STREET_WORDS:  # "Jalan ...": a road
                 t = towns.setdefault((sk, w), {"name": place, "points": []})
                 t["points"].append(p)
-            for (ask, src, pat), (_, name) in aliases.items():
+            for (ask, src, pat), (_, name, dists) in aliases.items():
                 if ask == sk and src == w and re.fullmatch(pat, pc):
-                    alias_points.setdefault((sk, words(name)), {"name": name, "points": []})["points"].append(p)
+                    alias_points.setdefault((sk, words(name)), {"name": name, "points": [], "districts": dists}
+                                            )["points"].append(p)
         for (sk, w), t in alias_points.items():
             if (sk, w) not in towns:  # only when GeoNames has no place of that name in the state
-                towns[(sk, w)] = t
+                towns[(sk, w)] = {"name": t["name"], "points": t["points"]}
                 self.names.add(w)
                 self.state_names.setdefault(sk, set()).add(w)
+                self.alias_names.add(w)
+                self.alias_districts[(sk, w)] = {words(plain_name(d)) for d in t["districts"]}
         self.longest = max((len(n.split()) for n in self.names), default=1)  # words in a name
         self.postcodes = {pc: _mean(v) for pc, v in pcs.items()}
         # Postcodes whose rows lie more than TOWN_SPREAD_KM apart name several places.
@@ -380,16 +460,20 @@ class Places:
                                for pc, c in pc_names.items()}
         # state key -> [(WORDS as written, WORDS of the GeoNames name, name, points, point)], longest
         # first. point: the average of the rows, or None when they lie more than TOWN_SPREAD_KM apart
-        # (one name for several places: see _near_point).
+        # (one name for several places: see _near_point). name: as the table most often writes it
+        # (label_of: 'Masai', not 'masai'), whatever the order of its rows.
         self.towns: dict[str, list] = {}
         self.spread_towns: set[tuple] = set()        # (state key, WORDS) of names whose rows spread
+        self.town_entry: dict[tuple, tuple] = {}     # (state key, WORDS) -> (name, points, point)
         for (sk, w), t in towns.items():
             point = None if _spread_over(t["points"], TOWN_SPREAD_KM) else _mean(t["points"])
-            self.towns.setdefault(sk, []).append((w, w, t["name"], t["points"], point))
+            name = self.label_of(sk, w) if (sk, w) in self.place_label else t["name"]  # else: an ALIASES name
+            self.towns.setdefault(sk, []).append((w, w, name, t["points"], point))
+            self.town_entry[(sk, w)] = (name, t["points"], point)
             if point is None:
                 self.spread_towns.add((sk, w))
         # A name of 2+ words also matches written as one word: GEORGETOWN is George Town.
-        for entries in self.towns.values():
+        for sk, entries in self.towns.items():
             have = {e[0] for e in entries}
             for w, _, name, points, point in list(entries):
                 joined = w.replace(" ", "")
@@ -397,45 +481,98 @@ class Places:
                     entries.append((joined, w, name, points, point))
                     have.add(joined)
                     self.names.add(joined)
+                    if w in self.alias_names and (sk, w) in self.alias_districts:
+                        self.alias_names.add(joined)
         for v in self.towns.values():
             v.sort(key=lambda t: (-len(t[0]), t[0]))
         # Words that end a GeoNames name of more words, written alone for that town in a route name:
         # SAMARAHAN (KOTA SAMARAHAN), KRAI (KUALA KRAI). Only words found in no other name, and no
-        # state name or MALAYSIA: JAYA, BARU, BESAR, KEDAH are ordinary address words.
-        uses = Counter(x for n in self.names for x in set(n.split()))
+        # state name or MALAYSIA: JAYA, BARU, BESAR, KEDAH are ordinary address words. Names made
+        # from ALIASES do not count: GeoNames has no place called that ("X-TOWN" is no route).
+        real = self.names - self.alias_names
+        uses = Counter(x for n in real for x in set(n.split()))
         not_towns = {words(sk) for sk in self.states} | {words(s) for v in STATE_SPELLINGS.values() for s in v}
         not_towns |= {"MALAYSIA"} | ROAD_WORDS | STREET_WORDS
-        ends = Counter(" ".join(n.split()[k:]) for n in self.names for k in range(1, len(n.split())))
+        ends = Counter(" ".join(n.split()[k:]) for n in real for k in range(1, len(n.split())))
         self.name_ends = {e for e, k in ends.items()
                           if k == 1 and e not in not_towns and all(uses[x] == 1 for x in e.split())}
         self._for_state: dict[str, list] = {}
+        # Place names whose postal rows all lie within ONE_POINT_KM of each other: the table has one
+        # rough point for the whole town (see postcode_town); within ONE_POINT_ROW_KM, for old rows.
+        self.one_point = {k for k, v in self.postal_points.items() if not _spread_over(v, ONE_POINT_KM)}
+        self.one_point_rows = {k for k, v in self.postal_points.items() if not _spread_over(v, ONE_POINT_ROW_KM)}
+        # The place list: (state key, WORDS of a name or ascii name) and (state key, WORDS of an alt
+        # name) -> {place id: point}. See place_point.
+        self.place_names: dict[tuple, dict] = {}
+        self.place_alts: dict[tuple, dict] = {}
+        self.place_called: dict[str, set] = {}       # geonameid -> all its names (WORDS)
+        for i, r in enumerate(place_rows or ()):
+            p = _point(r)
+            if p is None:
+                continue
+            sk = state_key(r.get("state") or "")
+            gid = f"{str(r.get('geonameid') or '').strip() or 'row'} {i}"
+            own = {words(r.get("name") or ""), words(r.get("asciiname") or "")} - {""}
+            for n in own:
+                self.place_names.setdefault((sk, n), {})[gid] = p
+            called = set(own)
+            for alt in str(r.get("alt") or "").split("|"):
+                n = words(alt)
+                if n and n not in own:
+                    self.place_alts.setdefault((sk, n), {})[gid] = p
+                    called.add(n)
+            self.place_called[gid] = called
+        self.town_postcodes: dict[tuple, set] = {}   # (state key, place WORDS) -> its postcodes
+        for pc, names in self.postcode_places.items():
+            for n in names:
+                for sk in self.postcode_states.get(pc, ()):
+                    if (sk, " ".join(n)) in self.postal_points:
+                        self.town_postcodes.setdefault((sk, " ".join(n)), set()).add(pc)
+        self.has_places = bool(self.place_names)
+        self._place_cache: dict[tuple, tuple | None] = {}
+        self.place_ambiguous: set[tuple] = set()     # (state key, name, references) with no place point:
+        self.place_dropped: set[tuple] = set()       # ... two near ones / all too far (see place_point)
 
     @classmethod
-    def load(cls, path) -> "Places | None":
+    def load(cls, path, places_path=None) -> "Places | None":
+        """The postcode table at `path` (None when there is none) and, when `places_path` is given,
+        the place list (see read_places: a missing or broken list is left out, with a warning)."""
         if not path or not Path(path).exists():
             return None
         with Path(path).open(encoding="utf-8-sig", newline="") as f:
-            return cls(list(csv.DictReader(f)))
+            rows = list(csv.DictReader(f))
+        return cls(rows, read_places(places_path) if places_path else None)
+
+    def label_of(self, sk: str, w: str) -> str:
+        """The GeoNames postal name of a place (WORDS) as written in the table ('Putatan')."""
+        c = self.place_label.get((sk, w))
+        return sorted(c.items(), key=lambda x: (-x[1], x[0]))[0][0] if c else w.title()
 
     def learn(self, found) -> None:
         """Check GeoNames against the shops OpenStreetMap found: found = [(shop, (lat, lon))] with
         the shop's state, district and address. A postcode (the shop's best_postcode) or a town (the
         first name _named finds in its address) that 2 or more such shops of a state name is placed
         at the median of those that agree (_agreed), not at its GeoNames point (for a name whose
-        rows spread, see town_hits). In the 2026 GeoNames table, 41 of 86 such postcode points lay
-        more than 10 km from the shops OpenStreetMap found there (32040 Seri Manjung 47 km)."""
+        rows spread, see town_hits). Counted on the data of 2026-11-16 (933 found shops of the
+        build): 2 or more agreeing found shops name 87 postcodes; 86 of them are in the table, and
+        41 of those have their table point (the average of its rows) more than 10 km from those
+        shops (32040 Seri Manjung 27 km, 97000 Bintulu 120 km). The districts of the shops that
+        agree on a town are kept too (see town_point)."""
         pcs: dict[tuple, list] = {}
         towns: dict[tuple, list] = {}
         for shop, p in found:
             sk, addr = state_key(shop.get("state") or ""), shop.get("address") or ""
+            dist = shop.get("district") or ""
             pc = best_postcode(addr, self, shop.get("state") or "")
             if pc:
-                pcs.setdefault((sk, pc), []).append(p)
-            named = self._named(addr, shop.get("state") or "", shop.get("district") or "")
+                pcs.setdefault((sk, pc), []).append((p, dist))
+            named = self._named(addr, shop.get("state") or "", dist)
             if named:
-                towns.setdefault((sk, named[0][0]), []).append(p)
-        self.found_pc = {k: v for k, v in ((k, _agreed(v)) for k, v in pcs.items()) if v}
-        self.found_town = {k: v for k, v in ((k, _agreed(v)) for k, v in towns.items()) if v}
+                towns.setdefault((sk, named[0][0]), []).append((p, dist))
+        self.found_pc = {k: v[0] for k, v in ((k, _agreeing(v)) for k, v in pcs.items()) if v}
+        agreed = {k: v for k, v in ((k, _agreeing(v)) for k, v in towns.items()) if v}
+        self.found_town = {k: v[0] for k, v in agreed.items()}
+        self.found_town_districts = {k: v[1] for k, v in agreed.items()}
 
     def vouched(self, state: str, kind: str, label: str):
         """The point found shops vouch for (see learn) for a postcode or town of the state, or None.
@@ -447,6 +584,191 @@ class Places:
         if kind == "town" and (sk, words(label)) not in self.spread_towns:
             return self.found_town.get((sk, words(label)))
         return None
+
+    def place_point(self, state: str, name: str, near, strong: bool = False, own: bool = False):
+        """G: where the GeoNames place list puts the town `name` (WORDS) of a shop of the state whose
+        district's shops are at the `near` points (Districts.references), or None.
+        The candidates are the places of the shop's state whose name or ascii name is the town's
+        (with `strong` evidence, see _named and postcode_anchor, also those of its NEIGHBOURS
+        states, as for postcodes); only when there is none, the places with it as an alt name
+        ('Kampung Jeli' for Jeli, 'Keruh' for Pengkalan Hulu). A candidate more than CHECK_KM from
+        every `near` point is another place of that name (Perak's 'Sungai Siput', 49 km from
+        Sungai Siput (U)): dropped. But the district's own town (`own`: its name is or contains
+        the district's), when it is the only place of that name, may lie up to STRONG_KM away: a
+        district is named after its town, and a large district's centre can be 40-55 km from it
+        (Kudat, Limbang, Sipitang, Tatau, Kuala Rompin in the 2026 data, where the 60 such towns
+        that shops OpenStreetMap found name lie a median 1.9 km from those shops).
+        And a town that is the only place of the state called that, by any of its names, may lie
+        further than CHECK_KM when it lies within CHECK_KM of the town's point in the postcode table
+        and that point lies within GUESS_KM of a `near` point: the table puts the town well inside
+        the district, but its points are rough (Pengkalan Hulu: its only place, 'Keruh', is 35.05
+        km from the shops OpenStreetMap found in Hulu Perak, its table point 27 km from Keruh and 14
+        km from those shops). Such a point, and the own town's, is used only when nothing in the
+        address lies within CHECK_KM (see anchor_for).
+        Of the rest, the one nearest a `near` point, unless two of them more than ANCHOR_KM apart
+        both lie within GUESS_KM of one (which one? none). None without the list, and without
+        `near` points (nothing to check a candidate against). Names left without a point are kept
+        in place_dropped and place_ambiguous, for the run's summary."""
+        if not self.has_places or not near or not name:
+            return None
+        sk, refs = state_key(state), tuple(near)
+        key = (sk, name, bool(strong), bool(own), refs)
+        if key in self._place_cache:
+            return self._place_cache[key]
+        states = anchor_states(state) if strong else (sk,)
+        cands = [p for s in states for p in self.place_names.get((s, name), {}).values()]
+        if not cands:
+            cands = [p for s in states for gid, p in self.place_alts.get((s, name), {}).items()
+                     if not self._other_town(s, name, gid)]
+        out = None
+        if cands:
+            def gap(p):
+                return min(km(*p, *r) for r in refs)
+            keep = [p for p in cands if gap(p) <= CHECK_KM]
+            if not keep and own and len(set(cands)) == 1 and gap(cands[0]) <= STRONG_KM:
+                keep = cands[:1]  # the district's own town, the only place of that name
+            if not keep and len(set(cands)) == 1 and self._only_place(states, name):
+                postal = self._postal_point(sk, name)  # the only place of the state called that
+                if postal and gap(postal) <= GUESS_KM and km(*cands[0], *postal) <= CHECK_KM:
+                    keep = cands[:1]
+            if not keep:
+                self.place_dropped.add((sk, name, refs))
+            elif _spread_over([p for p in keep if gap(p) <= GUESS_KM], ANCHOR_KM):
+                self.place_ambiguous.add((sk, name, refs))
+            else:
+                out = min(keep, key=lambda p: (gap(p), p))
+        self._place_cache[key] = out
+        return out
+
+    def _only_place(self, states, name: str) -> bool:
+        """True when exactly one place of the place list in these states has `name` (WORDS) as its
+        name, ascii name or one of its alt names."""
+        ids = {gid for s in states for table in (self.place_names, self.place_alts)
+               for gid in table.get((s, name), {})}
+        return len(ids) == 1
+
+    def _postal_point(self, sk: str, name: str):
+        """The town's point in the postcode table (the average of its rows in state sk), or None when
+        it has none or they lie more than TOWN_SPREAD_KM apart (several places)."""
+        points = self.postal_points.get((sk, name))
+        return _mean(points) if points and not _spread_over(points, TOWN_SPREAD_KM) else None
+
+    def at_only_place(self, state: str, name: str, point, near, strong: bool = False) -> bool:
+        """True when an old town row of a shop of the state, for the town `name` (WORDS), at `point`,
+        sits at the town itself, and the postcode table puts the town near the district: the point lies
+        within ANCHOR_KM of the only place of the place list called that, by any of its names (in the
+        shop's state; with `strong` evidence also its NEIGHBOURS, as place_point); that place lies within
+        CHECK_KM of the town's point in the postcode table (as for place_point's far towns); and that
+        point lies within CHECK_KM of a `near` point (Districts.references), the check any town point
+        must pass. Such a row is not judged by its own distance from the district (see wrong_by): with
+        the limits of place_point alone, a 1 km move of where the district's shops are sent Pengkalan
+        Hulu's rows from Keruh back to the table's rough point, 27 km off, and the next move back again."""
+        if not self.has_places or not near:
+            return False
+        sk = state_key(state)
+        states = anchor_states(state) if strong else (sk,)
+        if not self._only_place(states, name):
+            return False
+        place = next(p for s in states for table in (self.place_names, self.place_alts)
+                     for p in table.get((s, name), {}).values())
+        postal = self._postal_point(sk, name)
+        return (km(*point, *place) <= ANCHOR_KM and postal is not None and km(*place, *postal) <= CHECK_KM
+                and not _far(postal, near))
+
+    def one_point_town(self, pc: str, state: str) -> str | None:
+        """The town (WORDS) of postcode pc when the postcode has one place name and the table gives that
+        town one rough point for all its postcodes (see postcode_town), else None."""
+        names = [" ".join(n) for n in self.postcode_places.get(pc, ())]
+        states = [s for s in anchor_states(state) if s in self.postcode_states.get(pc, ())]
+        return names[0] if len(names) == 1 and states and (states[0], names[0]) in self.one_point else None
+
+    def _other_town(self, sk: str, name: str, gid: str) -> bool:
+        """True when the place list's place gid, found by its alt name `name`, is a longer town of
+        the postcode table in state sk: another of its names contains `name` and is a town of the
+        table with none of its postcodes. The alt name is then short for that town: 'Tasek Glugor'
+        (alt 'Gelugor', and 'Tasek Gelugor') is the table's TASEK GELUGOR (13300) on the mainland,
+        not GELUGOR (11700) on Penang island, 22-29 km away."""
+        mine = self.town_postcodes.get((sk, name), set())
+        return any(f" {name} " in f" {other} " and self.town_postcodes.get((sk, other))
+                   and not self.town_postcodes[(sk, other)] & mine
+                   for other in self.place_called.get(gid, set()) - {name})
+
+    def postcode_town(self, pc: str, state: str, near, place: str | None = None, strong: bool = False,
+                      district: str = "", old_row: bool = False):
+        """(town name, G) when the table gives the town of postcode pc one rough point for all its
+        postcodes and the place list has the town's own point G (see place_point; `strong`: the
+        town is written right after the postcode); else None. The town is the place written right
+        after the postcode (`place`, WORDS), else the postcode's only place name. One rough point:
+        ALL the table's rows of that town in the postcode's state lie within ONE_POINT_KM of each
+        other (Putatan's five postcodes share one point, 99 km from Putatan); to judge an old row
+        (`old_row`, see wrong_by), within ONE_POINT_ROW_KM. A town whose rows spread more (Kuala
+        Lumpur, Johor Bahru, Kuching, ...) has a point for each postcode, and those are kept. The
+        callers compare the postcode's point with G (see postcode_pick and wrong_by).
+        G, not where shops OpenStreetMap found that name the town (as for a town written in the
+        address): those shops have the town's other postcodes and may lie in another part of it.
+        Hiding the found shops of each such postcode on the data of 2026-11-16, G was nearer them
+        for 98000 Miri (2.5 km, the found shops of Miri's other postcodes 6.2 km) and 81750 Masai
+        (1.4 against 3.4 km), and as near for 32040 Seri Manjung (0.6 km)."""
+        if not self.has_places or not near:
+            return None
+        names = [place] if place else [" ".join(n) for n in self.postcode_places.get(pc, ())]
+        if len(names) != 1:
+            return None  # several places share the postcode: which town?
+        states = [s for s in anchor_states(state) if s in self.postcode_states.get(pc, ())]
+        if not states or (states[0], names[0]) not in (self.one_point_rows if old_row else self.one_point):
+            return None
+        dist = words(plain_name(district))
+        g = self.place_point(state, names[0], near, strong, bool(dist) and f" {dist} " in f" {names[0]} ")
+        return (self.label_of(states[0], names[0]), g) if g else None
+
+    def town_point(self, state: str, district: str, canon: str, points, point, strong: bool,
+                   around=(), near=None):
+        """(point, via) of a town written in a shop's address (canon: WORDS of its GeoNames name;
+        points, point: its rows and their average, see self.towns), or (None, ""). via says where
+        the point comes from: 'found' (shops OpenStreetMap found that name it agree, see learn),
+        'place' (its point in the place list, G: see place_point; `near` are the district's
+        references), 'rows' (the postcode table), 'area' or 'elsewhere' (see below; 'elsewhere' is
+        no point for the shop: its callers leave it out).
+        A name whose rows lie within TOWN_SPREAD_KM: the found shops' point, else G, else the
+        average of its rows. A name whose rows spread (a big town, or a postal town for a wide area):
+        its rows near the `around` points (see _near_point) come first, as before the place list
+        (their median was 15 km from Jasin and Marang for the found shops of those names); else,
+        when found shops that name it agree on a point, they say where the town is ('area'), but
+        only for a shop in their district or when their point lies within ANCHOR_KM of a `near`
+        point: shops that name SIBU are in Sibu town, 16-24 km from Sibu Jaya, whose addresses name
+        SIBU too (the division). So when they do not count ('elsewhere'), neither does G (that same
+        town). Else G. (Found shops before G, as for other names: leaving out each found shop of
+        such a name in turn, the others' point was a median 1.6 km from it, G 2.0 km, on the data
+        of 2026-11-16.)"""
+        sk = state_key(state)
+        found = self.found_town.get((sk, canon))
+        g = self.place_point(state, canon, near, strong, strong) if near else None
+        if point is not None or not points:  # one place (or no postal rows at all)
+            if found:
+                return found, "found"
+            if g:
+                return g, "place"
+            return (point, "rows") if point else (None, "")
+        rows = _near_point(points, around)
+        if rows:
+            return rows, "rows"
+        refs = near if near is not None else around
+        if found and not (self.found_town_districts.get((sk, canon), set()) <= {district}
+                          or (refs and not _far(found, refs, ANCHOR_KM))):
+            return found, "elsewhere"
+        if found:
+            return found, "area"
+        return (g, "place") if g else (None, "")
+
+    def row_town_point(self, label: str, state: str, district: str, near, centre=None):
+        """(point, via) of town_point() for the town of an old 'town' row (its query, `label`) of a
+        shop of the state and district: where today's anchor puts that town."""
+        w, dist = words(label), words(plain_name(district))
+        entry = next((self.town_entry[(s, w)] for s in anchor_states(state) if (s, w) in self.town_entry), None)
+        _, points, point = entry or (label, (), None)
+        around = near or ([centre] if centre else [])
+        return self.town_point(state, district, w, points, point, bool(dist) and f" {dist} " in f" {w} ",
+                               around, near)
 
     def postcode(self, pc: str):
         return self.postcodes.get(pc) if pc else None
@@ -521,7 +843,31 @@ class Places:
         decides, so that state's postcodes are not all thrown away; with no `near` points either,
         nothing can vouch for a postcode, so none counts. A postcode whose rows lie more than
         TOWN_SPREAD_KM apart is strong only through the rows of the place named after it, at their
-        median (strong_point); else it is weak evidence."""
+        median (strong_point); else it is weak evidence. With the place list, see postcode_pick."""
+        got = self.postcode_pick(candidates, state, near, address, reach, district)
+        return (got["postcode"], got["point"], got["strong"]) if got else None
+
+    def postcode_place_written(self, pc: str, address: str) -> str | None:
+        """The postcode's own GeoNames place (WORDS) written right after it in the address, or None."""
+        text = (address or "").upper()
+        for m in FIVE.finditer(text):
+            if m.group() == pc:
+                place = self.place_after(pc, _words_after(text, m.end()))
+                if place:
+                    return place
+        return None
+
+    def postcode_pick(self, candidates, state: str, near=(), address: str = "",
+                      reach: float = STRONG_KM, district: str = "") -> dict | None:
+        """postcode_anchor() as a dict: postcode, point, strong, via ('found': shops OpenStreetMap
+        found there agree on its point, 'rows': its GeoNames point, 'town': see below) and town.
+        With the place list: a postcode whose point no found shop vouches for, and whose town the
+        table gives one rough point for all its postcodes (see postcode_town), is not placed at
+        that point when it lies more than ANCHOR_KM from the town's own point G: the shop gets G,
+        as a town anchor ('town' is the town's name). G has passed place_point's checks, so the
+        postcode's own point need not pass the distance check here; G must lie within `reach` of a
+        `near` point (in the first pass CHECK_KM: only the district's own town, or a town the
+        postcode table puts well inside the district, may lie further, see place_point)."""
         known = self.knows(state)
         text = (address or "").upper()
         dist = words(plain_name(district))
@@ -532,23 +878,32 @@ class Places:
             if known and not self.in_state(pc, state):
                 continue  # another state's postcode: a lot number or a typo
             strong = own = False
+            named = None
             for m in FIVE.finditer(text):
                 place = self.place_after(pc, _words_after(text, m.end())) if m.group() == pc else None
                 spot = self.strong_point(pc, place) if place else None
                 if spot:
-                    strong, point, own = True, spot, bool(dist) and f" {dist} " in f" {place} "
+                    strong, point, own, named = True, spot, bool(dist) and f" {dist} " in f" {place} ", place
                     break
             if known and not strong and state_key(state) not in self.postcode_states[pc]:
                 continue  # a NEIGHBOURS postcode counts only as strong evidence
             found = self.vouched(state, "postcode", pc)
+            if found is None:
+                town = self.postcode_town(pc, state, near, named, strong, district)
+                if town and km(*point, *town[1]) > ANCHOR_KM:  # the postcode's own point is not used
+                    if _far(town[1], near, reach):
+                        continue  # the town lies further than this pass allows (see anchor_for)
+                    return {"postcode": pc, "point": town[1], "strong": strong, "via": "town", "town": town[0]}
             if _far(found or point, near, _reach(strong, found is not None, reach, own)):
                 continue
-            return pc, found or point, strong
+            return {"postcode": pc, "point": found or point, "strong": strong,
+                    "via": "found" if found else "rows", "town": None}
         return None
 
     def _towns_for(self, state: str) -> list:
-        """[(WORDS as written, WORDS of the GeoNames name, name, points, point, neighbour)] of the
-        shop's state and its NEIGHBOURS (neighbour: True), longest first (see self.towns)."""
+        """[(WORDS as written, WORDS of the GeoNames name, name, points, point, neighbour, only)] of
+        the shop's state and its NEIGHBOURS (neighbour: True), longest first (see self.towns). only:
+        for a name made from ALIASES, the districts (WORDS) where it is a town; else None."""
         sk = state_key(state)
         if sk not in self._for_state:
             seen, out = set(), []
@@ -556,10 +911,11 @@ class Places:
                 for w, canon, name, points, point in self.towns.get(s, []):
                     if w not in seen:  # the shop's own state first
                         seen.add(w)
-                        out.append((len(w), w, rank, canon, name, points, point))
+                        out.append((len(w), w, rank, canon, name, points, point,
+                                    self.alias_districts.get((s, canon))))
             out.sort(key=lambda t: (-t[0], t[1], t[2]))
-            self._for_state[sk] = [(w, canon, name, points, point, rank > 0)
-                                   for _, w, rank, canon, name, points, point in out]
+            self._for_state[sk] = [(w, canon, name, points, point, rank > 0, only)
+                                   for _, w, rank, canon, name, points, point, only in out]
         return self._for_state[sk]
 
     def _place_at(self, text: str, toks: list, k: int, step: int) -> bool:
@@ -683,7 +1039,8 @@ class Places:
         part of a road name (see _on_road); the state's own name ('MELAKA', 'PENANG') unless the
         district is named after it (Melaka Tengah); a NEIGHBOURS place that is not strong (KLANG
         in "JALAN GENTING KLANG", a KL road); a name written after the district's own town (the
-        wider area: "97100 SEBAUH, BINTULU" in district Sebauh)."""
+        wider area: "97100 SEBAUH, BINTULU" in district Sebauh); a name made from ALIASES outside
+        its districts (George Town outside Timur Laut and Barat Daya)."""
         text = (address or "").upper()
         spaced = f" {words(text)} "
         dist = f" {words(plain_name(district))} " if words(plain_name(district)) else ""
@@ -692,8 +1049,8 @@ class Places:
         seq = [t[0] for t in toks]
         taken = [False] * len(toks)  # words already part of a longer name
         out = []
-        for w, canon, name, points, point, neighbour in self._towns_for(state):
-            if f" {w} " not in spaced:
+        for w, canon, name, points, point, neighbour, only in self._towns_for(state):
+            if f" {w} " not in spaced or (only is not None and dist.strip() not in only):
                 continue
             parts, at = w.split(), None
             for i in range(len(toks) - len(parts) + 1):
@@ -715,38 +1072,43 @@ class Places:
         out.sort(key=lambda t: t[:2])  # stable: longest first within each group
         return [t[2:7] for t in out]
 
-    def town_hits(self, address: str, state: str, district: str = "", around=()) -> list:
+    def town_hits(self, address: str, state: str, district: str = "", around=(), near=None) -> list:
         """[(place name, point, strong)] of the names _named() finds, best first. The point is where
-        found shops put the town (see learn), else its GeoNames point. For a name whose rows lie
-        more than TOWN_SPREAD_KM apart (a big town, or a postal town for a wide area), its rows near
-        the `around` points come first (see _near_point), then the found shops' point; else it is
-        left out. (Found shops of such a name are spread over the area: their median was 15 km from
-        Jasin and Marang, and on average further from the town than the near rows.)"""
-        sk, out = state_key(state), []
+        found shops put the town (see learn), else its point in the place list (with the district's
+        references `near`), else its GeoNames point; for a name whose rows lie more than
+        TOWN_SPREAD_KM apart (a big town, or a postal town for a wide area), its rows near the
+        `around` points come first. See town_point. A name with no point is left out (several
+        places of this name, none or more than one near the district)."""
+        return [t[:3] for t in self._town_hits(address, state, district, around, near)]
+
+    def _town_hits(self, address: str, state: str, district: str = "", around=(), near=None) -> list:
+        """town_hits() with where each point comes from: [(place name, point, strong, via)]."""
+        out = []
         for canon, name, points, point, strong in self._named(address, state, district):
-            found = self.found_town.get((sk, canon))
-            if point is None:
-                point = _near_point(points, around) or found
-                if point is None:
-                    continue  # several places of this name, none (or more than one) near the district
-            else:
-                point = found or point
-            out.append((name, point, strong))
+            spot, via = self.town_point(state, district, canon, points, point, strong, around, near)
+            if spot is not None and via != "elsewhere":
+                out.append((name, spot, strong, via))
         return out
 
     def town_anchors(self, address: str, state: str, near=(), district: str = "",
                      reach: float = STRONG_KM, around=None) -> list:
-        """town_hits() that lie near one of the `near` points (none given: no distance check):
-        within CHECK_KM; a strong one (named after the district) within `reach` km (default
-        STRONG_KM) when found shops vouch for its point, else within GUESS_KM (see _reach). A name
-        whose rows spread is judged by its rows near the `around` points (default: `near`)."""
+        """town_hits() that lie near one of the `near` points (none given: no distance check), as
+        [(place name, point, strong, via)]: within CHECK_KM; a strong one (named after the district)
+        within `reach` km (default STRONG_KM) when found shops vouch for its point or it is the
+        town's point in the place list (both checked: via 'found' or 'place'), else within GUESS_KM
+        (see _reach). A point from the place list has passed place_point's own distance checks,
+        which let only the district's own town, or a town the postcode table puts well inside the
+        district, lie further than CHECK_KM: with a `reach` beyond CHECK_KM (the second pass, see
+        anchor_for) it counts. A name whose rows spread is judged by its rows near the `around`
+        points (default: `near`)."""
         around = near if around is None else around
-        return [t for t in self.town_hits(address, state, district, around)
-                if not _far(t[1], near, _reach(t[2], self.vouched(state, "town", t[0]) is not None, reach, t[2]))]
+        return [t for t in self._town_hits(address, state, district, around, near)
+                if not _far(t[1], near, _reach(t[2], t[3] in CHECKED, reach, t[2]))
+                or (t[3] == "place" and reach > CHECK_KM)]
 
     def towns_in(self, address: str, state: str, near=(), district: str = "") -> list:
         """[(place name, point)] of town_anchors()."""
-        return [(name, point) for name, point, _ in self.town_anchors(address, state, near, district)]
+        return [(name, point) for name, point, *_ in self.town_anchors(address, state, near, district)]
 
     def town(self, address: str, state: str, district: str = ""):
         """(place name, point) of the longest town name in the address that is not a road name,
@@ -1095,11 +1457,13 @@ class Districts:
 
 def anchor_for(shop: dict, places: Places | None, districts: Districts) -> dict | None:
     """Where we expect the shop: kind (postcode, town or district), point, label, strong (see
-    Places.postcode_anchor and town_hits), plus the town name for the search text and the shop's
-    postcode for the cache. None when there is nothing to go on. A postcode or town must be in
-    the shop's state and near the trusted district centre or the median of the district's shops
+    Places.postcode_anchor and town_hits), vouched (found shops or the place list checked the
+    point), via (where the point comes from), plus the town name for the search text and the
+    shop's postcode for the cache. None when there is nothing to go on. A postcode or town must be
+    in the shop's state and near the trusted district centre or the median of the district's shops
     found by OpenStreetMap (Districts.references); else the next one in the address is tried,
-    then the district centre."""
+    then the district centre. A postcode whose town has one rough point in the table gives the
+    town's own point instead, as a town anchor (see Places.postcode_pick)."""
     st, dist, addr = shop["state"], shop["district"], shop["address"]
     near = districts.references(st, dist)
     centre = districts.centre(st, dist)
@@ -1109,20 +1473,28 @@ def anchor_for(shop: dict, places: Places | None, districts: Districts) -> dict 
     # Evidence within CHECK_KM first ("18000 KUALA KRAI, KETEREH" in Kota Bharu: Ketereh); only
     # then may strong evidence that found shops vouch for lie up to STRONG_KM away (see _reach).
     for reach in ((CHECK_KM, STRONG_KM) if places else ()):
-        pc = places.postcode_anchor(candidates, st, near, addr, reach, dist)
+        pc = places.postcode_pick(candidates, st, near, addr, reach, dist)
         towns = places.town_anchors(addr, st, near, dist, reach, around)
         town = towns[0] if towns else None
         if pc or town:
             break
-    context = (town[0] if town else None) or (places.postcode_names.get(pc[0]) if pc else None)
+    if pc and pc["town"]:  # the postcode's town has one rough point: its own point instead
+        context = pc["town"]
+    else:
+        context = (town[0] if town else None) or (places.postcode_names.get(pc["postcode"]) if pc else None)
+    # via: where the point comes from ('found' shops, the 'place' list, the postcode table's
+    # 'rows', a spread name's found shops ('area'), or 'postcode town': see Places.postcode_pick).
     a = {"town": town[0] if town else None, "context": context or plain_name(dist),
-         "postcode": best_postcode(addr, places, st), "strong": False, "vouched": False}
+         "postcode": best_postcode(addr, places, st), "strong": False, "vouched": False, "via": ""}
+    if pc and pc["town"]:
+        return {**a, "kind": "town", "point": pc["point"], "label": pc["town"], "strong": pc["strong"],
+                "vouched": True, "via": "postcode town"}
     if pc:
-        return {**a, "kind": "postcode", "point": pc[1], "label": pc[0], "strong": pc[2],
-                "vouched": places.vouched(st, "postcode", pc[0]) is not None}
+        return {**a, "kind": "postcode", "point": pc["point"], "label": pc["postcode"], "strong": pc["strong"],
+                "vouched": pc["via"] == "found", "via": pc["via"]}
     if town:
         return {**a, "kind": "town", "point": town[1], "label": town[0], "strong": town[2],
-                "vouched": places.vouched(st, "town", town[0]) is not None}
+                "vouched": town[3] in CHECKED, "via": town[3]}
     if centre:
         return {**a, "kind": "district", "point": centre, "label": f"{dist}, {st}"}
     return None
@@ -1137,26 +1509,75 @@ def row_label(row: dict) -> str:
     return q
 
 
+def same_row(old: dict, row: dict) -> bool:
+    """True when the new premise_geo.csv row puts the shop where the old one does: the same point,
+    precision, postcode or town (its query, compared as WORDS), district and state. Only tries and
+    last_tried may differ."""
+    return all(old.get(k) == row[k] for k in ("lat", "lon", "precision", "district", "state")) and words(
+        row_label(old)) == words(row["query"])
+
+
 def wrong_point(row: dict, shop: dict, places: Places | None, districts: Districts) -> bool:
     """True when an old postcode or town row's point is wrong by evidence that does not come from
     GeoNames alone: found shops (see Places.learn) put its postcode or town more than ANCHOR_KM
     away ("91000" rows at Kalabakan, 77 km from Tawau's shops); or, when no found shop says where
     it is, the point lies more than CHECK_KM from where the district's shops are (STRONG_KM when
     its place is named after the district: Limbang's "98700" rows at the town, 38 km from the
-    middle of the district), e.g. a lot number read as another state's postcode. A GeoNames
-    point alone never makes an old point wrong: in the 2026 table it is often 10-80 km from the
-    town (98700: 81 km from Limbang), while most old points came from OpenStreetMap. Without the
-    table nothing is judged wrong."""
+    middle of the district), e.g. a lot number read as another state's postcode. A postcode
+    table point alone never makes an old point wrong: in the 2026 table it is often 10-80 km from
+    the town (98700: 81 km from Limbang), while most old points came from OpenStreetMap. A town's
+    own point in the place list does (see wrong_by). Without the table nothing is judged wrong."""
+    return wrong_by(row, shop, places, districts) is not None
+
+
+def wrong_by(row: dict, shop: dict, places: Places | None, districts: Districts) -> str | None:
+    """wrong_point() with the evidence that judged the point wrong: 'found' (shops OpenStreetMap
+    found), 'place' (the place list) or 'district' (the distance check); None when it is not wrong.
+    A town row is also wrong when it lies within ANCHOR_KM of the town of found shops of another
+    district, which today's anchor does not use for this shop (Sibu Jaya's shop 5304 at Sibu
+    town, 16-24 km away: see Places.town_point). With the place list (see Places.place_point), a
+    town row is wrong when it lies more than ANCHOR_KM from the town's own point in the list, G,
+    when that is where today's anchor puts the town (no found shops say where it is); and a
+    postcode row, when today's anchor does not use its postcode's point because the table gives
+    the postcode's town one rough point that lies more than ANCHOR_KM from G (see
+    Places.postcode_pick), and the row too lies more than ANCHOR_KM from G (a row near G may
+    have come from OpenStreetMap: it stays). For an old row, one rough point means all the town's
+    rows within ONE_POINT_ROW_KM, not ONE_POINT_KM: where they spread 5-10 km, its postcodes have
+    points of their own, and an old row far from the town may be OpenStreetMap's point for a
+    village in the postcode's area (shop 17730, Kampung Anak Ikan, 22020 Jerteh: its row is 2.9 km
+    from the village, which is 20.5 km from Jerteh). A town row at the only place of the list called
+    that, which the postcode table puts near the district, is not judged by its own distance from the
+    district (see Places.at_only_place): the place list put it there, and a small move of where the
+    district's shops are must not send it back to the table's rough point."""
     if places is None or row.get("precision") not in ("postcode", "town"):
-        return False
+        return None
     p = _point(row)
     if p is None:
-        return False
-    found = places.vouched(shop["state"], row["precision"], row_label(row))
+        return None
+    st, dist = shop["state"], shop["district"]
+    label, near = row_label(row), districts.references(st, dist)
+    found = places.vouched(st, row["precision"], label)
     if found is not None:
-        return km(*p, *found) > ANCHOR_KM
-    limit = STRONG_KM if districts.named_after_district(row, shop["district"]) else CHECK_KM
-    return _far(p, districts.references(shop["state"], shop["district"]), limit)
+        return "found" if km(*p, *found) > ANCHOR_KM else None
+    if row["precision"] == "town":
+        spot, via = places.row_town_point(label, st, dist, near, districts.centre(st, dist))
+        if via == "elsewhere" and km(*p, *spot) <= ANCHOR_KM:
+            return "found"  # at the town of found shops of another district (see Places.town_point)
+        if places.has_places and via == "place":
+            return "place" if km(*p, *spot) > ANCHOR_KM else None
+        d = words(plain_name(dist))
+        if places.at_only_place(st, words(label), p, near, bool(d) and f" {d} " in f" {words(label)} "):
+            return None  # at the town itself, which the table puts near the district (see Places.at_only_place)
+    if places.has_places and row["precision"] == "postcode":
+        place = places.postcode_place_written(label, shop.get("address") or "")
+        point = places.strong_point(label, place) if place else None  # as postcode_pick
+        town = places.postcode_town(label, st, near, place if point else None, point is not None, dist,
+                                    old_row=True)
+        point = point or places.postcode(label)
+        if town and point and km(*point, *town[1]) > ANCHOR_KM:  # today the postcode's point is not used
+            return "place" if km(*p, *town[1]) > ANCHOR_KM else None
+    limit = STRONG_KM if districts.named_after_district(row, dist) else CHECK_KM
+    return "district" if _far(p, near, limit) else None
 
 
 def lookup(geo: Geocoder, shop: dict, a: dict):
@@ -1211,7 +1632,11 @@ def retry_queue(shops: list[dict], cache: dict, today: str, limit: int) -> list[
 # ---------- the run ----------
 
 def run(data_dir: Path, cache_path: Path, dcache_path: Path, geo: Geocoder, max_new: int = 3000,
-        retry: int = 3000, postcodes_path: Path | None = None, today=None, save_every: int = 50) -> dict:
+        retry: int = 3000, postcodes_path: Path | None = None, today=None, save_every: int = 50,
+        places_path: Path | None = None) -> dict:
+    """Place the shops of the build in data_dir (see the module's notes). postcodes_path: the
+    GeoNames postcode table (None: district centres only); places_path: the GeoNames place list,
+    used with the table (None, missing or broken: towns are placed from the table alone)."""
     today = str(today or date.today().isoformat())
     shops = shops_from_build(data_dir)
     cache = read_cache(cache_path)
@@ -1223,7 +1648,7 @@ def run(data_dir: Path, cache_path: Path, dcache_path: Path, geo: Geocoder, max_
         row["tries"] = str(_int(row.get("tries")))
         row["last_tried"] = row.get("last_tried") or ""
     dfields = DFIELDS + [c for c in dict.fromkeys(c for r in dcache.values() for c in r) if c and c not in DFIELDS]
-    places = Places.load(postcodes_path)
+    places = Places.load(postcodes_path, places_path)
     if postcodes_path and places is None:
         print(f"  no postcode table at {postcodes_path}; using district centres only", file=sys.stderr)
     unknown = sorted({s["state"] for s in shops if not places.knows(s["state"])}) if places else []
@@ -1240,7 +1665,26 @@ def run(data_dir: Path, cache_path: Path, dcache_path: Path, geo: Geocoder, max_
              "looked_up": 0, "retried": 0, "skipped": 0, "name": 0, "address": 0, "postcode": 0,
              "town": 0, "district": 0, "offline": 0, "kept": 0, "missed": 0, "upgraded_offline": 0,
              "corrected_offline": 0, "unvouched_far": 0,
-             "district_lookups": 0, "district_requeried": 0, "district_rejected": 0}
+             "district_lookups": 0, "district_requeried": 0, "district_rejected": 0,
+             "place_towns": 0, "place_postcodes": 0, "place_corrected": 0, "place_ambiguous": 0,
+             "place_dropped": 0}
+    # Shops whose row this run set to a town's point in the place list: for a town written in the
+    # address (place_towns), for a postcode whose town has one rough point in the table
+    # (place_postcodes); old rows the place list showed to be wrong, corrected before any search
+    # (place_corrected). See Places.town_point, Places.postcode_pick and wrong_by. Counted from the
+    # rows as the run leaves them: a shop a later search in the run found, or that got another
+    # anchor, is taken out again; one a retry leaves as it was (same point and town) stays counted.
+    at_place: dict[str, set] = {"place_towns": set(), "place_postcodes": set(), "place_corrected": set()}
+
+    def placed(s: dict, a: dict) -> None:
+        """Note a row written from today's anchor a, when that is a place list point."""
+        if a.get("kind") == "town" and a.get("via") in ("place", "postcode town"):
+            at_place["place_towns" if a["via"] == "place" else "place_postcodes"].add(s["premise_code"])
+
+    def unplaced(s: dict) -> None:
+        """The shop's row changed (a search found it, or another anchor): no longer counted."""
+        for codes in at_place.values():
+            codes.discard(s["premise_code"])
     if places is not None:  # where the shops OpenStreetMap found say each postcode and town is
         places.learn([(s, _point(cache[s["premise_code"]])) for s in shops
                       if (cache.get(s["premise_code"]) or {}).get("precision") in EXACT
@@ -1258,22 +1702,35 @@ def run(data_dir: Path, cache_path: Path, dcache_path: Path, geo: Geocoder, max_
 
     # Before any shop search (so also when calls stop or there is no time): a shop of the build still
     # at district precision, or with no point, gets today's checked anchor when that is a postcode or
-    # town; so does a postcode or town row whose point is wrong (wrong_point), when today's anchor
+    # town; so does a postcode or town row whose point is wrong (wrong_by), when today's anchor
     # is as precise. tries and last_tried stay, so the retry pass still asks OpenStreetMap on its
-    # schedule. Never a less precise row.
+    # schedule. Never a less precise row, with one exception: a postcode row may become a town row
+    # when today's anchor is its postcode's town at its own point in the place list, because the
+    # table has one rough point for that town's postcodes (Places.postcode_pick); no other town
+    # anchor turns a postcode row into a town row.
     for s in shops:
         old = cache.get(s["premise_code"])
         if old is None:
             continue
         located = old.get("precision") in LOCATED and _point(old) is not None
-        if located and not wrong_point(old, s, places, districts):
+        why = wrong_by(old, s, places, districts) if located else None
+        if located and why is None:
             continue
         a = anchor_for(s, places, districts)
-        if not a or a["kind"] not in ("postcode", "town") or (located and RANK[a["kind"]] > RANK[old["precision"]]):
+        if not a or a["kind"] not in ("postcode", "town"):
             continue
-        cache[s["premise_code"]] = {**old, **make_row(s, a["kind"], a["point"], a["label"], _int(old.get("tries")),
-                                                      old.get("last_tried") or "", a["postcode"])}
+        if located and RANK[a["kind"]] > RANK[old["precision"]] and not (
+                old["precision"] == "postcode" and a["via"] == "postcode town"):
+            continue  # never less precise (but see the exception above)
+        row = make_row(s, a["kind"], a["point"], a["label"], _int(old.get("tries")), old.get("last_tried") or "",
+                       a["postcode"])
+        if located and same_row(old, row):
+            continue  # today's anchor is this very point: nothing to correct (and nothing to count)
+        cache[s["premise_code"]] = {**old, **row}
         stats["corrected_offline" if located else "upgraded_offline"] += 1
+        if why == "place":
+            at_place["place_corrected"].add(s["premise_code"])
+        placed(s, a)
         far_guess(s, a["kind"], a["point"], a)
     again = retry_queue(shops, cache, today, retry)  # in new order: upgraded rows after the district ones
     # The postcode column is worked out again from the address on every write, so a row kept
@@ -1316,6 +1773,7 @@ def run(data_dir: Path, cache_path: Path, dcache_path: Path, geo: Geocoder, max_
             cache[s["premise_code"]] = make_row(s, a["kind"], a["point"], a["label"], 0, "", a["postcode"])
             stats["offline"] += 1
             stats[a["kind"]] += 1
+            placed(s, a)
             far_guess(s, a["kind"], a["point"], a)
             return reached
         prec, point, query = found or (a["kind"], a["point"], a["label"])
@@ -1323,16 +1781,27 @@ def run(data_dir: Path, cache_path: Path, dcache_path: Path, geo: Geocoder, max_
         # Never swap a point for a less precise one, nor, when OpenStreetMap found nothing, an old
         # postcode or town point for today's anchor of the same postcode or town (most old points
         # came from OpenStreetMap; GeoNames' are often 10-80 km off). Unless the old point is wrong
-        # (wrong_point: found shops, or the district check, say so).
+        # (wrong_point: found shops, the place list, or the district check, say so). A town row of
+        # a postcode's town that has one rough point in the table (made from the postcode, see
+        # Places.postcode_pick) counts as the same postcode when today's anchor is that postcode at
+        # its rough point alone: a small move of where the district's shops are must not send it back.
         old_pt = _point(old) if old else None
         same = (found is None and old_pt is not None and a["kind"] in ("postcode", "town")
                 and old.get("precision") == a["kind"] and words(row_label(old)) == words(a["label"]))
+        if (found is None and old_pt is not None and places is not None and a["kind"] == "postcode"
+                and a["via"] == "rows" and old.get("precision") == "town"):
+            same = same or places.one_point_town(a["label"], s["state"]) == words(row_label(old))
         if old_pt and (same or RANK[prec] > RANK.get(old.get("precision"), 3)) and not wrong_point(
                 old, s, places, districts):
             cache[s["premise_code"]] = {**old, "tries": str(tries), "last_tried": today}  # no worse point
             prec = old["precision"]
         else:
-            cache[s["premise_code"]] = make_row(s, prec, point, query, tries, today, a["postcode"])
+            row = make_row(s, prec, point, query, tries, today, a["postcode"])
+            if not (old_pt and same_row(old, row)):
+                unplaced(s)  # the row changes: a search found the shop, or another anchor
+            cache[s["premise_code"]] = row
+            if found is None:
+                placed(s, a)
             far_guess(s, prec, point, a)
         stats[prec] += 1
         return True
@@ -1359,6 +1828,9 @@ def run(data_dir: Path, cache_path: Path, dcache_path: Path, geo: Geocoder, max_
                   "retry_waiting": len(retry_queue(shops, cache, today, 10 ** 9)),
                   "errors": geo.errors, "breaker_tripped": geo.breaker_tripped,
                   "out_of_time": geo.out_of_time, "requests": geo.calls, "minutes": round(geo.minutes(), 1)})
+    stats.update({k: len(v) for k, v in at_place.items()})
+    if places is not None:  # town names (once per district) the place list could not place
+        stats.update({"place_ambiguous": len(places.place_ambiguous), "place_dropped": len(places.place_dropped)})
     located = Counter(cache[s["premise_code"]].get("precision") for s in shops if s["premise_code"] in cache)
     stats["all_shops"] = {p: located.get(p, 0) for p in RANK} | {"none": len(shops) - sum(located.values())}
     return stats
@@ -1371,10 +1843,12 @@ def main(argv=None) -> int:
     ap.add_argument("--retry", type=int, default=3000, help="retry at most this many weak answers")
     ap.add_argument("--max-minutes", type=float, default=40, help="stop calling Nominatim after this")
     ap.add_argument("--postcodes", default=str(POSTCODES), help="GeoNames table ('' for none)")
+    ap.add_argument("--places", default=str(PLACES), help="GeoNames place list ('' for none)")
     args = ap.parse_args(argv)
     geo = Geocoder(max_minutes=args.max_minutes)
     stats = run(Path(args.data), CACHE, DCACHE, geo, args.max_new, args.retry,
-                Path(args.postcodes) if args.postcodes else None)
+                Path(args.postcodes) if args.postcodes else None,
+                places_path=Path(args.places) if args.places else None)
     print(json.dumps(stats))
     return 0
 

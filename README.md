@@ -36,14 +36,18 @@ Live site: https://murshidihashim.github.io/bakul-murah/
   duplicates are merged; monthly typical (median) prices are calculated per shop, district and Malaysia.
 - **Shop locations:** looked up from each shop's name and address with OpenStreetMap Nominatim,
   © OpenStreetMap contributors, [ODbL](https://www.openstreetmap.org/copyright). Each shop is placed at street or
-  shop level where possible ("1.2 km"), else at its postcode or town ("~2 km"). Shops that can only be placed in
-  their district are listed as "location unknown" and are never counted inside the radius.
-- **Postcode locations:** [GeoNames](https://www.geonames.org/) postal codes for Malaysia, CC BY 4.0, checked
-  against the shops OpenStreetMap found. A postcode with 2 or more of those shops close together is placed where
-  they are. A postcode whose GeoNames point is more than 30 km from the other postcodes of its town (when those
-  are not all on one point), or more than 15 km from those of a compact town, is left out; the app then places it
-  by the postcodes that share its first digits.
-  The exact rules are in `etl/geo/README.md`.
+  shop level where possible ("1.2 km"), else at its postcode or town ("~2 km"). A town's point comes from shops
+  OpenStreetMap found there, else from the GeoNames list of towns and villages, which puts each town at its own
+  point; the postcode table's points are often 10-80 km off, so they are checked against both, and a postcode whose
+  town has only one rough point in that table takes the town's point from the list. Shops that can only be placed
+  in their district are listed as "location unknown" and are never counted inside the radius. Details:
+  [etl/geo/README.md](etl/geo/README.md).
+- **Postcode and town locations:** [GeoNames](https://www.geonames.org/) postal codes and populated places for
+  Malaysia, CC BY 4.0. The postcode you type is placed by the postal codes, checked against the shops
+  OpenStreetMap found. A postcode with 2 or more of those shops close together is placed where they are. A
+  postcode whose GeoNames point is more than 30 km from the other postcodes of its town (when those are not all on
+  one point), or more than 15 km from those of a compact town, is left out; the app then places it by the
+  postcodes that share its first digits. The exact rules are in `etl/geo/README.md`.
 
 Bakul Murah is an independent project. It is not affiliated with or endorsed by KPDN, DOSM or any retailer.
 Prices are collected for price monitoring and can be days or weeks old; shelf prices and promotions differ.
