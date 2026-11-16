@@ -1834,7 +1834,8 @@ async function nearCounts(page) {
   const undoKeysName = "with the price changes shown, Tab, Shift+Tab and Esc on a removal's Undo put keyboard focus on its heading, and Esc closes the toast without putting the line back";
   // The shared-list bar's other buttons there: by keyboard, 'Replace my list' and 'Add to my list' take focus to Undo,
   // and Tab there goes to that heading; a tap on them, or 'Load it' into an empty list, puts focus on the heading.
-  const importTrendsName = "with the price changes shown, 'Replace my list' and 'Add to my list' on the shared-list bar put keyboard focus on Undo and Tab there goes to its heading; a tap on them, or 'Load it' into an empty list, puts focus on that heading";
+  // 'Add to my list' with nothing new (no Undo) says so and puts focus on the heading, by keyboard and by a tap.
+  const importTrendsName = "with the price changes shown, 'Replace my list' and 'Add to my list' on the shared-list bar put keyboard focus on Undo and Tab there goes to its heading; a tap on them, 'Load it' into an empty list, or 'Add to my list' with nothing new, puts focus on that heading";
   {
     const pet = readJson("d/selangor--petaling.json"), pshops = c => new Set((pet.prices[c] || []).map(r => r[0])).size;
     const three = meta.items.map(r => r[0]).filter(c => pshops(c) > 0).sort((a, b) => pshops(b) - pshops(a) || a - b).slice(0, 3);
@@ -1928,28 +1929,32 @@ async function nearCounts(page) {
           localStorage.setItem("bakul.basket", JSON.stringify([]));
         } catch (e) {}
       });
-      const bar = [], all3 = three.join(",");
-      for (const [bctx2, btn, how, toUndo, want] of [[tfctx, "#importYes", "Enter", true, String(three[2])], [tfctx, "#importAdd", "Enter", true, all3],
+      const bar = [], all3 = three.join(","), seeded = three.slice(0, 2).join(","), none = "Your list already has these items";
+      // shared: the '?l=' list when it is not three[2] alone; an item already on the list, at the same amount, adds nothing.
+      for (const [bctx2, btn, how, toUndo, want, shared] of [[tfctx, "#importYes", "Enter", true, String(three[2])], [tfctx, "#importAdd", "Enter", true, all3],
                                                       [tfctx, "#importYes", "tap", false, String(three[2])], [tfctx, "#importAdd", "tap", false, all3],
-                                                      [ectx, "#importYes", "Enter", false, String(three[2])]]) {
+                                                      [ectx, "#importYes", "Enter", false, String(three[2])],
+                                                      [tfctx, "#importAdd", "Enter", false, seeded, three[0] + "~1"],
+                                                      [tfctx, "#importAdd", "tap", false, seeded, three[0] + "~1"]]) {
         const p = await newPage(bctx2, errors, "shared-list bar on the price changes");
-        await p.goto(URL + "?l=" + three[2] + "~1");
+        await p.goto(URL + "?l=" + (shared || three[2] + "~1"));
         await p.waitForFunction(() => window.__bakul.d && window.__bakul.slug === "selangor--petaling" && !document.getElementById("importBar").hidden);
         if (how === "Enter") { await p.focus("#tab-basket"); await p.keyboard.press("ArrowRight"); } else await p.tap("#tab-trends");
         await p.waitForFunction(() => window.__bakul.tab === "trends");
         const label = await p.textContent(btn);
         const pat = () => p.evaluate(() => { const a = document.activeElement; return !a || a === document.body ? "the page" : a.id ? "#" + a.id : a.tagName; });
         if (how === "Enter") { await p.focus(btn); await p.keyboard.press("Enter"); } else await p.tap(btn);
-        const r = { what: `'${label}' (${how === "Enter" ? "Enter" : "a tap"}${bctx2 === ectx ? ", empty list" : ""})`, focus: await pat(),
+        const r = { what: `'${label}' (${how === "Enter" ? "Enter" : "a tap"}${bctx2 === ectx ? ", empty list" : ""}${shared ? ", nothing new" : ""})`, focus: await pat(),
                     lines: await p.evaluate(() => window.__bakul.basket.map(b => b.code).join(",")) };
+        if (shared) r.toast = await p.evaluate(() => document.getElementById("toast").classList.contains("on") ? document.getElementById("toastMsg").textContent : "(no toast)");
         if (toUndo) { await p.keyboard.press("Tab"); r.tab = await pat(); }
-        r.ok = r.lines === want && (toUndo ? r.focus === "#toastAct" && r.tab === "#feedTitle" : r.focus === "#feedTitle");
+        r.ok = r.lines === want && (toUndo ? r.focus === "#toastAct" && r.tab === "#feedTitle" : r.focus === "#feedTitle") && (!shared || r.toast === none);
         bar.push(r);
         await p.close();
       }
       await ectx.close();
-      check(importTrendsName, bar.length === 5 && bar.every(r => r.ok),
-            bar.map(r => `${r.what}: lines ${r.lines}, focus on ${r.focus}` + (r.tab ? `, then Tab: ${r.tab}` : "")).join("; "));
+      check(importTrendsName, bar.length === 7 && bar.every(r => r.ok),
+            bar.map(r => `${r.what}: lines ${r.lines}, focus on ${r.focus}` + (r.tab ? `, then Tab: ${r.tab}` : "") + (r.toast ? `, toast '${r.toast}'` : "")).join("; "));
       await tfctx.close();
     }
   }
