@@ -1,0 +1,10 @@
+{
+ "fetched": "2026-11-16",
+ "rows": 2818,
+ "postcodes": 2757,
+ "source": "GeoNames postal codes",
+ "source_url": "https://www.geonames.org/",
+ "download_url": "https://download.geonames.org/export/zip/MY.zip",
+ "licence": "CC BY 4.0",
+ "licence_url": "https://creativecommons.org/licenses/by/4.0/"
+}
