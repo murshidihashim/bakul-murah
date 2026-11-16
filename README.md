@@ -46,20 +46,34 @@ Live site: https://murshidihashim.github.io/bakul-murah/
 - **Postcode locations:** [GeoNames](https://www.geonames.org/) postal codes for Malaysia, CC BY 4.0, checked
   against the shops OpenStreetMap found and against the GeoNames list of towns and villages (also CC BY 4.0),
   where each town has its own point. A postcode with 2 or more of those shops close together is placed where
-  they are. A postcode more than 10 km from its town's point in that list is moved there when its town's
-  GeoNames points are one rough point for the whole town, when it lies far from the town's other postcodes, or
-  when its only shop agrees with the town's point, but only when that point is nearer the town's shops than its
-  own. The town's shops are those of its postcodes, else those whose address names the town, unless GeoNames
-  gives their postcode to another town only ("84600 PAGOH, MUAR" is a shop in Pagoh). The town's point counts
-  only when the town's shops are within 35 km of it, or, for a town without such shops, when the list has only
-  one place of that name and it is notable (it has a population or is a seat of government). Old and new
-  spellings, such as Tanjong and Tanjung, are one name.
+  they are; 2 shops more than 10 km apart do not place it (without the town list, they place it at their
+  middle). A postcode more than 10 km from its town's point in that list is moved there when its town's
+  GeoNames points are one rough point for the whole town, when it lies far from the town's other postcodes
+  near that point (with none near it, only in a town of fewer than 10 other postcodes or with shops: none of
+  Nusajaya's 43 lies within 10 km of the point of Iskandar Puteri, and they stay), or when its only shop
+  agrees with the town's point, but only when that point is nearer the town's shops than its own. The town's
+  shops are those of its postcodes, else those whose address names the town, unless GeoNames gives their
+  postcode to another town only ("84600 PAGOH, MUAR" is a shop in Pagoh). The town's point counts only when
+  the town's shops are within 35 km of it, or, for a town without such shops, when it is the list's one
+  notable place of that name (it has a population or is a seat of government), or, when no place has that
+  name, the only place that lists it among its other names, if that place is notable (Kertih, other name
+  Kerteh), unless another of that place's names is a longer town name of the postcode table that holds this
+  one and has none of its postcodes (Tasek Gelugor, for Gelugor), or another place of the list has one of its
+  names more than 10 km away. Old and new spellings, such as Tanjong and Tanjung, are one name.
+  A GeoNames row more than 30 km from its own town's point does not count when the postcode's other rows lie
+  elsewhere and their average lies within 30 km of that town's point: GeoNames put 42920's Pelabuhan Klang row
+  in Kuala Lumpur, so the postcode now lies on its Pulau Indah row, 4 km from Port Klang.
   A postcode still more than 30 km from the other postcodes of its town (when those are not all on one point),
-  or more than 15 km from those of a compact town, is left out; the app then places it by the postcodes that
-  share its first digits. Postcodes moved to the town's point do not make a town compact.
+  or more than 15 km from those of a compact town, is left out. So is one more than 60 km from each of the
+  confirmed postcodes that share its first 3 digits (at least 2 of them, placed or kept by shops, or at or
+  within 10 km of their town's point): GeoNames put 98057 Baram 431 km from Miri. So is one whose rows lie so
+  far apart that their average is more than 30 km from each of them: 81920's lie east of Kota Tinggi and near
+  Muar. The app places a postcode that is left out by the postcodes that share its first digits. Postcodes
+  moved to the town's point never count towards making a town compact.
   A rural postcode that GeoNames names after its post town goes to that town: 21610, the village of Merchang,
-  is placed in Marang, 18 km away, and the 8 postcodes of Pekan that lie 12 to 42 km from the town go to it.
-  Nothing in these lists tells such a delivery area from a wrong point.
+  is placed in Marang, 18 km away, and the 7 other postcodes of Pekan that lie 12 to 42 km from the town go to
+  it, as does 26600, Pekan's own postcode, which lay 14.5 km out. Nothing in these lists tells such a delivery
+  area from a wrong point.
   The exact rules and the known misses are in `etl/geo/README.md`.
 
 Bakul Murah is an independent project. It is not affiliated with or endorsed by KPDN, DOSM or any retailer.

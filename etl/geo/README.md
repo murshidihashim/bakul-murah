@@ -563,11 +563,16 @@ the place list, `places_my.csv`. A place below is a place of the postcode table:
 place name ("Putatan", Sabah).
 
 1. A postcode with 2 or more such shops, by their `postcode` column, that agree is placed at the
-   median of those that agree. They agree when at least 2 of them, and more than half, lie within
-   10 km of the median of them all (the rule the shop geocoder uses for its own postcode points).
-   One exception: when only 2 shops agree and they lie more than 10 km apart, the middle of the two
-   can be in neither town. If one of them is within 5 km of the GeoNames point, that shop backs the
-   point: the postcode keeps it, and no later step moves it or leaves it out.
+   median of those that agree. They agree when at least 2 of them, and more than half, lie within 10
+   km of the median of them all (the rule the shop geocoder uses for its own postcode points). One
+   exception: when only 2 shops agree and they lie more than 10 km apart, the middle of the two can
+   be in neither town, so they do not place the postcode (42700 Banting's 2 shops lie 18 km apart,
+   their middle 9 km from each). If one of them is within 5 km of the GeoNames point, that shop backs
+   the point: the postcode keeps it, and no later step moves it or leaves it out. Otherwise the later
+   steps judge the postcode as if it had no shops. A build without the place list has no town's point
+   to take over, so there the 2 shops still place the postcode at their middle: on the tables of
+   2026-11-16, the GeoNames points of 42700, 84900 and 96000 lie 11, 16.5 and 30 km from their
+   nearest shop, their middles 6.5 to 9 km.
 2. Each place can get the point of a town or village of that name in its state from the place list
    (name or asciiname; other names only when no name matches). Old and new Malay spellings are one
    name, in the postcode table, the place list and shop addresses alike: Tanjong and Tanjung, Telok
@@ -583,24 +588,55 @@ place name ("Putatan", Sabah).
      own or with one GeoNames does not have still counts.
    - The place's point is then the place-list entry nearest to where its shops are, within 35 km.
      So a town of the same name elsewhere in the state does not count.
-   - A place without such shops gets a point only when the list has exactly one entry by that name and
-     that entry has a population or is a seat of government (code PPLA to PPLA4 or PPLC), and only
-     when no other entry lists the name among its other names more than 10 km away. The place list's
-     "Sungai Siput" (Perak, population 49,000) lies 48.5 km from the town, which it calls "Sungai
-     Siput Utara". Two entries by name, or an entry that has the name only among its other names, give
-     no point without shops. The list has 2 entries named Engkilili, 15.5 km apart, and 2 named Dalat,
-     of which the one with a population lies 19 km from the villages of Dalat; it has Nabawan only as
-     another name of Bandar Nabawan. Taking other names without shops would also move 11700 Gelugor
-     25 km to Tasek Glugor, whose other name is Gelugor.
-3. A postcode that step 1 did not place or keep goes to its place's point when its own point is more
-   than 10 km from it and one of these holds:
+   - A place without such shops gets a point only from a notable entry: one that has a population or
+     is a seat of government (code PPLA to PPLA4 or PPLC).
+     - The one notable entry by that name, also when the list has other entries of that name that are
+       not notable, and only when no entry lists the name among its other names more than 10 km away.
+       The list has 2 entries named Engkilili, 15.5 km apart: the town (population 15,031) and one
+       without a population. The list's "Sungai Siput" (Perak, population 49,000) lies 48.5 km from
+       the town, which it calls "Sungai Siput Utara", other name "Sungai Siput".
+     - When no entry has the name, the one entry that lists it among its other names, when that entry
+       is notable: Kerteh is another name of Kertih (population 24,401), and Nabawan of Bandar Nabawan.
+       Not when another of the entry's names is a longer place name of the postcode table in that
+       state, a place with none of this place's postcodes (as the shop geocoder reads other names):
+       Tasek Glugor, other names Gelugor and Tasek Gelugor, is Tasek Gelugor (13300) on the mainland,
+       and would move 11700 Gelugor 25 km across the strait. Nor when another of the entry's names is
+       the name or another name of an entry more than 10 km away, so the list may mean either:
+       Kampung Kuala Sepetang (population 1,264), other names Kuala Sepetang and Port Weld, lies 32 km
+       from Kampung Sepetang, other name Port Weld, which is the town.
+     Two notable entries by name, or 2 entries with the name among their other names, give no point
+     without shops.
+3. First, a GeoNames row that lies more than 30 km from its own place's point no longer counts in its
+   postcode's point (the average of its rows) while a row on another point still counts and the
+   average of the rows that count, the postcode's new point, lies within 30 km of that place's point
+   (each of those rows may lie further out): GeoNames then names the right place and has a wrong
+   point for it. Not when the place's shops (as in step 2) lie nearer to that row than to the place's
+   point, and not when the average of the other rows lies far from that place too, as the row may
+   then name another place of that name: 81500's row of Sungai Mati lies 145 km from the place
+   list's Sungai Mati, near Muar, and its other row, of Pekan Nenas, 109 km (81500 is placed from its
+   shops in any case). A point that has a row that counts keeps its other rows too: GeoNames lists
+   27000 Jerantut in Pahang and in Selangor on one point. A postcode placed or kept by step 1 keeps
+   all its rows. GeoNames lists 42920 under Pelabuhan Klang, on a point in Kuala Lumpur 42 km from
+   Port Klang's point, and under Pulau Indah, the island off the town: its average lay 23 km from
+   each of them, and the app showed shoppers there the shops of Petaling. It now lies on its Pulau
+   Indah row, 4 km from Port Klang's point. So 26080 loses its Kuantan row, 36 km from Kuantan's
+   point (its Balok row is its point now, 16 km from Kuantan's point and 6 km from the market of
+   Balok), and 86300 its Kluang row, 44 km from Kluang's point (its Rengam row is its point now,
+   20.5 km from Kluang's point and 3 km from a shop in Rengam).
+   Then a postcode that step 1 did not place or keep goes to its place's point when its own point is
+   more than 10 km from it and one of these holds:
    - all GeoNames rows of its place lie within 5 km of each other: one rough point for the whole
      place, often a point shared by its PO box postcodes, or the place's only row;
    - its point also lies more than 10 km from every other postcode of its place that lies within
      10 km of the place's point (or no other postcode lies that near): it is an outlier from where
      the town is. A town whose postcodes spread keeps its points otherwise. This also moves a rural
      postcode that GeoNames names after its post town: 21610 is the village of Merchang, 18 km from
-     Marang, and goes to Marang's point. Nothing here tells such a delivery area from a wrong point;
+     Marang, and goes to Marang's point. Nothing here tells such a delivery area from a wrong point.
+     When no other postcode lies that near, this holds only for a place with fewer than 10 other
+     postcodes, or with shops as in step 2: when many postcodes all lie far from the place's point
+     and no shop says where the place is, the point is the doubtful one. None of Nusajaya's 43
+     postcodes lies within 10 km of the place list's Iskandar Puteri (other name Nusajaya), and no
+     shop names Nusajaya, so they keep their points;
    - its only shop found by name or address lies within 10 km of the place's point and more than
      10 km from its own point.
    A postcode with several places moves to a point all of them share (Alor Setar and Alor Star), or
@@ -612,59 +648,117 @@ place name ("Putatan", Sabah).
    Only the shops of the place whose point it is count: 06400 is listed under Pendang and Pokok Sena,
    and goes to Pokok Sena's point, where its one shop is, though Pendang's shops lie next to its
    GeoNames point.
-4. Any other postcode is left out when its point (the average of its rows) is more than 30 km from
-   the median of the other postcodes of its place (at least 3 others, on at least 2 different points
-   at the table's 4 decimals, each at its point after steps 1 and 3). Other postcodes that all share
-   one point are a single guess, and that guess can be the wrong one, so they judge nothing. In a
-   compact place, with at least 10 other postcodes of which 9 in 10 lie within 7.5 km of their median
-   on at least 2 different points, a point more than 15 km from that median is left out too:
+4. Any other postcode is left out when its point (the average of its rows that count) is more than 30
+   km from the median of the other postcodes of its place (at least 3 others, on at least 2 different
+   points at the table's 4 decimals, each at its point after steps 1 and 3). Other postcodes that all
+   share one point are a single guess, and that guess can be the wrong one, so they judge nothing. In
+   a compact place, with at least 10 other postcodes of which 9 in 10 lie within 7.5 km of their
+   median on at least 2 different points, a point more than 15 km from that median is left out too:
    Kota Kinabalu's city-centre postcode 88000 lay 18.4 km out, and the app showed shoppers there the
-   shops of Putatan. For the 9 in 10, postcodes moved in step 3 count at their GeoNames points: on the
-   place's point they are one guess, not a sign that the town is compact. Counted there, the 8 on
-   Kuantan's point made Kuantan look compact and left out 25100, 26040 and 26070, 16.5 to 18.1 km
-   from the others; their points lie 4 to 10 km from shops of the town (at Jaya Gading and Taman
-   Tas). A postcode moved in step 3 is never left out. The app places a postcode that was left out
-   from the postcodes that share its first 4, 3 or 2 digits.
-5. Every other postcode keeps its GeoNames point, also one whose rows lie more than 20 km apart.
+   shops of Putatan. Postcodes moved in step 3 count among the others but never within the 7.5 km: on
+   the place's point they are one guess, and their GeoNames points lay more than 10 km from it.
+   Counted on the place's point, the 8 on Kuantan's point made Kuantan look compact and left out
+   25100, 26040 and 26070, 16.5 to 18.1 km from the others; their points lie 4 to 10 km from shops of
+   the town (at Jaya Gading and Taman Tas). Counted at their GeoNames points, moved postcodes that
+   lie near the others' median could make a place compact too. A postcode moved in step 3 is never
+   left out.
+5. Any other postcode is left out when its point lies more than 60 km from each of the confirmed
+   postcodes that share its first 3 digits, when there are at least 2 of them. Confirmed: placed from
+   shops or kept in step 1, moved to its place's point in step 3, or within 10 km of that point
+   already, and not left out in step 4. A confirmed postcode is never left out here or in step 6.
+   Only confirmed postcodes count, as the postcodes of one group of first digits can lie in 2 towns:
+   of the 8 postcodes that start 980, GeoNames puts 4 in Miri and 4 in Baram, and their median lies
+   between them. And the nearest of them counts, not their median: the confirmed postcodes that start
+   890 lie in Keningau and in Kudat, 187 km apart, and a median would judge one town's own postcodes
+   by the other (with 2 confirmed postcodes in one town and 1 in another, the median lies in the
+   first, and the other town's own postcodes would be left out and placed in the first by the app).
+   GeoNames puts 98057 to 98059 Baram on one point in Betong, 431 km from Miri's confirmed postcodes
+   (98000, placed from its shops, and 98007 to 98009, near Miri's point), and 98050 Baram 308 km from
+   them: all 4 are left out (the place list has no Baram; the addresses of 98050's shops name
+   Marudi). Counting only the postcodes of steps 1 and 3 would leave 1 confirmed postcode that starts
+   980, too few to judge Baram's. Of the 78 postcodes that confirmed postcodes judge in the tables of
+   2026-11-16, 61 lie within 20 km of the nearest of them, the 6 left out 63 to 431 km, and the
+   furthest kept 49.5 km (31050 Sungai Siput, whose first digits it shares with Batu Gajah), 45 km
+   (89100 Kota Marudu, with Kota Belud) and 37 km (81920, which step 6 leaves out).
+6. Any other postcode is left out when its point, the average of its rows that count, lies more than
+   30 km from each of those rows: it is in none of its places. GeoNames lists 81920 under Ayer Tawar
+   2, 3 and 4, east of Kota Tinggi, and under Ayer Tawar 5, near Muar, 170 km west: their average lay
+   38 km from the nearest of them, and the app showed the nearest shop 12 km away in a 20 km circle.
+   83400 Seri Medan has a row in Batu Pahat district and one in Johor Bahru, 84 km apart, and its
+   average lay 42 km from each, in Kluang district. Of the 24 postcodes with rows on 2 or more points
+   that the earlier steps neither confirm nor leave out, these 2 are the only ones more than 20 km
+   from their nearest row (the next lies 19 km from each of its 2 rows).
+   The app places a postcode that was left out (step 4, 5 or 6) from the postcodes that share its
+   first 4, 3 or 2 digits: Baram's 4 land in Miri, 40 km from Marudi, 81920 in Kota Tinggi, 5 km from
+   the median of its 3 eastern rows, and 83400 in Batu Pahat district, 7 km from its row there and 16
+   km from the place list's Seri Medan.
+7. Every other postcode keeps its GeoNames point (the average of its rows that count), also one whose
+   rows lie more than 20 km apart.
 
 No postcode is added. `geo.postcode_checks` counts the postcodes placed from shops (`from_shops`),
 those of them moved more than 2 km (`moved`), those moved to their place's point (`to_place`, only
-when the build had a place list) and those left out (`set_aside`). The build prints the 10 largest
-moves from shops, the 10 largest moves to a place's point, every postcode it left out and every
-postcode a shop kept at its GeoNames point, with the reason. `etl/check_data.py` notes these
-counts, and warns when more than 5% of the GeoNames postcodes were left out (a broken table or shop
-cache).
+when the build had a place list), those left out (`set_aside`, steps 4, 5 and 6) and, only when step
+5 or 6 left any out, how many of them it did (`far_from_prefix`, `far_from_rows`; a build without them
+has the older shape). The build prints the 10 largest moves from shops, the 10 largest moves to a
+place's point, every postcode that lost a far row in step 3, every postcode it left out and every
+postcode a shop kept at its GeoNames point, with the reason.
+`etl/check_data.py` notes these counts, and warns when more than 5% of the GeoNames postcodes were
+left out (a broken table or shop cache).
 
-With the tables and shop cache of 2026-11-16 (2,754 of 2,757 postcodes in the table):
-- 84 postcodes are placed from shops, 66 of them moved more than 2 km (Bintulu 97000 by 120 km,
-  Muar 84000 by 29 km).
+With the tables and shop cache of 2026-11-16 (2,746 of 2,757 postcodes in the table):
+- 81 postcodes are placed from shops, 63 of them moved more than 2 km (Bintulu 97000 by 120 km,
+  Muar 84000 by 29 km). 3 more have 2 shops that agree but lie 13 to 18 km apart, neither within
+  5 km of the GeoNames point, so their shops do not place them: 42700 Banting, 84900 Tangkak and
+  96000 Sibu. Each goes to its town's point in the place list instead (step 3), 0.3, 0.7 and 2 km
+  from a shop of the town; the middle of the 2 shops lay 6.5 to 9 km from the nearest shop.
 - 2 keep their GeoNames point by the exception in step 1: 30200 Ipoh (one shop in Ipoh, one in
   Batu Gajah; the middle of the two was about 10 km from Ipoh's shops) and 98107 Lutong.
-- 287 of 459 places (old and new spellings counted once) get a point from the place list: 76
-  confirmed by their postcodes placed from shops, 62 by shops naming them and 149 by a single notable
-  entry.
-- 226 postcodes move to their place's point, 10 to 352 km (median 21 km): 76 whose place has one
-  rough point (62 of them the place's only row, such as 98200 Niah, 136 km, and 34250 Tanjong
-  Piandang, 29 km; and the PO boxes 88721 to 88725 Putatan, 99 km from the town), 112 outliers
-  (93550 Kuching 352 km, 25608 Kuantan 163 km, 26060 Kuantan 106 km, 27000 Jerantut 67 km, and
-  93100, 93582, 15608, 20582, 30632, 40517, 40612 and 70632, which a compact place used to leave
-  out), 33 with no other postcode of their place near its point (98700 Limbang 82 km, 96807 and
-  96809 Kapit 79 km) and 5 by their one shop (05050 Alor Setar, and 44300 Batang Kali, 06400 Pokok
-  Sena, 73000 Tampin and 13300 Tasek Gelugor, which GeoNames lists under 2 places).
-- 3 are left out: 73460 Pusat Bandar Palong, 79570 Nusajaya (which sat in Kedah) and 88000 Kota
-  Kinabalu.
-- Shops hidden one postcode at a time, for the 84 postcodes placed from shops: the table now puts
-  them a median 2.9 km from their hidden shops (8.9 km before the place list); more than 10 km
-  away: 18 (39 before). Hiding instead the shops that name each of 132 towns: 80 of the towns'
-  1,985 postcodes more than 10 km from those shops (152 before), 10 more than 20 km (41 before).
+- 331 of 459 places (old and new spellings counted once) get a point from the place list: 74
+  confirmed by their postcodes placed from shops, 64 by shops naming them, 149 by a single notable
+  entry, 14 by the one notable entry among several of that name (Engkilili, Tenom, Beluran, Dalat)
+  and 30 by the only entry that has the name among its other names, a notable one (Kerteh, Nabawan,
+  Pengkalan Hulu, Bruas; Nusajaya too, but its postcodes stay, step 3).
+- 267 postcodes move to their place's point, 10 to 352 km (median 21 km): 97 whose place has one
+  rough point (76 of them the place's only row, such as 98200 Niah, 136 km, 95800 Engkilili, 86 km,
+  34250 Tanjong Piandang, 29 km, and 24300 Kerteh, 23 km; and the PO boxes 88721 to 88725 Putatan,
+  99 km from the town), 119 outliers (93550 Kuching 352 km, 25608 Kuantan 163 km, 26060 Kuantan 106
+  km, 27000 Jerantut 67 km, 89950 Nabawan 30 km, 13300 Tasek Gelugor, and 93100, 93582, 15608,
+  20582, 30632, 40517, 40612 and 70632, which a compact place used to leave out), 46 with no other
+  postcode of their place near its point (98700 Limbang 82 km, 96807 and 96809 Kapit 79 km, 14290
+  Bandar Bahru 58 km; none of their places has more than 3 other postcodes) and 5 by their one shop
+  (05050 Alor Setar, 22100 Permaisuri, and 44300 Batang Kali, 06400 Pokok Sena and 73000 Tampin,
+  which GeoNames lists under 2 places).
+- 3 lose a far row in step 3 (42920 Pulau Indah, 26080 Balok and 86300 Rengam, above): their points
+  move 23, 20 and 15 km.
+- 11 are left out: 73460 Pusat Bandar Palong, 88000 Kota Kinabalu and 79570 Nusajaya, which
+  GeoNames puts in Kedah, 630 km from Nusajaya's other postcodes (step 4); by step 5, 98050 and
+  98057 to 98059 Baram (308 and 431 km from the nearest confirmed postcode), 88700 Beverly (98 km;
+  GeoNames puts it on the far point of Putatan's PO boxes) and 89260 Beverly / Tenghilan (63 km; the
+  average of that point and Tenghilan's); and by step 6, 81920 Ayer Tawar 2 to 5 (38 km from its
+  nearest row) and 83400 Seri Medan (42 km). The app places Beverly's 2 postcodes in Kota Kinabalu
+  and Tuaran, and 79570 on the point of 79575 and 79576 of Nusajaya.
+- Shops hidden one postcode at a time, for the 84 postcodes with 2 or more shops that agree: the
+  table now puts them a median 2.5 km from their hidden shops (2.9 km without the 2-shop limit of
+  step 1, the notable entries of step 2, the far rows of step 3 and steps 5 and 6; 8.9 km before the
+  place list); more than 10 km away: 14 (18; 39). Hiding instead the shops that name each of 132
+  towns: 67 of the towns' 1,985 postcodes more than 10 km from those shops (80; 152), 6 more than
+  20 km (10; 41). None lies more than 2 km further from its hidden shops than without those rules.
+  The far rows of step 3 bring 32040 Seri Manjung from 26 to 10 km of its hidden shops: its Seri
+  Manjung row lies 47 km from the town's point, its Seri Manjong row 10 km.
 
 Known misses, where the table or the app is still wrong and these rules cannot tell:
-- 98050 and 98057 to 98059 Baram: the place list has no Baram. It has Marudi, the town that the
-  addresses of 98050's shops name, but the postcode table names the district. 98057 to 98059 share
-  a point 445 km from Marudi.
-- 95800 Engkilili (86 km out), 89950 Nabawan (30 km) and 24300 Kerteh (23 km): fewer than 2 found
-  shops name each town, and the place list has 2 entries named Engkilili and the other two only as
-  other names (step 2).
+- 98050 and 98057 to 98059 Baram are left out, and the app places them in Miri, 40 km from Marudi,
+  the town that the addresses of 98050's shops name: the place list has no Baram, and the postcode
+  table names the district, not Marudi. (GeoNames put them 318 and 442 km from Marudi.)
+- Dalat's 3 postcodes go to the place list's Dalat with a population (21,147), 18 km from its other
+  Dalat (no population), which is the town; their GeoNames points lay 42 to 50 km from it.
+- Nusajaya's 42 postcodes other than 79570 keep their GeoNames points (step 3), on 9 points 15 km
+  apart at most (34 of them on one), 10 to 18 km from the place list's Iskandar Puteri (other name
+  Nusajaya, population 575,977). A surveyed shop lies 1.5 to 3.5 km from each of their points and
+  none within 13 km of Iskandar Puteri's, but no shop names Nusajaya or Iskandar Puteri, so nothing
+  says which points are right.
+- 34650 Kuala Sepetang keeps its GeoNames point, 10 km from the town: the place list's only Kuala
+  Sepetang with a population lies 32 km from it (step 2).
 - 88100 and 88400 Kota Kinabalu lie offshore but within 10 km of the city's point, and the app
   shows them the shops of Putatan. 21220 Kuala Terengganu, 93620 Kuching and 16010 Kota Bharu lie 12
   to 17 km from their city's point but within 10 km of another postcode near it, so they stay.
@@ -678,22 +772,60 @@ Known misses, where the table or the app is still wrong and these rules cannot t
   unless it agrees with a place point (step 3). 6 more postcodes have one found shop more than 15 km
   from their point, but there the shop is the odd one: 27030's is in Seremban, and those of 02700,
   34700, 45400, 77000 and 81440 lie 18 to 38 km from their town's entry in the place list.
-- Rural postcodes that GeoNames names after their post town go to that town's point (step 3), also
-  where their own point may be right: 21610, the village of Merchang, 18 km to Marang; the 8
-  postcodes 26600 to 26680 of Pekan, 12 to 42 km; 26800 to 26820 Kuala Rompin, 14 to 22 km; 73400
-  to 73480 Gemas, 10 to 13 km; 35900 and 35910 Tanjong Malim, 30 and 23 km (their points lie 9.4
-  and 3.8 km from Slim River); 34510 Batu Kurau, 17 km (its point lies 0.7 km from Redang Panjang);
-  and 31150 Ulu Kinta, 15 km into the hills (its point lies 2 km from Ipoh's). No shop says which
-  point is right.
+- The towns' own postcodes 26600 Pekan, 26800 Kuala Rompin, 73400 Gemas and 35900 Tanjong Malim lay
+  13 to 30 km out in GeoNames; step 3 corrects them. The other postcodes of these towns are rural
+  delivery areas that GeoNames names after their post town, and they go to that town's point too,
+  also where their own point may be right: the 7 postcodes 26610 to 26680 of Pekan, 12 to 42 km;
+  26810 and 26820 Kuala Rompin, 14.3 and 22.5 km; 73409 to 73480 Gemas, 10 to 12 km; 35910 Tanjong
+  Malim, 23 km (its point lies 3.8 km from Slim River). So do 21610, the village of Merchang, 18 km
+  to Marang; 34510 Batu Kurau, 17 km (its point lies 0.7 km from Redang Panjang); and 31150 Ulu
+  Kinta, 15 km into the hills (its point lies 2 km from Ipoh's). No shop says which point is right.
 - Moved to the right town, but the shop cache has that town's shops elsewhere, or none near, so the
   app shows no home district or a wrong one: 96600 Julau (its 2 shops sit on the old GeoNames point,
   27 km away), 96850 Song (its shop is 25 km from the town), 98850 Lawas (its shops sit at a
   district point 45 km away) and 81930 Bandar Penawar (no surveyed shop lies within 20 km; it showed
-  Kota Tinggi before) get none. For 06050 Bukit Kayu Hitam, 34100 and 34130 Selama and 45620 Batang
+  Kota Tinggi before) get none. 33100 Pengkalan Hulu now lies at Keruh, the town, but the cache has
+  its 4 shops on the old GeoNames point, 27 km away, so the app shows the shops of Baling, 10 km
+  from Keruh. For 06050 Bukit Kayu Hitam, 34100 and 34130 Selama and 45620 Batang
   Berjuntai, the nearest shop is another town's branch of a chain (in Arau, Seberang Perai Tengah
   and Kuala Lumpur), and for 86600 Paloh it is PASAR AWAM SEGAMAT, which the cache places at Chaah,
   18 km away: the app shows that shop's district. 08500 Kota Kuala Muda now shows Seberang Perai
-  Utara, whose shop in Penaga, across the river, is its nearest (6 km).
+  Utara, whose shop in Penaga, across the river, is its nearest (6 km). 89950 Nabawan now lies at
+  Bandar Nabawan, the town, but the cache has Nabawan's 2 shops on the district's point, 38.7 km south
+  of the town, so with no shop within 20 km the app shows Sook, whose district point is 19 km away
+  (it showed Nabawan before). 72400 Simpang Durian now lies 1 km from GeoNames' point for its PO box
+  72409, and its nearest surveyed shop is in Bera, Pahang, 16.7 km away, so the app shows Bera, where
+  it showed Jelebu (a shop in Kuala Klawang, 14.6 km). 26690 now lies at FELDA Chini, with no surveyed
+  shop within 20 km, so the app shows no home district (it showed Rompin, from a shop in Muadzam Shah
+  18 km away). 96507 to 96509 now lie at Bintangor, but the cache has Bintangor's 2 located shops on
+  the geocoder's town point, 10 km away, so their nearest shop is 10 km away, not 0.8 km. 14290 and 14390 Bandar
+  Bahru now lie at Bandar Baharu, where the cache places the Perai shop PASAR MINI TMN PERAI by name
+  (1.3 km), so the app shows Seberang Perai Tengah. 84900 now lies at Tangkak and shows Tangkak, the
+  town's district; PriceCatcher files its 2 found shops under Muar and Ledang.
+- 4 postcodes whose rows lie 33 to 38 km apart keep their average, 16.5 to 19 km from each row:
+  24050 Ayer Puteh / Ceneh, 83300 Seri Gading, 31900 Kampar / Mambang Di Awan and 26500 Bandar
+  Pusat Jengka / Maran. Left out, the app would place 31900 6 km from its Kampar row and 83300 6 km
+  from one of its rows, but 26500 48 km from the nearer of its rows, in Kuantan district, so the limit
+  of step 6 stays at 30 km.
+- 94650 Kabong lies 29 and 35 km east of the place list's 2 entries named Kabong, which have no
+  population, and no confirmed postcode shares its first 3 digits, so nothing judges it.
+- 7 more postcodes keep GeoNames points more than 20 km from every entry of their place's name in
+  the place list (entries within 10 km of each other), as do 94650, 34650 and 11700 above. Those
+  entries have no population, so without shops they give no point (step 2), and step 5 judges only
+  34140: 23200 Bukit Besi, 54.5 km (the app finds no shop within 20 km), 85200 Jementah, 41.5 km,
+  36750 Chikus, 29 km, 43950 Sungai Pelek, 25 km, 27300 Benta, 23.5 km, 28200 Bandar Bera / Triang,
+  23 km from Teriang (which has a point, but Bandar Bera has none, so the postcode does not move),
+  and 34140 Rantau Panjang, 23 km (the nearest of the 3 confirmed postcodes that start 341 lies 19
+  km from it). Left out, they would be placed by the postcodes that share their first digits (the
+  app's groupCentre): 34140 5.5 km from its entry, 27300, 36750, 43950, 23200 and 85200 16 to 20 km,
+  28200 23 km (about where it is now), but 11700 26 km, 34650 39 km and 94650 73 km.
+  Also: 24200 Kemasek lies 24 km from the list's Kemasik (population 10,247), a spelling the build
+  does not join, and the app shows Dungun, though Kemasik's one shop is filed under Kemaman; 94850
+  Sebuyau lies 20 km from the list's Sebuyau (population 13,200), which gives no point, as an entry
+  with Sebuyau among its other names lies 35 km from it (step 2).
+  Not counted above: postcodes whose place name has place-list entries far apart also keep their
+  GeoNames points, such as 84500 Panchor (31 km from the nearer entry) and 36800 and 36810 Kampung
+  Gajah (23 and 35 km).
 - When a town's own shops are hidden (the test above), shops with no postcode that name the town
   only as their district or their road can still stand for it: "WAKAF LANAS, JALAN KOTA BHARU" (in
   Pasir Puteh) and "KG ARIL, PAUH LIMA, KOTA BHARU" would keep 15628 at its GeoNames point, 11 km

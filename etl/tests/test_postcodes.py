@@ -32,6 +32,11 @@ def north(p, d_km):
     return (p[0] + d_km / KM_PER_DEG, p[1])
 
 
+def east(p, d_km):
+    """The point d_km due east of p (west when negative), along p's parallel."""
+    return (p[0], p[1] + d_km / (KM_PER_DEG * math.cos(math.radians(p[0]))))
+
+
 def write_geonames(path, rows, bom=False):
     """rows: (postcode, place, state, lat, lon)."""
     text = GN_HEAD + "".join(f"{pc},{place},{state},{lat},{lon},3\n" for pc, place, state, lat, lon in rows)
@@ -128,35 +133,45 @@ def test_one_shop_two_that_disagree_or_anchors_only_keep_the_geonames_point(tmp_
 
 def test_two_shops_far_apart_keep_a_geonames_point_one_of_them_backs(tmp_path):
     """Only 2 shops agree and they lie more than 10 km apart: their middle can be in neither town
-    (30200 Ipoh: a shop in Ipoh and one in Batu Gajah). When one of them is within 5 km of the
-    GeoNames point, the postcode keeps that point; else it is placed at their middle."""
-    g = {pc: (2.0 + 0.5 * i, 102.0) for i, pc in enumerate(["30200", "30210", "30220", "30230", "30240",
-                                                             "30250", "30260"])}
-    km_north = {"30200": (3.7, -8.9), "30210": (4.9, 15.8), "30220": (5.1, 16.0), "30230": (1, 10.9),
-                "30240": (1, 11.1), "30250": (1, 8, 12), "30260": (28, 41)}
+    (30200 Ipoh: a shop in Ipoh and one in Batu Gajah; 42700 Banting: 2 shops 18 km apart, their middle
+    9 km from each). When one of them is within 5 km of the GeoNames point, the postcode keeps that point
+    ("kept"). Else, with a place list, they do not place the postcode: the other steps judge it, and here
+    it keeps its GeoNames point too. Without a place list no town's point can take over, so they place it
+    at their middle, as before the place list. Each postcode here has first 3 digits of its own, so no
+    other judges it."""
+    g = {pc: (2.0 + 0.5 * i, 102.0) for i, pc in enumerate(["30200", "31210", "32220", "33230", "34240",
+                                                             "35250", "36260"])}
+    km_north = {"30200": (3.7, -8.9), "31210": (4.9, 15.8), "32220": (5.1, 16.0), "33230": (1, 10.9),
+                "34240": (1, 11.1), "35250": (1, 8, 12), "36260": (28, 41)}
     at = {pc: [as_read(north(g[pc], d)) for d in ds] for pc, ds in km_north.items()}
     shops = [(10 * i + k, *p, "name", pc) for i, (pc, ps) in enumerate(at.items()) for k, p in enumerate(ps)]
     gn = [(pc, f"Town {pc}", "Perak", *p) for pc, p in g.items()]
-    res = run_check(tmp_path, gn, shops)
+    elsewhere = [("Kota Lain", "", 6.0, 116.0, "PPL", "Sabah", 100)]   # a place list that has none of these towns
+    res = run_places(tmp_path, gn, elsewhere, shops)
     pts = res["postcodes"]
 
     def middle(pc):   # the median of pc's shops, as the build reads them
         return r4((statistics.median(p[0] for p in at[pc]), statistics.median(p[1] for p in at[pc])))
 
     assert pts["30200"] == r4(g["30200"])                       # 12.6 km apart, one 3.7 km away: kept
-    assert pts["30210"] == r4(g["30210"])                       # one 4.9 km away: kept
-    assert pts["30220"] == middle("30220")                      # 5.1 km: not close enough, their middle
-    assert pts["30230"] == middle("30230")                      # 9.9 km apart: they agree closely enough
-    assert pts["30240"] == r4(g["30240"])                       # 10.1 km apart: kept
-    assert pts["30250"] == middle("30250") == r4(at["30250"][1])   # 3 shops: their median, however wide
-    assert pts["30260"] == middle("30260")                      # neither near the GeoNames point: their middle
-    assert res["checks"] == {"from_shops": 4, "moved": 4, "set_aside": 0}
+    assert pts["31210"] == r4(g["31210"])                       # one 4.9 km away: kept
+    assert pts["32220"] == r4(g["32220"]) != middle("32220")    # 5.1 km: not close enough, and not placed
+    assert pts["33230"] == middle("33230")                      # 9.9 km apart: they agree closely enough
+    assert pts["34240"] == r4(g["34240"])                       # 10.1 km apart: kept
+    assert pts["35250"] == middle("35250") == r4(at["35250"][1])   # 3 shops: their median, however wide
+    assert pts["36260"] == r4(g["36260"]) != middle("36260")    # neither near the GeoNames point: not placed
+    assert res["checks"] == {"from_shops": 2, "moved": 2, "to_place": 0, "set_aside": 0}
     assert res["kept"] == [
         ("30200", "Town 30200 (Perak)", "its 2 shops lie 12.6 km apart and one of them is 3.7 km from that point"),
-        ("30210", "Town 30210 (Perak)", "its 2 shops lie 10.9 km apart and one of them is 4.9 km from that point"),
-        ("30240", "Town 30240 (Perak)", "its 2 shops lie 10.1 km apart and one of them is 1.0 km from that point")]
-    assert not {m[1] for m in res["moves"]} & {"30200", "30210", "30240"}
+        ("31210", "Town 31210 (Perak)", "its 2 shops lie 10.9 km apart and one of them is 4.9 km from that point"),
+        ("34240", "Town 34240 (Perak)", "its 2 shops lie 10.1 km apart and one of them is 1.0 km from that point")]
+    assert [m[1] for m in res["moves"]] == ["35250", "33230"]
     assert bd.BACKED_KM == 5.0
+    # Without a place list, 32220 and 36260 go to the middle of their 2 shops; nothing else changes.
+    plain = run_check(tmp_path, gn, shops, name="plain")
+    assert plain["postcodes"] == {**pts, "32220": middle("32220"), "36260": middle("36260")}
+    assert plain["checks"] == {"from_shops": 4, "moved": 4, "set_aside": 0} and plain["kept"] == res["kept"]
+    assert [m[1] for m in plain["moves"]] == ["36260", "32220", "35250", "33230"]
     # A point a shop backs is never set aside, though its place's other postcodes lie 40 km away.
     town = (4.6, 101.08)
     gn = [("30200", "Ipoh", "Perak", *north(town, 40)), ("30100", "Ipoh", "Perak", *town),
@@ -194,6 +209,46 @@ def test_three_shops_that_agree_are_placed_at_their_median_in_any_order(tmp_path
         res = run_check(tmp_path, [("30250", "Town", "Perak", *g)], shops, name="order_" + "_".join(map(str, order)))
         assert res["postcodes"] == {"30250": r4(as_read(north(g, 8)))}, order
         assert res["kept"] == [] and res["checks"] == {"from_shops": 1, "moved": 1, "set_aside": 0}
+
+
+def test_two_shops_more_than_anchor_km_apart_place_nothing(tmp_path, monkeypatch):
+    """42700 Banting: its 2 shops agree (each 9 km from their middle) but lie 18 km apart, neither within
+    5 km of its GeoNames point. Their middle is in neither town, so with a place list they do not place it:
+    it keeps its GeoNames point, or goes to its place's point by the place list's rules, as without the
+    shops. 2 shops exactly ANCHOR_KM apart still place it at their middle; 9.9 km apart they do, 10.1 km
+    apart not. Without a place list no town's point can take over, and they place it at their middle."""
+    p = (2.8, 101.5)
+    gn = [("42700", "Banting", "Selangor", *north(p, -11)), ("43000", "Kajang", "Selangor", 3.0, 101.8),
+          ("44000", "Kuala Kubu Baru", "Selangor", 3.6, 101.6)]
+    rows = bd.load_postcode_rows(write_geonames(tmp_path / "pcs.csv", gn))
+    a, b = as_read(north(p, 0.3)), as_read(north(p, -17.9))
+    c, d = as_read(north((3.0, 101.8), 6)), as_read(north((3.0, 101.8), 15.9))   # 9.9 km apart
+    e, f = as_read(north((3.6, 101.6), 6)), as_read(north((3.6, 101.6), 16.1))   # 10.1 km apart
+    shops = [(1, *a, "name", "42700"), (2, *b, "name", "42700"), (3, *c, "name", "43000"),
+             (4, *d, "address", "43000"), (5, *e, "name", "44000"), (6, *f, "address", "44000")]
+    geo = bd.load_geo(write_cache(tmp_path / "geo.csv", shops))
+    apart = bd.km(*a, *b)
+    # A place list that has none of these towns: the 2-shop limit applies, and nothing else changes.
+    other = bd.load_places(write_places(tmp_path / "other.csv", [("Kota Lain", "", 6.0, 116.0, "PPL", "Sabah", 100)]))
+    res = bd.check_postcodes(rows, geo, other, {})
+    assert res["postcodes"]["42700"] == r4(north(p, -11)) and res["kept"] == []
+    assert res["postcodes"]["43000"] == r4(((c[0] + d[0]) / 2, c[1]))   # 9.9 km apart: placed at their middle
+    assert res["postcodes"]["44000"] == [3.6, 101.6]                    # 10.1 km apart: not
+    assert res["checks"] == {"from_shops": 1, "moved": 1, "to_place": 0, "set_aside": 0}
+    places = bd.load_places(write_places(tmp_path / "pl.csv", [("Banting", "", *p, "PPL", "Selangor", 93497)]))
+    res = bd.check_postcodes(rows, geo, places, {})
+    assert res["postcodes"]["42700"] == r4(p) and [m[1] for m in res["to_place"]] == ["42700"]
+    # Without a place list, the 2 shops place 42700 and 44000 at their middle all the same.
+    res = bd.check_postcodes(rows, geo)
+    assert res["postcodes"] == {"42700": r4(((a[0] + b[0]) / 2, a[1])), "43000": r4(((c[0] + d[0]) / 2, c[1])),
+                                "44000": r4(((e[0] + f[0]) / 2, e[1]))}
+    assert res["checks"] == {"from_shops": 3, "moved": 3, "set_aside": 0} and res["kept"] == []
+    monkeypatch.setattr(bd, "ANCHOR_KM", apart)   # exactly that far apart: they place it at their middle
+    res = bd.check_postcodes(rows, geo, other, {})
+    assert res["postcodes"]["42700"] == r4(((a[0] + b[0]) / 2, a[1])) and res["checks"]["from_shops"] == 3
+    monkeypatch.setattr(bd, "ANCHOR_KM", math.nextafter(apart, 0))
+    res = bd.check_postcodes(rows, geo, other, {})
+    assert res["postcodes"]["42700"] == r4(north(p, -11)) and res["checks"]["from_shops"] == 2
 
 
 # ---------- points far from their place ----------
@@ -391,8 +446,12 @@ def test_each_limit_is_the_last_distance_that_counts(tmp_path, monkeypatch):
     monkeypatch.setattr(bd, "BACKED_KM", near)
     assert [k[0] for k in bd.check_postcodes(rows, geo)["kept"]] == ["30200"]
     monkeypatch.setattr(bd, "BACKED_KM", math.nextafter(near, 0))
-    res = bd.check_postcodes(rows, geo)
-    assert res["kept"] == [] and res["checks"]["from_shops"] == 1
+    other = bd.load_places(write_places(tmp_path / "other.csv", [("Kota Lain", "", 6.0, 116.0, "PPL", "Sabah", 100)]))
+    res = bd.check_postcodes(rows, geo, other, {})   # not backed: 2 shops more than ANCHOR_KM apart place nothing
+    assert res["kept"] == [] and res["checks"]["from_shops"] == 0 and res["postcodes"]["30200"] == r4(p)
+    res = bd.check_postcodes(rows, geo)   # ... unless there is no place list: then their middle
+    mid = bd._median_point([g[:2] for g in geo.values()])
+    assert res["kept"] == [] and res["checks"]["from_shops"] == 1 and res["postcodes"]["30200"] == r4(mid)
     # ANCHOR_KM: 2 shops on each of 2 points 16 km apart, so all 4 lie 8 km from the median of them all.
     top, bottom = as_read(north(p, 36)), as_read(north(p, 20))
     rows = bd.load_postcode_rows(write_geonames(tmp_path / "anchor.csv", [("60000", "Kota", "Johor", *p)]))
@@ -447,6 +506,177 @@ def test_postcodes_whose_rows_lie_far_apart_keep_their_average(tmp_path):
     assert res["set_aside"] == [("81920", "Ayer Tawar 2 (Johor) / Ayer Tawar 5 (Johor)",
                                  "90.0 km from the median of the 3 other postcodes of its place")]
     assert res["checks"] == {"from_shops": 0, "moved": 0, "set_aside": 1}
+
+
+# ---------- far from the confirmed postcodes that share its first digits ----------
+
+def test_a_postcode_far_from_the_confirmed_postcodes_of_its_first_digits_is_set_aside(tmp_path, monkeypatch):
+    """GeoNames puts 98057 Baram on a point in Betong, 431 km from Miri. Shops place 98000 and 98007 in Miri:
+    they are confirmed, and they share 98057's first 3 digits. A postcode more than 60 km from each of 2 or
+    more confirmed postcodes that share its first 3 digits is set aside (98057, and 98059 at 60.1 km), and
+    one that close to one of them stays (98050, 59.9 km). Confirmed postcodes are never set aside (98008,
+    placed from its shops 100 km away), and those of other first digits judge nothing (98100)."""
+    miri = (4.4, 114.0)
+    gn = [("98000", "Miri", "Sarawak", *north(miri, 5)), ("98007", "Miri", "Sarawak", *north(miri, -5)),
+          ("98008", "Miri", "Sarawak", *miri), ("98050", "Baram", "Sarawak", *north(miri, -59.9)),
+          ("98057", "Baram", "Sarawak", *north(miri, -431)), ("98059", "Baram", "Sarawak", *north(miri, -60.1)),
+          ("98100", "Lutong", "Sarawak", *north(miri, -100))]
+    rows = bd.load_postcode_rows(write_geonames(tmp_path / "pcs.csv", gn))
+    far = as_read(north(miri, 100))
+    shops = [(1, *miri, "name", "98000"), (2, *miri, "address", "98000"), (3, *miri, "name", "98007"),
+             (4, *miri, "name", "98007"), (5, *far, "name", "98008"), (6, *far, "address", "98008")]
+    geo = bd.load_geo(write_cache(tmp_path / "geo.csv", shops))
+    res = bd.check_postcodes(rows, geo)
+    assert res["postcodes"] == {"98000": list(miri), "98007": list(miri), "98008": r4(far),
+                                "98050": r4(north(miri, -59.9)), "98100": r4(north(miri, -100))}
+    assert res["checks"] == {"from_shops": 3, "moved": 3, "set_aside": 2, "far_from_prefix": 2}
+    assert res["set_aside"] == [
+        ("98057", "Baram (Sarawak)", "431.0 km from the nearest of the 3 confirmed postcodes that start 980"),
+        ("98059", "Baram (Sarawak)", "60.1 km from the nearest of the 3 confirmed postcodes that start 980")]
+    assert (bd.PREFIX_DIGITS, bd.PREFIX_MIN, bd.PREFIX_KM) == (3, 2, 60.0)
+    # Set aside in steps 3 and 4 alike, listed by postcode: 99050 is 40 km from the 3 others of Limbang.
+    b = (4.75, 115.0)
+    limbang = [("99050", "Limbang", "Sarawak", *north(b, 40)), ("99000", "Limbang", "Sarawak", *b),
+               ("99010", "Limbang", "Sarawak", *b), ("99020", "Limbang", "Sarawak", *north(b, 1))]
+    both = bd.check_postcodes(bd.load_postcode_rows(write_geonames(tmp_path / "both.csv", limbang + gn)), geo)
+    assert [a[0] for a in both["set_aside"]] == ["98057", "98059", "99050"]
+    assert both["checks"] == {"from_shops": 3, "moved": 3, "set_aside": 3, "far_from_prefix": 2}
+    # The limit is exact: a point exactly PREFIX_KM from the nearest confirmed postcode stays.
+    d = bd.km(*rows["98059"][0][2], *miri)
+    monkeypatch.setattr(bd, "PREFIX_KM", d)
+    assert [a[0] for a in bd.check_postcodes(rows, geo)["set_aside"]] == ["98057"]
+    monkeypatch.setattr(bd, "PREFIX_KM", math.nextafter(d, 0))
+    assert [a[0] for a in bd.check_postcodes(rows, geo)["set_aside"]] == ["98057", "98059"]
+    monkeypatch.undo()
+    # One confirmed postcode judges nothing (the count is then not in checks); PREFIX_MIN of them do.
+    one = bd.load_geo(write_cache(tmp_path / "one.csv", shops[:2]))
+    res = bd.check_postcodes(rows, one)
+    assert res["checks"] == {"from_shops": 1, "moved": 1, "set_aside": 0} and res["set_aside"] == []
+    monkeypatch.setattr(bd, "PREFIX_MIN", 1)
+    assert [a[0] for a in bd.check_postcodes(rows, one)["set_aside"]] == ["98057", "98059"]
+    monkeypatch.undo()
+    # A postcode kept at its GeoNames point by one of its 2 shops is confirmed too: with 98000 in Miri and
+    # 98007 kept 5 km south, 98059 lies 55.1 km from 98007, and 98057 426 km.
+    kept = shops[:2] + [(3, *as_read(north(miri, -6)), "name", "98007"), (4, *as_read(north(miri, -18)), "name", "98007")]
+    res = bd.check_postcodes(rows, bd.load_geo(write_cache(tmp_path / "kept.csv", kept)))
+    assert [k[0] for k in res["kept"]] == ["98007"] and res["set_aside"] == [
+        ("98057", "Baram (Sarawak)", f"{bd.km(*rows['98057'][0][2], *north(miri, -5)):.1f} km from the nearest of "
+                                     "the 2 confirmed postcodes that start 980")]
+
+
+def test_postcodes_moved_to_or_near_their_places_point_are_confirmed_too(tmp_path):
+    """With the place list, a postcode moved to its place's point, or already within 10 km of it, is confirmed
+    too. Miri's 98000 and 98007 lie near the town's point, so 98057 Baram, 431 km away, is set aside (the
+    place list has no Baram). 89050 Kudat lies 9 km from Kudat's point, 183 km from Keningau: confirmed, it
+    stays, and the Kudat postcodes moved to Kudat's point are confirmed too."""
+    miri, keningau = (4.4, 114.0), (5.34, 116.16)
+    kudat = north(keningau, 183)
+    gn = [("98000", "Miri", "Sarawak", *north(miri, 5)), ("98007", "Miri", "Sarawak", *north(miri, -6)),
+          ("98057", "Baram", "Sarawak", *north(miri, -431)),
+          ("89000", "Keningau", "Sabah", *keningau), ("89050", "Kudat", "Sabah", *north(kudat, 9))]
+    gn += [(f"8900{i}", "Keningau", "Sabah", *north(keningau, 15)) for i in (7, 8, 9)]
+    gn += [(f"8905{i}", "Kudat", "Sabah", *north(kudat, 25)) for i in (7, 8, 9)]
+    shops = [(1, *keningau, "name", "89000"), (2, *keningau, "address", "89000")]
+    places = [("Miri", "", *miri, "PPLA2", "Sarawak", 300000), ("Keningau", "", *keningau, "PPLA3", "Sabah", 170000),
+              ("Kudat", "", *kudat, "PPLA3", "Sabah", 30000)]
+    res = run_places(tmp_path, gn, places, shops)
+    assert sorted(m[1] for m in res["to_place"]) == ["89007", "89008", "89009", "89057", "89058", "89059"]
+    assert res["set_aside"] == [("98057", "Baram (Sarawak)", f"{bd.km(*north(miri, -431), *north(miri, -6)):.1f} "
+                                 "km from the nearest of the 2 confirmed postcodes that start 980")]
+    assert res["postcodes"]["89050"] == r4(north(kudat, 9))
+    assert res["checks"] == {"from_shops": 1, "moved": 0, "to_place": 6, "set_aside": 1, "far_from_prefix": 1}
+
+
+def test_a_group_of_first_digits_whose_confirmed_postcodes_lie_in_2_towns_judges_by_the_nearest(tmp_path):
+    """The postcodes that start 770 lie in 2 towns 150 km apart, Alpha and Beta, and shops place one
+    postcode of each (77000, 77050). The median of the 2 would lie between the towns, 75 km from each, and
+    set aside 77010 and 77060, 2 km from their towns' confirmed postcodes; the app would then place 77060
+    in Alpha. Judged by the nearest confirmed postcode, both stay. With 2 confirmed postcodes in Alpha and
+    1 in Beta, 180 km apart, the median lies in Alpha, and 77050, 3 km from Beta's, stays too."""
+    a = (3.0, 101.5)
+    b = north(a, -150)
+
+    def shops_at(code, p, pc):
+        return [(code, *as_read(north(p, 0.2)), "name", pc), (code + 1, *as_read(north(p, -0.2)), "address", pc)]
+
+    gn = [("77000", "Alpha", "Johor", *a), ("77010", "Alpha", "Johor", *north(a, 2)),
+          ("77050", "Beta", "Johor", *b), ("77060", "Beta", "Johor", *north(b, 2))]
+    res = run_check(tmp_path, gn, shops_at(1, a, "77000") + shops_at(3, b, "77050"))
+    assert res["set_aside"] == [] and "far_from_prefix" not in res["checks"]
+    assert res["postcodes"]["77010"] == r4(north(a, 2)) and res["postcodes"]["77060"] == r4(north(b, 2))
+    b = north(a, -180)
+    gn = [("77000", "Alpha", "Johor", *a), ("77001", "Alpha", "Johor", *north(a, 1)),
+          ("77080", "Beta", "Johor", *b), ("77050", "Gamma", "Johor", *north(b, 3))]
+    shops = shops_at(1, a, "77000") + shops_at(3, north(a, 1), "77001") + shops_at(5, b, "77080")
+    res = run_check(tmp_path, gn, shops, name="majority")
+    assert res["set_aside"] == [] and res["postcodes"]["77050"] == r4(north(b, 3))
+    assert res["checks"] == {"from_shops": 3, "moved": 0, "set_aside": 0}
+    # 61 km from Beta's confirmed postcode and 119 km from Alpha's, 77050 is set aside.
+    gn[-1] = ("77050", "Gamma", "Johor", *north(b, 61))
+    res = run_check(tmp_path, gn, shops, name="far")
+    assert res["set_aside"] == [("77050", "Gamma (Johor)", f"{bd.km(*north(b, 61), *as_read(b)):.1f} km from the "
+                                 "nearest of the 3 confirmed postcodes that start 770")]
+
+
+# ---------- rows far apart ----------
+
+def test_a_postcode_whose_rows_lie_so_far_apart_that_their_average_is_in_none_of_its_places_is_set_aside(
+        tmp_path, monkeypatch):
+    """GeoNames lists 81920 under Ayer Tawar 2, 3 and 4, east of Kota Tinggi, and under Ayer Tawar 5, near
+    Muar, 170 km west: the average of the 4 rows lay 38 km from the nearest of them (here the fourth lies
+    129 km west, and the average 32 km from the nearest). 83400 Seri Medan has 2 rows 84 km apart, so its
+    average lay 42 km from each. A postcode whose point, the average of its rows, lies more than PLACE_KM
+    from each of them is in none of its places, and is set aside (with or without the place list). 26500's
+    2 rows lie 33 km apart: their average, 16.5 km from each, stays. A postcode placed from shops, or within
+    10 km of its place's point, is confirmed, and never set aside so."""
+    e = (1.72, 103.92)
+    gn = [("81920", "Ayer Tawar 2", "Johor", *north(e, 2)), ("81920", "Ayer Tawar 3", "Johor", *e),
+          ("81920", "Ayer Tawar 4", "Johor", *north(e, -2)), ("81920", "Ayer Tawar 5", "Johor", *east(e, -129)),
+          ("83400", "Seri Medan", "Johor", *north(e, 10)), ("83400", "Sri Medan", "Johor", *north(e, 94)),
+          ("26500", "Maran", "Pahang", 3.59, 102.77), ("26500", "Bandar Pusat Jengka", "Pahang", *north((3.59, 102.77), 33))]
+    rows = bd.load_postcode_rows(write_geonames(tmp_path / "pcs.csv", gn))
+    avg = {pc: bd._mean_point([r[2] for r in v]) for pc, v in rows.items()}
+    d = {pc: min(bd.km(*avg[pc], *r[2]) for r in v) for pc, v in rows.items()}
+    assert 32 < d["81920"] < 33 and 41.9 < d["83400"] < 42.1 and 16.4 < d["26500"] < 16.6
+    res = bd.check_postcodes(rows, {})
+    assert res["set_aside"] == [
+        ("81920", "Ayer Tawar 2 (Johor) / Ayer Tawar 3 (Johor) / Ayer Tawar 4 (Johor) / Ayer Tawar 5 (Johor)",
+         f"{d['81920']:.1f} km from the nearest of its 4 GeoNames rows, whose average it is"),
+        ("83400", "Seri Medan (Johor) / Sri Medan (Johor)",
+         f"{d['83400']:.1f} km from the nearest of its 2 GeoNames rows, whose average it is")]
+    assert res["postcodes"] == {"26500": r4(avg["26500"])}
+    assert res["checks"] == {"from_shops": 0, "moved": 0, "set_aside": 2, "far_from_rows": 2}
+    other = bd.load_places(write_places(tmp_path / "other.csv", [("Kota Lain", "", 6.0, 116.0, "PPL", "Sabah", 100)]))
+    with_list = bd.check_postcodes(rows, {}, other, {})
+    assert (with_list["postcodes"], with_list["set_aside"]) == (res["postcodes"], res["set_aside"])
+    assert with_list["checks"] == {"from_shops": 0, "moved": 0, "to_place": 0, "set_aside": 2, "far_from_rows": 2}
+    # The limit is exact: a point exactly PLACE_KM from its nearest row stays.
+    monkeypatch.setattr(bd, "PLACE_KM", d["81920"])
+    assert [a[0] for a in bd.check_postcodes(rows, {})["set_aside"]] == ["83400"]
+    monkeypatch.setattr(bd, "PLACE_KM", math.nextafter(d["81920"], 0))
+    assert [a[0] for a in bd.check_postcodes(rows, {})["set_aside"]] == ["81920", "83400"]
+    monkeypatch.undo()
+    # Placed from its shops, 83400 is confirmed and stays; without a set aside postcode, no count.
+    shops = [(1, *as_read(north(e, 10)), "name", "83400"), (2, *as_read(north(e, 10.5)), "address", "83400")]
+    res = bd.check_postcodes(rows, bd.load_geo(write_cache(tmp_path / "geo.csv", shops)))
+    assert [a[0] for a in res["set_aside"]] == ["81920"] and res["postcodes"]["83400"] == r4(north(e, 10.25))
+    rows2 = {pc: v for pc, v in rows.items() if pc != "81920"}
+    res = bd.check_postcodes(rows2, bd.load_geo(write_cache(tmp_path / "geo.csv", shops)))
+    assert res["set_aside"] == [] and res["checks"] == {"from_shops": 1, "moved": 1, "set_aside": 0}
+    # Within 10 km of its place's point, a postcode is confirmed: Kota's 2 rows lie 35 km either side of it.
+    k = (2.5, 102.5)
+    gn = [("85000", "Kota", "Johor", *north(k, 35)), ("85000", "Kota", "Johor", *north(k, -35))]
+    res = run_places(tmp_path, gn, [("Kota", "", *k, "PPL", "Johor", 5000)], name="at_place")
+    assert res["set_aside"] == [] and res["postcodes"]["85000"] == r4(bd._mean_point([north(k, 35), north(k, -35)]))
+    # The rows of one point are one row: 3 rows on one point 100 km from a fourth average 25 km from it.
+    gn = [("86000", "Kota", "Johor", *k)] * 3 + [("86000", "Lain", "Johor", *north(k, 100))]
+    res = run_check(tmp_path, gn, name="one_point")
+    assert res["set_aside"] == [] and res["postcodes"]["86000"] == r4(north(k, 25))
+    # With the fourth 160 km away, the average lies 40 km from the 3 and is set aside; the reason counts 4 rows.
+    gn = [("87000", "Kota", "Johor", *k)] * 3 + [("87000", "Lain", "Johor", *north(k, 160))]
+    res = run_check(tmp_path, gn, name="one_point_far")
+    assert res["set_aside"] == [("87000", "Kota (Johor) / Lain (Johor)",
+                                 "40.0 km from the nearest of its 4 GeoNames rows, whose average it is")]
 
 
 # ---------- missing and messy files ----------
@@ -537,27 +767,29 @@ def test_the_check_only_moves_or_removes_and_is_deterministic(tmp_path):
     assert list(out) == sorted(out) and set(out) <= set(before) and "99999" not in out
     removed = set(before) - set(out)
     assert removed == {pc for pc, _, _ in res["set_aside"]} and len(removed) == c["set_aside"]
-    agreed, backed = {}, set()
+    agreed, backed, split = {}, set(), set()
     for pc in before:
         found = [g[:2] for g in geo.values() if g[2] in ("name", "address") and g[3] == pc]
         if bd.agreed_point(found):
-            agreed[pc] = bd.agreed_point(found)
             mid = statistics.median(p[0] for p in found), statistics.median(p[1] for p in found)
             close = [p for p in found if bd.km(*p, *mid) <= 10]
             average = (statistics.mean(r[2][0] for r in rows[pc]), statistics.mean(r[2][1] for r in rows[pc]))
-            if len(close) == 2 and bd.km(*close[0], *close[1]) > 10 and min(
-                    bd.km(*p, *average) for p in close) <= 5:   # 2 far apart, one backs GeoNames
-                backed.add(pc)
+            if len(close) == 2 and bd.km(*close[0], *close[1]) > 10:   # 2 far apart
+                if min(bd.km(*p, *average) for p in close) <= 5:   # one backs GeoNames
+                    backed.add(pc)
+                    continue
+                split.add(pc)   # without a place list, they place it at their middle all the same
+            agreed[pc] = bd.agreed_point(found)
     assert {pc for pc, _, _ in res["kept"]} == backed
-    for pc, v in out.items():   # each kept postcode: its GeoNames point, or where its shops agree
-        assert v == (r4(agreed[pc]) if pc in agreed and pc not in backed else before[pc])
+    for pc, v in out.items():   # each postcode in the table: its GeoNames point, or where its shops agree
+        assert v == (r4(agreed[pc]) if pc in agreed else before[pc])
         assert all(isinstance(x, float) and round(x, 4) == x for x in v) and len(v) == 2
-    assert not removed & set(agreed)                         # a postcode placed from shops or backed is kept
-    assert c["from_shops"] == len(agreed) - len(backed) and c["moved"] == len(res["moves"]) <= c["from_shops"]
+    assert not removed & (set(agreed) | backed)              # a postcode placed from shops or backed is kept
+    assert c["from_shops"] == len(agreed) and c["moved"] == len(res["moves"]) <= c["from_shops"]
     assert all(d > bd.MOVED_KM for d, _, _ in res["moves"])
     assert [m[0] for m in res["moves"]] == sorted((m[0] for m in res["moves"]), reverse=True)
     assert 0 < c["set_aside"] and 0 < c["from_shops"] and 0 < c["moved"]   # the data tries every rule
-    assert 0 < len(backed)
+    assert 0 < len(backed) and 0 < len(split)
     # Deterministic: the same answer from postcodes and shops in the opposite order.
     assert bd.check_postcodes(dict(reversed(list(rows.items()))), dict(reversed(list(geo.items())))) == res
 
@@ -630,6 +862,7 @@ def test_no_place_list_or_a_broken_one_gives_the_shops_only_check(tmp_path):
     for places in (None, [], bd.load_places(broken)):
         res = bd.check_postcodes(rows, {}, places, {})
         assert res == bd.check_postcodes(rows, {}) and "to_place" not in res and "to_place" not in res["checks"]
+        assert "far_rows" not in res
         assert res["postcodes"] == {pc: r4(north(town, -99)) for pc, *_ in gn}
 
 
@@ -650,9 +883,11 @@ def test_states_compare_as_the_geocoder_compares_them():
 
 def test_a_place_point_needs_the_places_shops_or_one_notable_entry(monkeypatch):
     """With a reference (where the place's shops are): the entry by name nearest to it, within CHECK_KM;
-    other names count only when no name matches. Without one: a single entry by name that has a
-    population or a seat-of-government code, unless an entry with that name as another name lies more
-    than ANCHOR_KM from it. Entries are ((lat, lon), code, population)."""
+    other names count only when no name matches. Without one: the one notable entry by name (it has a
+    population or a seat-of-government code), also among entries of that name that are not notable,
+    unless an entry with that name as another name lies more than ANCHOR_KM from it; with no entry by
+    name, the one entry with it as another name, when that entry is notable. Entries are ((lat, lon),
+    code, population)."""
     town = (4.8151, 101.0786)            # Sungai Siput Utara, other name Sungai Siput
     far = north(town, -46.5)             # 'Sungai Siput', population 49,000
     ref = north(town, 1)
@@ -677,9 +912,17 @@ def test_a_place_point_needs_the_places_shops_or_one_notable_entry(monkeypatch):
         assert bd.place_point([e(town, 0, code)], [], None) == town, code
     for code in ("PPL", "PPLX", "PPLG", "PPLL"):
         assert bd.place_point([e(town, 0, code)], [], None) is None, code
-    assert bd.place_point([e(town, 33000), e(far, 9)], [], None) is None   # 2 by name: which one?
-    assert bd.place_point([], [e(town, 33000)], None) is None             # another name only
+    assert bd.place_point([e(town, 33000), e(far, 9)], [], None) is None   # 2 notable by name: which one?
+    assert bd.place_point([e(town, 15031), e(far)], [], None) == town      # Engkilili: the one notable of 2
+    assert bd.place_point([e(far), e(north(town, 5)), e(town, 0, "PPLA3")], [], None) == town   # ... a seat
+    assert bd.place_point([e(town), e(far)], [], None) is None             # none of them notable
+    assert bd.place_point([], [e(town, 24401)], None) == town             # Kerteh: the one by another name
+    assert bd.place_point([], [e(town, 0, "PPLA2")], None) == town
+    assert bd.place_point([], [e(town)], None) is None                    # not notable
+    assert bd.place_point([], [e(town, 24401), e(far)], None) is None     # 2 by another name: which one?
+    assert bd.place_point([e(far)], [e(town, 24401)], None) is None       # other names only when no name matches
     assert bd.place_point([e(far, 49000)], [e(town)], None) is None       # Sungai Siput
+    assert bd.place_point([e(far, 49000), e(town)], [e(town)], None) is None   # ... also among 2 by name
     twin = north(far, 1)                                                  # the same town listed twice
     assert bd.place_point([e(far, 49000)], [e(twin)], None) == far
     monkeypatch.setattr(bd, "ANCHOR_KM", bd.km(*far, *twin))
@@ -752,6 +995,44 @@ def test_an_outlier_goes_to_its_town_and_a_spread_town_keeps_its_points(tmp_path
     res = run_places(tmp_path, gn, [("Nanga Medamit", "", *g, "PPL", "Sarawak", 900)], name="one")
     assert res["to_place"] == [(pytest.approx(300), "98750", "Nanga Medamit (Sarawak)",
                                 "its place has no other GeoNames row")]
+
+
+def test_many_postcodes_none_near_their_places_point_keep_their_points_without_shops(tmp_path, monkeypatch):
+    """GeoNames puts Nusajaya's postcodes 10 to 18 km from the place list's point for Iskandar Puteri (other
+    name Nusajaya), spread over 15 km, and 79570 in Kedah; no shop names Nusajaya. When no other postcode lies
+    within ANCHOR_KM of the place's point, a postcode goes there only when its place has fewer than
+    COMPACT_MIN other postcodes (as Gemas, above) or shops that say where the place is. Here each has 10
+    others: they keep their points, and step 3 sets 79570 aside, far from them. The limit is exact: with 9
+    others they go, 79570 too. With shops that name Nusajaya near the point, or a postcode near it, they go."""
+    g = (1.3932, 103.6232)
+    c = north(g, 12)
+    gn = [(f"79{i:03d}", "Nusajaya", "Johor", *east(c, i % 4)) for i in range(10)]   # on 4 points, 1 km apart
+    gn += [("79570", "Nusajaya", "Johor", 6.12, 100.37)]
+    places = [("Iskandar Puteri", "Nusajaya", *g, "PPL", "Johor", 575977)]
+    res = run_places(tmp_path, gn, places)
+    assert res["to_place"] == [] and res["checks"]["to_place"] == 0
+    assert res["postcodes"] == {pc: r4((lat, lon)) for pc, _, _, lat, lon in gn[:-1]}
+    mid = bd._median_point([(lat, lon) for _, _, _, lat, lon in gn[:-1]])
+    assert res["set_aside"] == [("79570", "Nusajaya (Johor)", f"{bd.km(6.12, 100.37, *mid):.1f} km from the median of "
+                                 "the 10 other postcodes of its place")]
+    # 10 postcodes in all, so 9 others each: they go, 79570 too.
+    res = run_places(tmp_path, gn[1:], places, name="nine")
+    assert sorted(m[1] for m in res["to_place"]) == [pc for pc, *_ in gn[1:]]
+    assert {m[3] for m in res["to_place"]} == {"no other postcode of its place lies near that point"}
+    assert res["set_aside"] == [] and set(map(tuple, res["postcodes"].values())) == {tuple(r4(g))}
+    # Shops that name Nusajaya, 0.5 km either side of the point: all 11 go.
+    shops = [(1, *as_read(north(g, 0.5)), "name", ""), (2, *as_read(north(g, -0.5)), "address", "")]
+    addresses = {1: ("Johor", "PASAR NUSAJAYA"), 2: ("Johor", "JALAN 1, NUSAJAYA, JOHOR")}
+    res = run_places(tmp_path, gn, places, shops, addresses, name="shops")
+    assert sorted(m[1] for m in res["to_place"]) == [pc for pc, *_ in gn] and res["set_aside"] == []
+    # 79800 lies 1 km from the point: the others lie more than 10 km from it, outliers, and go.
+    res = run_places(tmp_path, gn + [("79800", "Nusajaya", "Johor", *north(g, 1))], places, name="near")
+    assert sorted(m[1] for m in res["to_place"]) == [pc for pc, *_ in gn]
+    assert {m[3] for m in res["to_place"]} == {"more than 10 km from each of the 1 other postcodes of its place "
+                                               "near that point"}
+    assert bd.COMPACT_MIN == 10
+    monkeypatch.setattr(bd, "COMPACT_MIN", 11)   # the limit is COMPACT_MIN: with it at 11, 10 others are few enough
+    assert len(run_places(tmp_path, gn, places, name="limit")["to_place"]) == 11
 
 
 def test_the_place_limits_are_exact(tmp_path, monkeypatch):
@@ -836,7 +1117,8 @@ def test_the_outlier_and_one_shop_limits_are_exact(tmp_path, monkeypatch):
 def test_the_places_shops_choose_its_point(tmp_path):
     """The reference is the median of the place's postcodes placed from shops, else the shops found by name
     or address whose address names the place, in its state, when they agree. Simpang Empat has 2 entries
-    by name 20 km apart; its PO box postcodes share a point 50 km south of the town."""
+    by name 20 km apart, a with a population and b without; its PO box postcodes share a point 50 km south
+    of the town. Without a reference, a, the one notable entry, is the place's point."""
     a = (5.53, 100.43)
     b = north(a, 20)
     gn = [("06650", "Simpang Empat", "Kedah", *north(a, -50)), ("06651", "Simpang Empat", "Kedah", *north(a, -50))]
@@ -852,14 +1134,17 @@ def test_the_places_shops_choose_its_point(tmp_path):
     shops_a = [(20, *as_read(north(a, 0.5)), "name", "06600"), (21, *as_read(north(a, -0.5)), "name", "06600")]
     res = run_places(tmp_path, gn + placed, places, near_b + shops_a, named_b, name="placed")
     assert res["postcodes"]["06650"] == r4(a) and res["checks"]["from_shops"] == 1
-    # Shops of another state, a street of that name, or shops that do not agree: no reference, and with
-    # 2 entries by name, no place point.
-    assert run(near_b, {10: ("Perlis", "SIMPANG EMPAT"), 11: ("Perlis", "SIMPANG EMPAT")}, "state") == r4(north(a, -50))
-    assert run(near_b, {10: ("Kedah", "TAMAN SIMPANG EMPATJAYA"), 11: named_b[11]}, "one") == r4(north(a, -50))
+    # Shops of another state, a street of that name, or shops that do not agree: no reference, so not b,
+    # where these shops are, but a, the one notable entry of the 2 by name. With b notable too, no point.
+    assert run(near_b, {10: ("Perlis", "SIMPANG EMPAT"), 11: ("Perlis", "SIMPANG EMPAT")}, "state") == r4(a)
+    assert run(near_b, {10: ("Kedah", "TAMAN SIMPANG EMPATJAYA"), 11: named_b[11]}, "one") == r4(a)
     apart = [(10, *as_read(north(b, 12)), "name", ""), (11, *as_read(north(b, -12)), "address", "")]
-    assert run(apart, named_b, "apart") == r4(north(a, -50))
+    assert run(apart, named_b, "apart") == r4(a)
     anchor = [near_b[0], (11, *as_read(north(b, -1)), "town", "")]   # a town-level point is no shop found by OSM
-    assert run(anchor, named_b, "anchor") == r4(north(a, -50))
+    assert run(anchor, named_b, "anchor") == r4(a)
+    both = [places[0], ("Simpang Empat", "", *b, "PPL", "Kedah", 120)]
+    res = run_places(tmp_path, gn, both, apart, named_b, name="both")
+    assert res["postcodes"]["06650"] == r4(north(a, -50)) and res["to_place"] == []
     # Only b in the place list, 20 km from where the shops are: it counts. A town of that name 40 km away
     # does not (the shops near a, with a dropped from the list).
     only_b = [p for p in places if p[2] == b[0]]
@@ -1068,13 +1353,20 @@ def test_a_place_name_of_two_states_counts_where_the_place_list_has_it(tmp_path)
     assert res["postcodes"]["27000"] == r4(j)
     assert res["to_place"] == [(pytest.approx(bd.km(*far, *j)), "27000", "Jerantut (Pahang) / Jerantut (Selangor)",
                                 "more than 10 km from each of the 2 other postcodes of its place near that point")]
+    # Its Pahang row lies 67 km from Jerantut's point, but its Selangor row (no point) is on the same point,
+    # so that point still counts: no far row.
+    assert res["far_rows"] == []
+    # It does not go to Jerantut's point then. Step 4 leaves it out instead: 27010 and 27020, which share its
+    # first 3 digits, lie near the town's point, so they are confirmed, and 27000 lies 64 km from the nearer.
+    why = [("27000", "Jerantut (Pahang) / Jerantut (Selangor)", f"{bd.km(*far, *north(j, -3)):.1f} km from the "
+            "nearest of the 2 confirmed postcodes that start 270")]
     res = run_places(tmp_path, gn, places + [("Jerantut", "", 3.3, 101.6, "PPL", "Selangor", 900)], name="both")
-    assert res["postcodes"]["27000"] == r4(far) and res["to_place"] == []
+    assert "27000" not in res["postcodes"] and res["to_place"] == [] and res["set_aside"] == why
     # The place list has Jerantut in Selangor twice, with no population and no shops: no point there, but the
-    # list has the name in both states, so both count and 27000 keeps its point.
+    # list has the name in both states, so both count and 27000 does not go to Jerantut's point.
     selangor = [("Jerantut", "", 3.3, 101.6, "PPL", "Selangor", 0), ("Jerantut", "", 3.5, 101.4, "PPL", "Selangor", 0)]
     res = run_places(tmp_path, gn, places + selangor, name="no_point")
-    assert res["postcodes"]["27000"] == r4(far) and res["to_place"] == []
+    assert "27000" not in res["postcodes"] and res["to_place"] == [] and res["set_aside"] == why
     # Old and new spellings are one name here too: GeoNames lists 17600 as Kampong Jeli (Kelantan) and
     # Kampung Jeli (Perak), and the place list has Kampung Jeli in Kelantan only.
     k = (5.7, 101.84)
@@ -1290,6 +1582,207 @@ def test_an_outlier_is_judged_by_the_postcodes_of_every_place_it_names(tmp_path)
                                                  "no other postcode of its place lies near that point")]
 
 
+def test_the_one_notable_entry_of_several_by_name_is_the_places_point(tmp_path):
+    """The place list has 2 entries named Engkilili, 15.5 km apart: one with a population of 15,031 and one
+    with none. Without shops naming the town, the notable one is its point, and 95800, 86 km out on its own,
+    goes there. With 2 notable entries there is no telling which, and it stays."""
+    town, other = (1.13864, 111.66665), (1.25, 111.75)
+    gn = [("95800", "Engkilili", "Sarawak", 1.2817, 110.9074)]
+    res = run_places(tmp_path, gn, [("Engkilili", "", *other, "PPL", "Sarawak", 0),
+                                    ("Engkilili", "Engkelili", *town, "PPL", "Sarawak", 15031)])
+    assert res["postcodes"] == {"95800": r4(town)}
+    assert res["to_place"] == [(pytest.approx(bd.km(1.2817, 110.9074, *town)), "95800", "Engkilili (Sarawak)",
+                                "its place has no other GeoNames row")]
+    res = run_places(tmp_path, gn, [("Engkilili", "", *other, "PPL", "Sarawak", 12),
+                                    ("Engkilili", "Engkelili", *town, "PPL", "Sarawak", 15031)], name="two")
+    assert res["postcodes"] == {"95800": [1.2817, 110.9074]} and res["to_place"] == []
+
+
+def test_the_one_notable_entry_with_the_name_among_its_other_names_is_the_places_point(tmp_path, monkeypatch):
+    """The place list has Kerteh only as another name of Kertih (population 24,401): without shops naming the
+    town, that entry is its point, and 24300, 23 km out on its own, goes there. Not when 2 entries have that
+    other name, nor when the one entry is not notable. Nor when another of its names is a longer place of
+    the postcode table with none of the place's postcodes: Tasek Glugor (other names Gelugor and Tasek
+    Gelugor) is Tasek Gelugor (13300) on the mainland, so 11700 Gelugor stays on Penang island. Nor when
+    another of its names is the name or other name of an entry more than ANCHOR_KM away: Kampung Kuala
+    Sepetang (other names Kuala Sepetang and Port Weld) lies 32 km from Kampung Sepetang (other name Port
+    Weld), which is the town."""
+    kertih, own = (4.5141, 103.4483), (4.6985, 103.3568)
+    gn = [("24300", "Kerteh", "Terengganu", *own)]
+    entry = ("Kertih", "Kerteh|Kertikh", *kertih, "PPL", "Terengganu", 24401)
+    res = run_places(tmp_path, gn, [entry])
+    assert res["postcodes"] == {"24300": r4(kertih)}
+    assert res["to_place"] == [(pytest.approx(bd.km(*own, *kertih)), "24300", "Kerteh (Terengganu)",
+                                "its place has no other GeoNames row")]
+    for i, places in enumerate([[entry, ("Perkampungan Kertih", "Kerteh", 4.6, 103.4, "PPL", "Terengganu", 0)],
+                                [("Kertih", "Kerteh", *kertih, "PPL", "Terengganu", 0)]]):
+        res = run_places(tmp_path, gn, places, name=f"k{i}")
+        assert res["postcodes"] == {"24300": list(own)} and res["to_place"] == [], i
+    # Gelugor. Without Tasek Gelugor in the postcode table, or when it has Gelugor's postcode too, the entry counts.
+    island, tasek = (5.3653, 100.3067), (5.4803, 100.4985)
+    glugor = [("Tasek Glugor", "Gelugor|Tasek Gelugor", *tasek, "PPL", "Pulau Pinang", 135786)]
+    gn = [("11700", "Gelugor", "Pulau Pinang", *island), ("13300", "Tasek Gelugor", "Pulau Pinang", *north(tasek, 2))]
+    res = run_places(tmp_path, gn, glugor, name="gelugor")
+    assert res["postcodes"] == {"11700": list(island), "13300": r4(north(tasek, 2))} and res["to_place"] == []
+    for i, rows in enumerate([gn[:1], gn + [("11700", "Tasek Gelugor", "Pulau Pinang", *island)]]):
+        res = run_places(tmp_path, rows, glugor, name=f"g{i}")
+        assert res["postcodes"]["11700"] == r4(tasek) and [m[1] for m in res["to_place"]] == ["11700"], i
+    # With a reference these vetoes do not apply: shops naming Gelugor at Tasek Glugor make it Gelugor's point.
+    shops = [(1, *as_read(north(tasek, 0.5)), "name", ""), (2, *as_read(north(tasek, -0.5)), "address", "")]
+    addresses = {1: ("Pulau Pinang", "JALAN SUNGAI DUA, GELUGOR"), 2: ("Penang", "GELUGOR, PULAU PINANG")}
+    res = run_places(tmp_path, gn, glugor, shops, addresses, name="g_ref")
+    assert res["postcodes"]["11700"] == r4(tasek) and [m[1] for m in res["to_place"]] == ["11700"]
+    # Kuala Sepetang. Without the other Port Weld, or with it no more than ANCHOR_KM away, the entry counts.
+    sepetang, own = (4.5429, 100.6597), (4.9204, 100.6607)
+    gn = [("34650", "Kuala Sepetang", "Perak", *own)]
+    ks = ("Kampung Kuala Sepetang", "Kuala Sepetang|Port Weld", *sepetang, "PPL", "Perak", 1264)
+    town = ("Kampung Sepetang", "Port Weld|Sapetang", 4.83333, 100.63333, "PPL", "Perak", 0)
+    res = run_places(tmp_path, gn, [ks, town], name="sepetang")
+    assert res["postcodes"] == {"34650": list(own)} and res["to_place"] == []
+    res = run_places(tmp_path, gn, [ks], name="sepetang_one")
+    assert res["postcodes"] == {"34650": r4(sepetang)} and [m[1] for m in res["to_place"]] == ["34650"]
+    rows = bd.load_postcode_rows(write_geonames(tmp_path / "ks.csv", gn))
+    places = bd.load_places(write_places(tmp_path / "ks_pl.csv", [ks, town]))
+    d = bd.km(*sepetang, 4.83333, 100.63333)
+    monkeypatch.setattr(bd, "ANCHOR_KM", d)
+    assert [m[1] for m in bd.check_postcodes(rows, {}, places, {})["to_place"]] == ["34650"]
+    monkeypatch.setattr(bd, "ANCHOR_KM", math.nextafter(d, 0))
+    assert bd.check_postcodes(rows, {}, places, {})["to_place"] == []
+
+
+def test_the_vetoes_on_an_entry_by_another_name_leave_the_entries_by_name_alone(tmp_path):
+    """The place list's 'Sungai Siput' (population 49,000) lies 46.5 km from the town, which it calls 'Sungai
+    Siput Utara', other name 'Sungai Siput'. That other name makes the entry by name doubtful, and Sungai
+    Siput gets no point, also when the postcode table has a place Sungai Siput Utara of its own (which would
+    stop the entry by another name from being Sungai Siput's point were there no entry by name)."""
+    town = (4.8151, 101.0786)
+    far = north(town, -46.5)
+    gn = [("31100", "Sungai Siput", "Perak", *north(town, 3)), ("31110", "Sungai Siput Utara", "Perak", *town)]
+    places = [("Sungai Siput", "", *far, "PPL", "Perak", 49000), ("Sungai Siput Utara", "Sungai Siput", *town,
+                                                                   "PPL", "Perak", 0)]
+    res = run_places(tmp_path, gn, places)
+    assert res["postcodes"] == {"31100": r4(north(town, 3)), "31110": list(town)} and res["to_place"] == []
+
+
+def test_the_place_lists_ascii_name_counts_too(tmp_path):
+    """GeoNames gives each place a name and an ASCII name. A place of the postcode table that matches only
+    the ASCII name ('Kampung Nipah' for 'Kampung Ñipah') is found too."""
+    pt = (2.0, 103.0)
+    path = tmp_path / "places_my.csv"
+    path.write_text(PL_HEAD + f"1,Kampung Ñipah,Kampung Nipah,,{pt[0]},{pt[1]},PPL,Johor,5000\n", encoding="utf-8")
+    places = bd.load_places(path)
+    assert places == [("johor", frozenset({"KAMPUNG IPAH", "KAMPUNG NIPAH"}), frozenset(), pt, "PPL", 5000)]
+    rows = bd.load_postcode_rows(write_geonames(tmp_path / "pcs.csv", [("86000", "Kampung Nipah", "Johor",
+                                                                        *north(pt, 20))]))
+    res = bd.check_postcodes(rows, {}, places, {})
+    assert res["postcodes"] == {"86000": r4(pt)} and [m[1] for m in res["to_place"]] == ["86000"]
+
+
+def test_every_place_whose_point_it_is_must_have_its_shops_nearer_that_point(tmp_path):
+    """06400 names Alor Setar and Alor Star, whose place point is one entry (Alor Star is its other name), 20
+    km from 06400's point x, where all rows of both places lie: one rough point. Alor Setar's shops (those
+    of 05000) lie at the place point, Alor Star's (those of 05300) at x. That point lies further than x
+    from Alor Star's shops, so 06400 stays. Without shops of Alor Star, it goes there, with 05300."""
+    g = (6.12, 100.37)
+    x = north(g, 20)
+    gn = [("05000", "Alor Setar", "Kedah", *x), ("05300", "Alor Star", "Kedah", *x),
+          ("06400", "Alor Setar", "Kedah", *x), ("06400", "Alor Star", "Kedah", *x)]
+    places = [("Alor Setar", "Alor Star", *g, "PPLA", "Kedah", 217000)]
+    setar = [(1, *as_read(north(g, 0.5)), "name", "05000"), (2, *as_read(north(g, -0.5)), "address", "05000")]
+    star = [(3, *as_read(north(x, 0.5)), "name", "05300"), (4, *as_read(north(x, -0.5)), "address", "05300")]
+    res = run_places(tmp_path, gn, places, setar + star)
+    assert res["checks"]["from_shops"] == 2 and res["postcodes"]["06400"] == r4(x) and res["to_place"] == []
+    res = run_places(tmp_path, gn, places, setar, name="setar_only")
+    assert res["postcodes"]["06400"] == r4(g) and sorted(m[1] for m in res["to_place"]) == ["05300", "06400"]
+
+
+def test_others_moved_onto_one_point_are_one_guess_whatever_their_geonames_points(tmp_path):
+    """Kota's 3 other postcodes lie on 2 GeoNames points, 20 and 25 km south of its place point, and all go to
+    it (no postcode of Kota lies near it). 42000, listed under Kota and Lain (not in the place list), does
+    not move, and lies 40 km north. The others now share one point, one guess, so they judge nothing and
+    42000 stays. Counted at their GeoNames points they would be 2 points, and 42000 would be set aside."""
+    g = (3.0, 101.5)
+    gn = [("42010", "Kota", "Selangor", *north(g, -20)), ("42020", "Kota", "Selangor", *north(g, -20)),
+          ("42030", "Kota", "Selangor", *north(g, -25)),
+          ("42000", "Kota", "Selangor", *north(g, 40)), ("42000", "Lain", "Selangor", *north(g, 40))]
+    res = run_places(tmp_path, gn, [("Kota", "", *g, "PPL", "Selangor", 5000)])
+    assert sorted(m[1] for m in res["to_place"]) == ["42010", "42020", "42030"]
+    assert res["postcodes"]["42000"] == r4(north(g, 40)) and res["set_aside"] == []
+
+
+def test_the_other_states_place_of_a_two_state_postcode_judges_nothing(tmp_path):
+    """27000 is listed under Jerantut in Pahang and in Selangor; the place list has Jerantut only in Pahang,
+    so 27000 is a postcode of Jerantut, Pahang, and Selangor's Jerantut judges nothing. 45000, of Jerantut in
+    Selangor, lies within 10 km of both the town's point and 27000, but 27000 is still an outlier from the
+    postcodes of Jerantut, Pahang near that point. And the rows of Jerantut, Pahang are one rough point,
+    whatever the rows of Selangor's Jerantut."""
+    j = (3.936, 102.3626)
+    places = [("Jerantut", "", *j, "PPL", "Pahang", 33606)]
+    gn = [("27000", "Jerantut", "Pahang", *north(j, 15)), ("27000", "Jerantut", "Selangor", *north(j, 15)),
+          ("27010", "Jerantut", "Pahang", *j), ("27020", "Jerantut", "Pahang", *north(j, 1)),
+          ("45000", "Jerantut", "Selangor", *north(j, 7))]
+    res = run_places(tmp_path, gn, places)
+    assert [m[1:] for m in res["to_place"]] == [("27000", "Jerantut (Pahang) / Jerantut (Selangor)",
+                                                 "more than 10 km from each of the 2 other postcodes of its place "
+                                                 "near that point")]
+    gn = [("27000", "Jerantut", "Pahang", *north(j, 15)), ("27000", "Jerantut", "Selangor", *north(j, 15)),
+          ("27010", "Jerantut", "Pahang", *north(j, 14)), ("27020", "Jerantut", "Pahang", *north(j, 16)),
+          ("45000", "Jerantut", "Selangor", *north(j, 100))]
+    res = run_places(tmp_path, gn, places, name="rough")
+    assert sorted(m[1] for m in res["to_place"]) == ["27000", "27010", "27020"]
+    assert {m[3] for m in res["to_place"]} == {"all 3 GeoNames rows of its place lie within 5 km of each other"}
+
+
+def test_the_reference_is_the_median_of_all_placed_postcodes_not_the_first(tmp_path):
+    """3 postcodes of Kota are placed from shops 0, 10 and 12 km north of a. Their median (10 km) is nearest the
+    entry 11 km north, the first of them (81000, 0 km) the entry 1 km north: Kota's point is the entry 11 km
+    north, and 81090, an outlier 40 km south, goes there."""
+    a = (2.0, 103.0)
+    gn, shops = [], []
+    for i, (pc, k) in enumerate((("81000", 0), ("81010", 10), ("81020", 12))):
+        gn.append((pc, "Kota", "Johor", *north(a, k)))
+        shops += [(2 * i + 1, *as_read(north(a, k + 0.3)), "name", pc),
+                  (2 * i + 2, *as_read(north(a, k - 0.3)), "address", pc)]
+    gn.append(("81090", "Kota", "Johor", *north(a, -40)))
+    places = [("Kota", "", *north(a, 1), "PPL", "Johor", 0), ("Kota", "", *north(a, 11), "PPL", "Johor", 0)]
+    res = run_places(tmp_path, gn, places, shops)
+    assert res["checks"]["from_shops"] == 3 and [m[1] for m in res["to_place"]] == ["81090"]
+    assert res["postcodes"]["81090"] == r4(north(a, 11))
+
+
+def test_a_rough_place_is_one_whose_rows_all_lie_close_in_any_direction(tmp_path):
+    """The rows of Alpha: 40030 9.9 km north of the place point (near it), 40000 and 40020 12 km north and 3
+    km west and east (6 km apart), 40010 14 km north. The largest distance between 2 rows, west to east, is
+    6 km: not one rough point. 40000, 40010 and 40020 each lie within 10 km of 40030: no outliers, so
+    nothing moves. The first and last rows in sorted order are only 4.1 km apart."""
+    g = (3.0, 101.5)
+    a, b, c = east(north(g, 12), -3), north(g, 14), east(north(g, 12), 3)
+    gn = [("40000", "Alpha", "Selangor", *a), ("40010", "Alpha", "Selangor", *b),
+          ("40020", "Alpha", "Selangor", *c), ("40030", "Alpha", "Selangor", *north(g, 9.9))]
+    rows = bd.load_postcode_rows(write_geonames(tmp_path / "pcs.csv", gn))
+    places = bd.load_places(write_places(tmp_path / "pl.csv", [("Alpha", "", *g, "PPLA", "Selangor", 0)]))
+    pts = [r[2] for v in rows.values() for r in v]
+    assert bd._spread(pts) == pytest.approx(bd.km(*a, *c), abs=1e-9) and 5.9 < bd._spread(pts) < 6.1
+    assert bd.km(*sorted(pts)[0], *sorted(pts)[-1]) < 5
+    assert bd.check_postcodes(rows, {}, places, {})["to_place"] == []
+
+
+def test_moved_postcodes_never_make_a_place_compact(tmp_path):
+    """Kota's rows lie 8 to 12.5 km north of its place point: one rough point. 12 postcodes at 8 to 9 km stay,
+    and 41000 to 41002, 10.5 to 12.5 km out, go to the place point. 42000 is listed under Kota (9 km north)
+    and Lain (31 km south; not in the place list), so its point lies 11 km south, 19.5 km from the median of
+    Kota's 15 others; it is not moved. Moved postcodes count among the others but never inside the compact
+    core, wherever their GeoNames points lie: 12 of 15 are too few, Kota is not compact, and 42000 stays.
+    Counted at their GeoNames points, 2 to 4 km from that median, they would make Kota compact."""
+    g = (3.0, 101.5)
+    gn = [(f"40{i:03d}", "Kota", "Selangor", *north(g, 8.0 + (i % 3) * 0.5)) for i in range(12)]
+    gn += [(f"41{i:03d}", "Kota", "Selangor", *north(g, d)) for i, d in enumerate((10.5, 11.5, 12.5))]
+    gn += [("42000", "Kota", "Selangor", *north(g, 9)), ("42000", "Lain", "Selangor", *north(g, -31))]
+    res = run_places(tmp_path, gn, [("Kota", "", *g, "PPLA2", "Selangor", 50000)])
+    assert sorted(m[1] for m in res["to_place"]) == ["41000", "41001", "41002"]
+    assert res["set_aside"] == [] and res["postcodes"]["42000"] == r4(north(g, -11))
+
+
 def test_with_a_place_list_the_check_still_only_moves_or_removes_and_is_deterministic(tmp_path):
     rnd = random.Random(20261117)
     towns = {"Alpha": (3.0, 101.5), "Beta": (4.0, 101.0), "Gamma": (5.5, 100.4), "Delta": (2.2, 102.2),
@@ -1329,19 +1822,319 @@ def test_with_a_place_list_the_check_still_only_moves_or_removes_and_is_determin
     assert removed == {pc for pc, _, _ in res["set_aside"]} and len(removed) == c["set_aside"]
     moved = {m[1] for m in res["to_place"]}
     assert len(moved) == c["to_place"] and not moved & removed and c["to_place"] > 0 and c["from_shops"] > 0
+    far = {m[1] for m in res["far_rows"]}   # without a GeoNames row far from its place's point, then judged as usual
+    assert far
+    # 2 shops that agree but lie more than ANCHOR_KM apart, neither within BACKED_KM of the GeoNames point,
+    # place a postcode only without the place list.
+    split = set()
+    for pc in before:
+        close = bd._agreeing([g[:2] for g in geo.values() if g[2] in ("name", "address") and g[3] == pc])
+        if close and len(close) == 2 and bd.km(*close[0], *close[1]) > bd.ANCHOR_KM and min(
+                bd.km(*q, *bd._mean_point([r[2] for r in rows[pc]])) for q in close) > bd.BACKED_KM:
+            split.add(pc)
+    assert split <= set(plain["postcodes"]) | {pc for pc, _, _ in plain["set_aside"]}
     place_points = {tuple(r4(p[3])) for p in places}
     for pc, v in out.items():
-        if pc in moved:   # moved to a place-list point more than ANCHOR_KM from its GeoNames point
-            assert tuple(v) in place_points and bd.km(*bd._mean_point([r[2] for r in rows[pc]]), *v) > bd.ANCHOR_KM
+        if pc in moved:   # moved to a place-list point more than ANCHOR_KM from its point (its GeoNames point,
+            #                 or, without a far row, its other row)
+            starts = [r[2] for r in rows[pc]] if pc in far else [bd._mean_point([r[2] for r in rows[pc]])]
+            assert tuple(v) in place_points and any(bd.km(*q, *v) > bd.ANCHOR_KM for q in starts)
+        elif pc in far:   # the average of its other rows: here 2 rows on 2 points, so the other row
+            assert len({r[2] for r in rows[pc]}) == 2 and v in [r4(r[2]) for r in rows[pc]]
         else:             # as without the place list: its GeoNames point or where its shops agree
-            assert v == plain["postcodes"].get(pc, before[pc])
+            assert v == (before[pc] if pc in split else plain["postcodes"].get(pc, before[pc]))
         assert all(isinstance(x, float) and round(x, 4) == x for x in v) and len(v) == 2
+    shop_moves = [m for m in plain["moves"] if m[1] not in split]
     assert (c["from_shops"], c["moved"], res["moves"], res["kept"]) == (
-        plain["checks"]["from_shops"], plain["checks"]["moved"], plain["moves"], plain["kept"])
+        plain["checks"]["from_shops"] - len(split), len(shop_moves), shop_moves, plain["kept"])
     assert [m[0] for m in res["to_place"]] == sorted((m[0] for m in res["to_place"]), reverse=True)
+    assert [m[0] for m in res["far_rows"]] == sorted((m[0] for m in res["far_rows"]), reverse=True)
     # Deterministic: the same answer from every input in the opposite order.
     assert bd.check_postcodes(dict(reversed(list(rows.items()))), dict(reversed(list(geo.items()))),
                               list(reversed(places)), dict(reversed(list(addresses.items())))) == res
+
+
+def test_a_row_far_from_its_places_point_does_not_count_while_another_row_does(tmp_path, monkeypatch):
+    """GeoNames lists 42920 under Pelabuhan Klang, on a point in Kuala Lumpur 42 km from Port Klang's point
+    in the place list, and under Pulau Indah, the island off the town (no entry in the place list). Its
+    average lay 23 km from each, in Petaling. A row more than PLACE_KM from its own place's point does not
+    count while a row on another point does: 42920 is placed at its Pulau Indah row. The limit is exact.
+    The build lists such postcodes by how far their point moved, largest first."""
+    port, kl, indah = (2.99959, 101.39287), (3.1373, 101.7471), (2.9662, 101.3768)
+    gn = [("42000", "Pelabuhan Klang", "Selangor", *north(port, 2)), ("42009", "Pelabuhan Klang", "Selangor", *north(port, 1)),
+          ("42920", "Pelabuhan Klang", "Selangor", *kl), ("42920", "Pulau Indah", "Selangor", *indah)]
+    places = [("Pelabuhan Klang", "Port Klang", *port, "PPL", "Selangor", 20000)]
+    res = run_places(tmp_path, gn, places)
+    avg = bd._mean_point([kl, indah])
+    assert res["postcodes"]["42920"] == r4(indah)
+    assert res["far_rows"] == [(pytest.approx(bd.km(*avg, *indah)), "42920", "Pelabuhan Klang (Selangor) / Pulau Indah "
+                                "(Selangor)", f"its row of Pelabuhan Klang (Selangor) lies {bd.km(*kl, *port):.1f} km "
+                                "from that place's point")]
+    assert res["to_place"] == [] and res["set_aside"] == [] and res["checks"]["to_place"] == 0
+    assert bd.check_postcodes(bd.load_postcode_rows(tmp_path / "p_postcodes.csv"), {})["postcodes"]["42920"] == r4(avg)
+    d = bd.km(*kl, *port)
+    monkeypatch.setattr(bd, "PLACE_KM", d)   # exactly PLACE_KM from its place's point, the row counts
+    res = run_places(tmp_path, gn, places, name="exact")
+    assert res["postcodes"]["42920"] == r4(avg) and res["far_rows"] == []
+    monkeypatch.setattr(bd, "PLACE_KM", math.nextafter(d, 0))
+    assert run_places(tmp_path, gn, places, name="below")["postcodes"]["42920"] == r4(indah)
+    monkeypatch.undo()
+    # 42990's Pelabuhan Klang row lies 70 km north of Port Klang's point and its other row 3 km, so its point
+    # moves 33.5 km, more than 42920's 22.7 km: it comes first, though its postcode comes after.
+    gn += [("42990", "Pelabuhan Klang", "Selangor", *north(port, 70)), ("42990", "Lain", "Selangor", *north(port, 3))]
+    res = run_places(tmp_path, gn, places, name="two")
+    assert [(m[1], round(m[0], 1)) for m in res["far_rows"]] == [("42990", 33.5), ("42920", round(bd.km(*avg, *indah), 1))]
+    assert res["postcodes"]["42990"] == r4(north(port, 3)) and res["set_aside"] == []
+
+
+def test_a_far_row_counts_when_its_places_shops_lie_nearer_to_it_and_shop_points_keep_every_row(tmp_path):
+    """Kota's point lies 31 km from 41000's Kota row. When Kota's shops (those of 41100) lie 20 km north of
+    the point, 11 km from that row, the row counts: 41000 keeps the average of its 2 rows. When they lie
+    1 km from the point, the row does not count, and 41000 is placed at its other row, Lain's. 41100, placed
+    from its shops, keeps their point whatever its rows."""
+    k = (2.5, 102.5)
+    gn = [("41000", "Kota", "Johor", *north(k, 31)), ("41000", "Lain", "Johor", *north(k, -1)),
+          ("41100", "Kota", "Johor", *north(k, 40)), ("41100", "Lain", "Johor", *north(k, -1))]
+    places = [("Kota", "", *k, "PPL", "Johor", 5000)]
+
+    def shops(at):
+        return [(1, *as_read(north(k, at + 0.2)), "name", "41100"), (2, *as_read(north(k, at - 0.2)), "address", "41100")]
+
+    res = run_places(tmp_path, gn, places, shops(20), name="near_row")
+    assert res["postcodes"]["41000"] == r4(north(k, 15)) and res["far_rows"] == []
+    assert res["postcodes"]["41100"] == r4(bd._median_point([as_read(north(k, 20.2)), as_read(north(k, 19.8))]))
+    res = run_places(tmp_path, gn, places, shops(1), name="near_point")
+    assert res["postcodes"]["41000"] == r4(north(k, -1))
+    assert res["far_rows"] == [(pytest.approx(16.0), "41000", "Kota (Johor) / Lain (Johor)",
+                                f"its row of Kota (Johor) lies {bd.km(*north(k, 31), *k):.1f} km from that place's point")]
+    assert res["postcodes"]["41100"] == r4(bd._median_point([as_read(north(k, 1.2)), as_read(north(k, 0.8))]))
+
+
+def test_a_far_row_counts_when_the_other_rows_lie_far_from_that_place_too(tmp_path):
+    """GeoNames lists 81500 under Pekan Nenas, 20 km north-west of that town's point in the place list, and
+    under Sungai Mati, 21 km east of it. The place list's Sungai Mati (Bandar Sungai Mati, other name Sungai
+    Mati) lies near Muar, 145 km from that row, but the Pekan Nenas row lies 109 km from it too: the postcode
+    is not near that Sungai Mati, and its row may name another place of that name. So it keeps counting, and
+    81500 keeps the average of its 2 rows, 10 km from Pekan Nenas (its Pekan Nenas row lies 20 km from it)."""
+    nenas, mati = (1.51, 103.5141), (2.1467, 102.5655)
+    rows = [("81500", "Pekan Nenas", "Johor", 1.6627, 103.4182), ("81500", "Sungai Mati", "Johor", 1.5141, 103.7014),
+            ("84400", "Sungai Mati", "Johor", 2.0749, 102.7197)]
+    places = [("Pekan Nenas", "Pekan Nanas", *nenas, "PPL", "Johor", 23292),
+              ("Bandar Sungai Mati", "Sungai Mati", *mati, "PPL", "Johor", 1737)]
+    res = run_places(tmp_path, rows, places)
+    avg = bd._mean_point([(1.6627, 103.4182), (1.5141, 103.7014)])
+    assert bd.km(1.5141, 103.7014, *mati) > bd.PLACE_KM and bd.km(1.6627, 103.4182, *mati) > bd.PLACE_KM
+    assert res["postcodes"]["81500"] == r4(avg) and res["far_rows"] == [] and 9 < bd.km(*avg, *nenas) < 11
+    # Had Bandar Sungai Mati lain 25 km from the Pekan Nenas row (and 52 km from the Sungai Mati row), that
+    # row would not count, and 81500 would lie on its Pekan Nenas row.
+    near = north((1.6627, 103.4182), 25)
+    assert bd.km(1.5141, 103.7014, *near) > bd.PLACE_KM
+    res = run_places(tmp_path, rows, places[:1] + [("Bandar Sungai Mati", "Sungai Mati", *near, "PPL", "Johor", 1737)],
+                     name="near")
+    assert res["postcodes"]["81500"] == [1.6627, 103.4182] and [m[1] for m in res["far_rows"]] == ["81500"]
+    # The limit is exact: the other rows exactly PLACE_KM from that place's point are near enough.
+    d = bd.km(1.6627, 103.4182, *near)
+    near_places = places[:1] + [("Bandar Sungai Mati", "Sungai Mati", *near, "PPL", "Johor", 1737)]
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(bd, "PLACE_KM", d)
+        assert run_places(tmp_path, rows, near_places, name="exact")["postcodes"]["81500"] == [1.6627, 103.4182]
+        mp.setattr(bd, "PLACE_KM", math.nextafter(d, 0))
+        assert run_places(tmp_path, rows, near_places, name="below")["postcodes"]["81500"] == r4(avg)
+    # Rows of 2 places far from their points: both stop counting only when the other rows lie near both places.
+    c = (3.0, 102.0)
+    rows = [("70000", "Alfa", "Johor", *north(c, 50)), ("70000", "Bravo", "Johor", *north(c, -40)),
+            ("70000", "Lain", "Johor", *c)]
+    alfa, bravo = ("Alfa", "", *north(c, 10), "PPL", "Johor", 900), ("Bravo", "", *north(c, -100), "PPL", "Johor", 900)
+    res = run_places(tmp_path, rows, [alfa, bravo], name="two")
+    assert res["postcodes"]["70000"] == r4(north(c, 10 / 3)) and res["far_rows"] == []
+    bravo = ("Bravo", "", *north(c, 25), "PPL", "Johor", 900)   # 65 km from the Bravo row, 25 km from Lain's
+    res = run_places(tmp_path, rows, [alfa, bravo], name="both")
+    assert res["postcodes"]["70000"] == r4(c) and [m[1] for m in res["far_rows"]] == ["70000"]
+
+
+def test_a_far_row_exactly_as_far_from_its_places_shops_as_the_point_counts(tmp_path):
+    """Kota's point (the place list's Kota, chosen by the shops naming Kota) and 41000's Kota row lie on one
+    parallel, a quarter of a degree of longitude either side of those shops: exactly as far from them, in
+    floating point too. The row lies 56 km from Kota's point, but it is not further from the shops than the
+    point is, so it counts; a little further out, it does not."""
+    ref, g = (2.5, 102.5), (2.5, 102.25)
+    shops = [(1, 2.5, 102.46875, "name", ""), (2, 2.5, 102.53125, "address", "")]   # their median: ref
+    addresses = {1: ("Johor", "PASAR AWAM KOTA"), 2: ("Johor", "41100 KOTA, JOHOR")}
+    places = [("Kota", "", *g, "PPL", "Johor", 0)]
+    assert bd.km(*g, *ref) == bd.km(2.5, 102.75, *ref) and bd.km(*g, 2.5, 102.75) > bd.PLACE_KM
+    gn = [("41000", "Kota", "Johor", 2.5, 102.75), ("41000", "Lain", "Johor", *ref)]
+    res = run_places(tmp_path, gn, places, shops, addresses)
+    assert res["postcodes"] == {"41000": [2.5, 102.625]} and res["far_rows"] == []
+    gn[0] = ("41000", "Kota", "Johor", 2.5, 102.7501)
+    res = run_places(tmp_path, gn, places, shops, addresses, name="out")
+    assert res["postcodes"] == {"41000": list(ref)} and [m[1] for m in res["far_rows"]] == ["41000"]
+
+
+def test_without_its_far_row_a_postcode_is_judged_at_its_new_point(tmp_path):
+    """41000's Kota row lies 70 km north of Kota's point; its Lain row 2 km south of it. Without the far row,
+    its point is the Lain row, 2 km from the median of Kota's 3 other postcodes, and it stays (at the average
+    of both rows it would lie 34 km from them, and be set aside). 42000's row of Xa lies 35 km from Xa's
+    point, 10 km east of the middle of its 2 other rows, which lie 70 km apart, and Xa's point lies 25 km
+    west of that middle: without the far row, its point, the average of the 2 others, lies 35 km from each
+    of them, and it is set aside. The far row stops counting because that average, 25 km from Xa's point,
+    lies within PLACE_KM of it, though each of the 2 other rows lies 43 km from it."""
+    k = (3.0, 101.5)
+    gn = [("40100", "Kota", "Perak", *north(k, 1)), ("40200", "Kota", "Perak", *k),
+          ("40300", "Kota", "Perak", *north(k, -1)),
+          ("41000", "Kota", "Perak", *north(k, 70)), ("41000", "Lain", "Perak", *north(k, -2))]
+    m = (4.5, 101.0)
+    gn += [("42000", "Xa", "Perak", *east(m, 10)), ("42000", "Yb", "Perak", *north(m, 35)),
+           ("42000", "Zc", "Perak", *north(m, -35))]
+    res = run_places(tmp_path, gn, [("Kota", "", *k, "PPL", "Perak", 5000), ("Xa", "", *east(m, -25), "PPL", "Perak", 900)])
+    xa = east(m, -25)
+    assert [round(bd.km(*p, *xa), 1) for p in (north(m, 35), north(m, -35), m)] == [43.0, 43.0, 25.0]
+    assert res["postcodes"]["41000"] == r4(north(k, -2)) and "42000" not in res["postcodes"]
+    assert res["set_aside"] == [("42000", "Xa (Perak) / Yb (Perak) / Zc (Perak)",
+                                 f"{bd.km(*bd._mean_point([north(m, 35), north(m, -35)]), *north(m, 35)):.1f} km from "
+                                 "the nearest of its 2 GeoNames rows, whose average it is")]
+    assert [x[1] for x in res["far_rows"]] == ["41000", "42000"] and res["checks"]["far_from_rows"] == 1
+
+
+def test_a_postcode_kept_by_one_of_its_shops_keeps_its_far_row(tmp_path):
+    """41000's Kota row lies 40 km north of Kota's point, its Lain row 1 km south of it, and their average 19.5
+    km north. Its 2 shops lie 12 km apart, one 1 km from that average: the shop backs the GeoNames point, and
+    the postcode keeps it, far row and all."""
+    k = (2.5, 102.5)
+    gn = [("41000", "Kota", "Johor", *north(k, 40)), ("41000", "Lain", "Johor", *north(k, -1))]
+    shops = [(1, *as_read(north(k, 20.5)), "name", "41000"), (2, *as_read(north(k, 32.5)), "address", "41000")]
+    res = run_places(tmp_path, gn, [("Kota", "", *k, "PPL", "Johor", 5000)], shops)
+    assert [x[0] for x in res["kept"]] == ["41000"] and res["far_rows"] == []
+    assert res["postcodes"] == {"41000": r4(north(k, 19.5))}
+
+
+def test_the_rows_that_count_keep_their_weight_in_the_average(tmp_path):
+    """43000's Kota row lies 45 km from Kota's point and stops counting. Of the rows that count, 2 (Lain and
+    Lain Dua) share a point 2 km north of Kota's point and 1 (Baru) lies 10 km south: their average, 2 km
+    south, is its point (the average of the 2 points would lie 4 km south)."""
+    k = (2.5, 102.5)
+    gn = [("43000", "Kota", "Johor", *north(k, 45)), ("43000", "Lain", "Johor", *north(k, 2)),
+          ("43000", "Lain Dua", "Johor", *north(k, 2)), ("43000", "Baru", "Johor", *north(k, -10))]
+    res = run_places(tmp_path, gn, [("Kota", "", *k, "PPL", "Johor", 5000)])
+    assert res["postcodes"] == {"43000": r4(north(k, -2))}
+    assert [x[:2] for x in res["far_rows"]] == [(pytest.approx(bd.km(*north(k, 9.75), *north(k, -2))), "43000")]
+
+
+def test_a_far_row_on_a_point_that_still_counts_does_not_hold_back_another(tmp_path):
+    """44000's Kota row lies 50 km from Kota's point, on the point of its Lain row (Lain has no place point),
+    so it still counts. Its Jauh row lies 61 km from Jauh's point, and the rows that count lie 10 km from
+    Jauh's point: the Jauh row stops counting. Only the rows that stop counting must lie near their place's
+    point: that Kota's point lies 50 km away holds nothing back."""
+    k = (2.5, 102.5)
+    top = north(k, 50)
+    gn = [("44000", "Kota", "Johor", *top), ("44000", "Lain", "Johor", *top),
+          ("44000", "Jauh", "Johor", *east(top, 60))]
+    places = [("Kota", "", *k, "PPL", "Johor", 5000), ("Jauh", "", *north(k, 40), "PPL", "Johor", 900)]
+    res = run_places(tmp_path, gn, places)
+    assert res["postcodes"] == {"44000": r4(top)}
+    assert res["far_rows"] == [(pytest.approx(20.0, abs=0.1), "44000", "Jauh (Johor) / Kota (Johor) / Lain (Johor)",
+                                f"its row of Jauh (Johor) lies {bd.km(*east(top, 60), *north(k, 40)):.1f} km from that "
+                                "place's point")]
+
+
+def test_a_postcode_its_shops_do_not_place_is_not_confirmed(tmp_path):
+    """Confirmed postcodes are those placed or kept by their shops (or moved to or near their place's point),
+    not any postcode with a found shop. 98057 has one found shop, on its GeoNames point 431 km from Miri's
+    confirmed postcodes: it is set aside, and it is no reference for 98058 on the same point. So too with 2
+    shops 12 km apart, neither within BACKED_KM of its point, which with a place list do not place it."""
+    miri = (4.4, 114.0)
+    far = north(miri, -431)
+    gn = [("98000", "Miri", "Sarawak", *north(miri, 1)), ("98007", "Miri", "Sarawak", *north(miri, -1)),
+          ("98057", "Baram", "Sarawak", *far), ("98058", "Baram", "Sarawak", *far)]
+    miri_shops = [(1, *miri, "name", "98000"), (2, *miri, "address", "98000"), (3, *miri, "name", "98007"),
+                  (4, *miri, "address", "98007")]
+    res = run_check(tmp_path, gn, miri_shops + [(5, *as_read(far), "name", "98057")])
+    assert sorted(res["postcodes"]) == ["98000", "98007"] and [a[0] for a in res["set_aside"]] == ["98057", "98058"]
+    assert res["checks"] == {"from_shops": 2, "moved": 0, "set_aside": 2, "far_from_prefix": 2}
+    two = miri_shops + [(5, *as_read(north(far, 6)), "name", "98057"),
+                        (6, *as_read(north(far, -6)), "address", "98057")]
+    res = run_places(tmp_path, gn, [("Kota Lain", "", 6.0, 116.0, "PPL", "Sabah", 100)], two, name="two")
+    assert res["kept"] == [] and sorted(res["postcodes"]) == ["98000", "98007"]
+    assert res["checks"] == {"from_shops": 2, "moved": 0, "to_place": 0, "set_aside": 2, "far_from_prefix": 2}
+
+
+def test_a_postcode_set_aside_in_step_3_is_no_reference_for_its_first_digits(tmp_path):
+    """77000 lies at Kota's point, so it would be confirmed, but the median of Kota's 3 other postcodes
+    (one placed from shops 31 km north) lies 32 km from it: step 3 leaves it out. Left out, it is no
+    reference: 77090, 70 km south, has 1 confirmed postcode that shares its first 3 digits, and stays."""
+    g = (3.0, 101.5)
+    ref = north(g, 31)
+    gn = [("77000", "Kota", "Selangor", *g), ("77001", "Kota", "Selangor", *north(g, 30)),
+          ("77002", "Kota", "Selangor", *north(g, 32)), ("77003", "Kota", "Selangor", *north(g, 33)),
+          ("77090", "Lain", "Selangor", *north(g, -70))]
+    shops = [(1, *as_read(north(ref, 0.2)), "name", "77001"), (2, *as_read(north(ref, -0.2)), "address", "77001")]
+    res = run_places(tmp_path, gn, [("Kota", "", *g, "PPL", "Selangor", 5000)], shops)
+    assert [a[0] for a in res["set_aside"]] == ["77000"] and "far_from_prefix" not in res["checks"]
+    assert res["postcodes"]["77090"] == r4(north(g, -70))
+
+
+def test_the_sungai_siput_guard_reads_the_notable_entry_not_the_first():
+    """2 entries by name: a village 30 km away (no population, listed first) and the town (notable). An entry
+    with the name among its other names lies 1 km from the town, so the town is the point; 12 km from it,
+    the list may mean either, and there is no point."""
+    town = (4.0, 101.0)
+    village = north(town, 30)
+    assert bd.place_point([(village, "PPL", 0), (town, "PPL", 5000)], [(north(town, 1), "PPL", 0)], None) == town
+    assert bd.place_point([(village, "PPL", 0), (town, "PPL", 5000)], [(north(town, 12), "PPL", 0)], None) is None
+
+
+def test_the_veto_on_an_entry_by_another_name_reads_its_own_names_too(tmp_path):
+    """Both vetoes read the entry's own name as well as its other names. The entry named Tasek Gelugor
+    (other name Gelugor) is Tasek Gelugor (13300), a place of the postcode table with none of Gelugor's
+    postcodes, so 11700 Gelugor does not take its point. The entry named Kampung Kuala Sepetang (other
+    name Kuala Sepetang) shares its name with an entry 32 km away, so 34650 does not take its point either;
+    without that entry, it does."""
+    island, tasek = (5.3653, 100.3067), (5.4803, 100.4985)
+    gn = [("11700", "Gelugor", "Pulau Pinang", *island), ("13300", "Tasek Gelugor", "Pulau Pinang", *north(tasek, 2))]
+    res = run_places(tmp_path, gn, [("Tasek Gelugor", "Gelugor", *tasek, "PPL", "Pulau Pinang", 135786)])
+    assert res["postcodes"]["11700"] == list(island) and res["to_place"] == []
+    s = (4.5429, 100.6597)
+    gn = [("34650", "Kuala Sepetang", "Perak", *north(s, 40))]
+    entry = ("Kampung Kuala Sepetang", "Kuala Sepetang", *s, "PPL", "Perak", 1264)
+    twin = ("Kampung Kuala Sepetang", "", *north(s, 32), "PPL", "Perak", 0)
+    assert run_places(tmp_path, gn, [entry, twin], name="twin")["to_place"] == []
+    assert [m[1] for m in run_places(tmp_path, gn, [entry], name="one")["to_place"]] == ["34650"]
+
+
+def test_the_veto_on_an_entry_by_another_name_reads_the_places_postcodes_in_every_spelling(tmp_path):
+    """Here GeoNames spells the state 2 ways: 11700 is Gelugor and Tasek Gelugor in 'Pulau Pinang', 11900 is
+    Gelugor in 'Penang'. The entry Tasek Glugor (other names Gelugor and Tasek Gelugor) shares 11700 with
+    Gelugor, whose postcodes count in both spellings, so no veto: both postcodes take its point."""
+    island, tasek = (5.3653, 100.3067), (5.4803, 100.4985)
+    gn = [("11700", "Gelugor", "Pulau Pinang", *island), ("11700", "Tasek Gelugor", "Pulau Pinang", *island),
+          ("11900", "Gelugor", "Penang", *north(island, 1))]
+    res = run_places(tmp_path, gn, [("Tasek Glugor", "Gelugor|Tasek Gelugor", *tasek, "PPL", "Pulau Pinang", 135786)])
+    assert sorted(m[1] for m in res["to_place"]) == ["11700", "11900"]
+    assert res["postcodes"] == {"11700": r4(tasek), "11900": r4(tasek)}
+
+
+def test_one_other_name_of_an_entry_for_two_places_of_the_table(tmp_path):
+    """Bandar X (notable) has the other names Alpha and Beta, two places of the postcode table with their
+    own postcodes. Neither name holds the other, so neither vetoes: both places take Bandar X's point."""
+    x = (3.0, 101.5)
+    gn = [("77000", "Alpha", "Johor", *north(x, 20)), ("77100", "Beta", "Johor", *north(x, -20))]
+    res = run_places(tmp_path, gn, [("Bandar X", "Alpha|Beta", *x, "PPL", "Johor", 5000)])
+    assert res["postcodes"] == {"77000": r4(x), "77100": r4(x)}
+
+
+def test_compact_min_counts_the_moved_postcodes(tmp_path):
+    """Kota has 10 other postcodes: 9 within 1 km of their median (on 2 points) and 1 moved to the place's
+    point. COMPACT_MIN counts all 10, and 9 in 10 lie close: compact, so 42000, 16 km out, is set aside."""
+    g = (3.0, 101.5)
+    c = north(g, 5)
+    gn = [(f"40{i:03d}", "Kota", "Selangor", *north(c, 0.3 * (i % 2))) for i in range(9)]
+    gn += [("41000", "Kota", "Selangor", *north(g, -40))]   # an outlier of Kota: moved
+    gn += [("42000", "Kota", "Selangor", *north(c, 16)), ("42000", "Lain", "Selangor", *north(c, 16))]   # not moved
+    res = run_places(tmp_path, gn, [("Kota", "", *g, "PPLA2", "Selangor", 50000)])
+    assert [m[1] for m in res["to_place"]] == ["41000"]
+    # The median of the 10 others is c: 5 lie on it, 4 at 0.3 km north and 41000 on the place's point, 5 km south.
+    assert res["set_aside"] == [("42000", "Kota (Selangor) / Lain (Selangor)", f"{bd.km(*north(c, 16), *c):.1f} km from "
+                                 "the median of the 10 other postcodes of its place, 90% of which lie within 0.3 km "
+                                 "of it")]
 
 
 # ---------- the build ----------
@@ -1469,6 +2262,90 @@ def test_build_checks_the_table_against_the_place_list(tmp_path, capsys, monkeyp
         assert g["postcode_source"] == "GeoNames (CC BY 4.0), checked against shops found by OpenStreetMap"
 
 
+def test_build_counts_and_prints_the_postcodes_set_aside_by_their_first_digits(tmp_path, capsys):
+    """The postcodes set aside as far from the confirmed postcodes that share their first 3 digits count in
+    set_aside and, only when there are any, in far_from_prefix. The build prints the count and each of them
+    with its reason, and check_data notes them."""
+    raw = te.write_raw(tmp_path / "raw", [(1, "GULA CONTOH", "1kg")], [(1, "Sarawak", "Miri")],
+                       {"2026-10": [("2026-10-10", 1, 1, 3.0)]})
+    miri = (4.4, 114.0)
+    gn = [("98000", "Miri", "Sarawak", *miri), ("98007", "Miri", "Sarawak", *miri),
+          ("98057", "Baram", "Sarawak", *north(miri, -431))]
+    shops = [(1, *miri, "name", "98000"), (2, *miri, "address", "98000"), (3, *miri, "name", "98007"),
+             (4, *miri, "name", "98007")]
+    pcs = write_geonames(tmp_path / "postcodes_my.csv", gn)
+    geo = write_cache(tmp_path / "premise_geo.csv", shops)
+    out = tmp_path / "out"
+    args = ["--raw", str(raw), "--geo", str(geo), "--postcodes", str(pcs), "--district-geo", "", "--places", ""]
+    assert bd.main(args + ["--out", str(out)]) == 0
+    text = capsys.readouterr().out
+    g = te.read_json(out / "meta.json")["geo"]
+    assert g["postcodes"] == {"98000": list(miri), "98007": list(miri)}
+    assert g["postcode_checks"] == {"from_shops": 2, "moved": 0, "set_aside": 1, "far_from_prefix": 1}
+    assert ("postcode table: 2 postcodes from GeoNames, checked against shops found by OpenStreetMap: 2 placed at "
+            "those shops (0 moved more than 2 km), 1 set aside (1 of them as far from the confirmed postcodes that "
+            "share their first 3 digits)") in text
+    assert ("  set aside 98057 Baram (Sarawak): 431.0 km from the nearest of the 2 confirmed postcodes that start 980"
+            in text)
+    assert ("Postcode check: 2 postcode(s) placed at the shops OpenStreetMap found there (0 moved more than 2 km), "
+            "1 set aside as far from the other postcodes of their place or, for 1 of them, from the confirmed "
+            "postcodes that share their first 3 digits.") in cd.check(out)["notes"]
+    # With 1 confirmed postcode in Miri, nothing judges 98057: the counts keep their older shape.
+    geo1 = write_cache(tmp_path / "one.csv", shops[:2])
+    assert bd.main(args[:2] + ["--geo", str(geo1), "--postcodes", str(pcs), "--district-geo", "", "--places", "",
+                               "--out", str(tmp_path / "one")]) == 0
+    assert "far_from_prefix" not in capsys.readouterr().out
+    assert te.read_json(tmp_path / "one" / "meta.json")["geo"]["postcode_checks"] == {
+        "from_shops": 1, "moved": 0, "set_aside": 0}
+
+
+def test_build_prints_the_far_rows_and_the_postcodes_whose_rows_lie_far_apart(tmp_path, capsys):
+    """With the place list, the build says which postcodes it placed without a GeoNames row far from its
+    place's point, and why. The postcodes set aside as far from each of their own rows count in set_aside
+    and, only when there are any, in far_from_rows; the build prints each with its reason, and check_data
+    notes them."""
+    raw = te.write_raw(tmp_path / "raw", [(1, "GULA CONTOH", "1kg")], [(1, "Sarawak", "Miri")],
+                       {"2026-10": [("2026-10-10", 1, 1, 3.0)]})
+    miri, port, kl, indah, e = (4.4, 114.0), (2.99959, 101.39287), (3.1373, 101.7471), (2.9662, 101.3768), (1.72, 103.92)
+    gn = [("98000", "Miri", "Sarawak", *miri), ("98007", "Miri", "Sarawak", *miri),
+          ("98057", "Baram", "Sarawak", *north(miri, -431)),
+          ("42000", "Pelabuhan Klang", "Selangor", *north(port, 2)), ("42009", "Pelabuhan Klang", "Selangor", *port),
+          ("42920", "Pelabuhan Klang", "Selangor", *kl), ("42920", "Pulau Indah", "Selangor", *indah),
+          ("81920", "Ayer Tawar 2", "Johor", *north(e, 2)), ("81920", "Ayer Tawar 3", "Johor", *e),
+          ("81920", "Ayer Tawar 4", "Johor", *north(e, -2)), ("81920", "Ayer Tawar 5", "Johor", *east(e, -129))]
+    shops = [(1, *miri, "name", "98000"), (2, *miri, "address", "98000"), (3, *miri, "name", "98007"),
+             (4, *miri, "name", "98007")]
+    pcs = write_geonames(tmp_path / "postcodes_my.csv", gn)
+    geo = write_cache(tmp_path / "premise_geo.csv", shops)
+    places = write_places(tmp_path / "places_my.csv", [("Pelabuhan Klang", "", *port, "PPL", "Selangor", 20000)])
+    out = tmp_path / "out"
+    assert bd.main(["--raw", str(raw), "--geo", str(geo), "--postcodes", str(pcs), "--district-geo", "",
+                    "--places", str(places), "--out", str(out)]) == 0
+    text = capsys.readouterr().out
+    g = te.read_json(out / "meta.json")["geo"]
+    assert g["postcodes"] == {"42000": r4(north(port, 2)), "42009": r4(port), "42920": list(indah),
+                              "98000": list(miri), "98007": list(miri)}
+    assert g["postcode_checks"] == {"from_shops": 2, "moved": 0, "to_place": 0, "set_aside": 2, "far_from_prefix": 1,
+                                    "far_from_rows": 1}
+    assert ("postcode table: 5 postcodes from GeoNames, checked against shops found by OpenStreetMap and the GeoNames "
+            "place list: 2 placed at those shops (0 moved more than 2 km), 0 moved to their place's point in the place "
+            "list, 1 placed without a GeoNames row far from its place's point, 2 set aside (1 of them as far from the "
+            "confirmed postcodes that share their first 3 digits, 1 as far from each of their own GeoNames rows)") in text
+    d = bd.km(*bd._mean_point([kl, indah]), *indah)
+    assert (f"  without a far row 42920 Pelabuhan Klang (Selangor) / Pulau Indah (Selangor): {d:.1f} km (its row of "
+            f"Pelabuhan Klang (Selangor) lies {bd.km(*kl, *port):.1f} km from that place's point)") in text
+    rows = bd.load_postcode_rows(pcs)["81920"]
+    d = min(bd.km(*bd._mean_point([r[2] for r in rows]), *r[2]) for r in rows)
+    assert re.findall(r"^  set aside .*$", text, flags=re.M) == [
+        "  set aside 81920 Ayer Tawar 2 (Johor) / Ayer Tawar 3 (Johor) / Ayer Tawar 4 (Johor) / Ayer Tawar 5 (Johor): "
+        f"{d:.1f} km from the nearest of its 4 GeoNames rows, whose average it is",
+        "  set aside 98057 Baram (Sarawak): 431.0 km from the nearest of the 2 confirmed postcodes that start 980"]
+    assert ("Postcode check: 2 postcode(s) placed at the shops OpenStreetMap found there (0 moved more than 2 km), "
+            "0 moved to their place's point in the GeoNames place list, 2 set aside as far from the other postcodes "
+            "of their place or, for 1 of them, from the confirmed postcodes that share their first 3 digits or, for "
+            "1 of them, from each of their own GeoNames rows.") in cd.check(out)["notes"]
+
+
 # ---------- check_data ----------
 
 def checked_build(root, checks="absent", geo=None, **kw):
@@ -1566,4 +2443,49 @@ def test_check_data_notes_the_moves_to_place_points(tmp_path, to_place, shown):
     assert [w for w in res["warns"] if "postcode_checks" in w] == ([] if shown != "?" else [
         "geo.postcode_checks in meta.json has counts that are not whole numbers of 0 or more: to_place."])
     assert res["facts"]["postcode_checks"]["to_place"] == (None if shown == "?" else to_place)
+    assert cd.main(["--data", str(root)]) == 0
+
+
+@pytest.mark.parametrize("rows_apart, shown", [(2, "2"), (0, "0"), (1234, "1,234"), (None, "?"), ("2", "?"), (-1, "?"),
+                                               (1.5, "?"), (True, "?"), ([2], "?")])
+def test_check_data_notes_the_postcodes_set_aside_as_far_from_their_own_rows(tmp_path, rows_apart, shown):
+    """A build that set aside postcodes whose point, the average of their GeoNames rows, lies more than 30 km
+    from each of those rows counts them in far_from_rows, part of set_aside. An odd value shows as ? with a
+    warning, and never stops the report; a build without it is noted as before."""
+    root = checked_build(tmp_path / "b", {"from_shops": 81, "moved": 63, "to_place": 310, "set_aside": 10,
+                                          "far_from_prefix": 6, "far_from_rows": rows_apart})
+    res = cd.check(root)
+    assert res["fails"] == []
+    assert ("Postcode check: 81 postcode(s) placed at the shops OpenStreetMap found there (63 moved more than 2 km), "
+            "310 moved to their place's point in the GeoNames place list, 10 set aside as far from the other "
+            "postcodes of their place or, for 6 of them, from the confirmed postcodes that share their first 3 digits "
+            f"or, for {shown} of them, from each of their own GeoNames rows.") in res["notes"]
+    assert [w for w in res["warns"] if "postcode_checks" in w] == ([] if shown != "?" else [
+        "geo.postcode_checks in meta.json has counts that are not whole numbers of 0 or more: far_from_rows."])
+    assert res["facts"]["postcode_checks"]["far_from_rows"] == (None if shown == "?" else rows_apart)
+    assert cd.main(["--data", str(root)]) == 0
+    # Without far_from_prefix, only the rows' count is said.
+    root = checked_build(tmp_path / "c", {"from_shops": 1, "moved": 0, "set_aside": 2, "far_from_rows": 2})
+    assert ("Postcode check: 1 postcode(s) placed at the shops OpenStreetMap found there (0 moved more than 2 km), "
+            "2 set aside as far from the other postcodes of their place or, for 2 of them, from each of their own "
+            "GeoNames rows.") in cd.check(root)["notes"]
+
+
+@pytest.mark.parametrize("far, shown", [(4, "4"), (0, "0"), (1234, "1,234"), (None, "?"), ("4", "?"), (-1, "?"),
+                                        (1.5, "?"), (True, "?"), ([4], "?")])
+def test_check_data_notes_the_postcodes_set_aside_by_their_first_digits(tmp_path, far, shown):
+    """A build that set aside postcodes as far from the confirmed postcodes that share their first 3 digits
+    counts them in far_from_prefix, part of set_aside. An odd value shows as ? with a warning, and never stops
+    the report; a build without it is noted as before (see above)."""
+    root = checked_build(tmp_path / "b", {"from_shops": 81, "moved": 63, "to_place": 310, "set_aside": 8,
+                                          "far_from_prefix": far})
+    res = cd.check(root)
+    assert res["fails"] == []
+    assert ("Postcode check: 81 postcode(s) placed at the shops OpenStreetMap found there (63 moved more than 2 km), "
+            "310 moved to their place's point in the GeoNames place list, 8 set aside as far from the other "
+            f"postcodes of their place or, for {shown} of them, from the confirmed postcodes that share their first "
+            "3 digits.") in res["notes"]
+    assert [w for w in res["warns"] if "postcode_checks" in w] == ([] if shown != "?" else [
+        "geo.postcode_checks in meta.json has counts that are not whole numbers of 0 or more: far_from_prefix."])
+    assert res["facts"]["postcode_checks"]["far_from_prefix"] == (None if shown == "?" else far)
     assert cd.main(["--data", str(root)]) == 0

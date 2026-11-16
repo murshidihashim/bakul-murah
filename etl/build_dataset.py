@@ -630,6 +630,9 @@ COMPACT_SHARE = 0.9    # ... this share of them within COMPACT_KM / 2 of their m
 COMPACT_KM = 15.0      # ... there a point further than this from that median is set aside too
 CHECK_KM = 35.0    # a place-list point counts only this close to where the place's shops are (as in the geocoder)
 ROUGH_KM = 5.0     # all GeoNames rows of a place this close together: one rough point for the whole place
+PREFIX_DIGITS = 3  # a postcode not confirmed (placed from shops, kept, or moved to or near its place's point) ...
+PREFIX_MIN = 2     # ... is judged by at least this many confirmed postcodes that share its first PREFIX_DIGITS digits:
+PREFIX_KM = 60.0   # ... further than this from each of them, it is set aside
 SEATS = ("PPLA", "PPLA2", "PPLA3", "PPLA4", "PPLC")   # place-list codes of a seat of government
 POSTCODE_SOURCE = "GeoNames (CC BY 4.0), checked against shops found by OpenStreetMap"
 PLACES_SOURCE = POSTCODE_SOURCE + " and the GeoNames place list"
@@ -661,17 +664,26 @@ def agreed_point(points) -> tuple[float, float] | None:
     return _median_point(close) if close else None
 
 
-def _compact_core(points, mid) -> float | None:
-    """The distance from mid within which COMPACT_SHARE of the points lie, when the place is compact:
-    at least COMPACT_MIN points, that distance at most COMPACT_KM / 2, and at least PLACE_POINTS
+def _compact_core(points, mid, count: int | None = None) -> float | None:
+    """The distance from mid within which COMPACT_SHARE of count postcodes lie, when the place is compact:
+    at least COMPACT_MIN postcodes, that distance at most COMPACT_KM / 2, and at least PLACE_POINTS
     different points (at 4 decimals) that close, since postcodes on one shared point are one guess.
-    Else None."""
-    if len(points) < COMPACT_MIN:
+    points: the points of the postcodes that can lie inside; count: how many postcodes there are in all
+    (default len(points)), the rest never inside. Else None."""
+    n = len(points) if count is None else count
+    need = math.ceil(round(COMPACT_SHARE * n, 6))
+    if n < COMPACT_MIN or need > len(points):
         return None
     ds = sorted(km(*p, *mid) for p in points)
-    core = ds[math.ceil(round(COMPACT_SHARE * len(ds), 6)) - 1]
+    core = ds[need - 1]
     within = {(round(p[0], 4), round(p[1], 4)) for p in points if km(*p, *mid) <= core}
     return core if core <= COMPACT_KM / 2 and len(within) >= PLACE_POINTS else None
+
+
+def _notable(entry) -> bool:
+    """True for a place-list entry ((lat, lon), feature code, population) that has a population or a
+    seat-of-government code (SEATS)."""
+    return entry[2] > 0 or entry[1] in SEATS
 
 
 def place_point(named: list, other: list, ref) -> tuple[float, float] | None:
@@ -681,17 +693,24 @@ def place_point(named: list, other: list, ref) -> tuple[float, float] | None:
     as ((lat, lon), feature code, population); other: those with it among their other names, which
     count only when no name matches; ref: where the place's shops are, or None (see check_postcodes).
     With ref, the entry nearest to it within CHECK_KM, so a town of the same name elsewhere in the
-    state does not count. Without ref, only a single entry by name that has a population or a
-    seat-of-government code (SEATS), when no entry with the name among its other names lies more
-    than ANCHOR_KM from it: the entry named 'Sungai Siput' (Perak, population 49,000) lies 48.5 km
-    from the town, which the place list calls 'Sungai Siput Utara', other name 'Sungai Siput'."""
+    state does not count. Without ref, only a notable entry (_notable): the one notable entry by name,
+    when no entry with the name among its other names lies more than ANCHOR_KM from it (the entry
+    named 'Sungai Siput' (Perak, population 49,000) lies 48.5 km from the town, which the place list
+    calls 'Sungai Siput Utara', other name 'Sungai Siput'); entries by name that are not notable do not
+    count against it (Engkilili: population 15,031, and an entry of that name 15.5 km away with none).
+    When no entry has the name, the one entry that has it among its other names, when that entry is
+    the only one and notable (Kerteh is another name of Kertih, population 24,401)."""
     candidates = named or other
     if ref is not None:
         near = sorted((km(*c[0], *ref), c[0]) for c in candidates)
         return near[0][1] if near and near[0][0] <= CHECK_KM else None
-    if (len(named) == 1 and (named[0][2] > 0 or named[0][1] in SEATS)
-            and all(km(*o[0], *named[0][0]) <= ANCHOR_KM for o in other)):
-        return named[0][0]
+    if named:
+        notable = [c for c in named if _notable(c)]
+        if len(notable) == 1 and all(km(*o[0], *notable[0][0]) <= ANCHOR_KM for o in other):
+            return notable[0][0]
+        return None
+    if len(other) == 1 and _notable(other[0]):
+        return other[0][0]
     return None
 
 
@@ -725,15 +744,25 @@ def _place_points(places_of: dict, shops: dict, geo: dict, places: list, address
     name or address whose PriceCatcher address names the place (names_place), in its state, when they
     agree (agreed_point); else none. A shop whose own postcode (the cache's postcode column) GeoNames lists
     only under other places is not one of the place's shops: '84600 PAGOH, MUAR' is a shop in Pagoh, and
-    names Muar as its district."""
+    names Muar as its district.
+    Without a reference, the one entry that has the place's name only among its other names (place_point)
+    does not count when another of its names is a longer place name of the postcode table in that state, a
+    place with none of this place's postcodes (as in the shop geocoder: 'Tasek Glugor', other names 'Gelugor'
+    and 'Tasek Gelugor', is Tasek Gelugor (13300) on the mainland, not Gelugor (11700) on Penang island, 25 km
+    away), or when another of its names is a name or other name of an entry more than ANCHOR_KM from it, so the
+    list may mean either ('Kampung Kuala Sepetang', other names 'Kuala Sepetang' and 'Port Weld', lies 32 km
+    from 'Kampung Sepetang', other name 'Port Weld', which is the town)."""
     by_name: dict[tuple, list] = {}
     by_alt: dict[tuple, list] = {}
+    alt_names: dict[tuple, list] = {}   # (state, other name) -> all names of each entry in by_alt, in order
     for state, names, alts, pt, code, pop in places:
         names = {spelled(n) for n in names}
+        alts = {spelled(n) for n in alts} - names
         for n in names:
             by_name.setdefault((state, n), []).append((pt, code, pop))
-        for n in {spelled(n) for n in alts} - names:
+        for n in alts:
             by_alt.setdefault((state, n), []).append((pt, code, pop))
+            alt_names.setdefault((state, n), []).append(names | alts)
     listed = set().union(*places_of.values())   # the postcodes of the table that have a place
     # state key -> [(address words, (lat, lon), postcode)] of the shops found by name or address
     named: dict[str, list] = {}
@@ -746,22 +775,31 @@ def _place_points(places_of: dict, shops: dict, geo: dict, places: list, address
         state, place = key.split("|", 1)
         keys[key] = (state_key(state), spelled(words(place)))
     state_names: dict[str, set] = {}
-    for st, w in keys.values():
+    pcs_of: dict[tuple, set] = {}   # (state, name) -> the postcodes of that place, in every spelling
+    for key, (st, w) in keys.items():
         if w:
             state_names.setdefault(st, set()).add(w)
+            pcs_of.setdefault((st, w), set()).update(places_of[key])
     out = {}
     for key, pcs in sorted(places_of.items()):
         k = keys[key]
         if not k[1] or (k not in by_name and k not in by_alt):
             continue
+        longer = [w for w in state_names[k[0]] if w != k[1] and f" {k[1]} " in f" {w} "]
         placed = [shops[o] for o in sorted(pcs) if o in shops]
         if placed:
             ref = _median_point(placed)
         else:
-            longer = [w for w in state_names[k[0]] if w != k[1] and f" {k[1]} " in f" {w} "]
             ref = agreed_point([p for a, p, pc in named.get(k[0], ()) if names_place(a, k[1], longer)
                                 and (pc in pcs or pc not in listed)])
-        out[key] = (place_point(by_name.get(k, []), by_alt.get(k, []), ref), ref)
+        other = by_alt.get(k, [])
+        if ref is None and len(other) == 1 and k not in by_name:
+            also = alt_names[k][0] - {k[1]}   # the entry's other names
+            if (any(w in also and not pcs_of[(k[0], w)] & pcs_of[k] for w in longer)
+                    or any(km(*e[0], *other[0][0]) > ANCHOR_KM
+                           for n in also for e in by_name.get((k[0], n), []) + by_alt.get((k[0], n), []))):
+                other = []
+        out[key] = (place_point(by_name.get(k, []), other, ref), ref)
     return out
 
 
@@ -775,26 +813,38 @@ def check_postcodes(rows: dict, geo: dict, places: list | None = None, addresses
       1. From shops: a postcode with 2 or more shops found by name or address (the cache's postcode
          column) that agree (agreed_point) is placed at the median of those that agree.
          Except when only 2 shops agree and they lie more than ANCHOR_KM apart: their middle can be
-         in neither town. If one of the 2 lies within BACKED_KM of the GeoNames point, that shop
-         backs the point, and the postcode keeps it and is never set aside ("kept").
-      2. To the place: a place of the postcode table (state and place name; names compare as
-         spelled(), so Tanjong is Tanjung, here and in step 3) gets the place list's point of a town
-         or village of that name in its state (place_point). The reference for it is the median of the
-         place's postcodes placed in step 1, else the agreeing shops found by name or address whose
-         address names the place, except shops whose own postcode GeoNames lists only under other
-         places (_place_points). Any other postcode of the place goes to that point when its own point is
-         more than ANCHOR_KM from it and either all GeoNames rows of its place lie within ROUGH_KM of
-         each other (one rough point for the whole place, often a shared point for its PO boxes), or
-         its point also lies more than ANCHOR_KM from every other postcode of its place that lies
-         within ANCHOR_KM of the place point (an outlier from where the town is; a rural postcode
-         named after its post town goes to the town too: 21610 Merchang to Marang, 18 km), or its
-         only shop found by name or address lies within ANCHOR_KM of the place point and more than
-         ANCHOR_KM from its own point. A postcode with several places goes to a point all of them
-         share, or to the one point among theirs that its only shop agrees with. A place name that
-         GeoNames lists in 2 states counts only in the state where the place list has it. A postcode
-         goes only to a point nearer to the reference of the place(s) whose point it is than its own
-         point is; at the same distance it stays. Places whose rows spread keep their points unless a
-         rule above applies.
+         in neither town, so with a place list they do not place the postcode, and the steps below
+         apply to it (without one, nothing else could place it nearer to them, and they place it at
+         their middle). If one of the 2 lies within BACKED_KM of the GeoNames point, that shop backs
+         the point, and the postcode keeps it and is never set aside ("kept").
+      2. To the place: a place of the postcode table (state and place name; names compare as spelled(),
+         so Tanjong is Tanjung, here and in step 3) gets the place list's point of a town or village of
+         that name in its state (place_point; without a reference, the one notable entry by that name
+         or, when no entry has that name, the only entry with it among its other names, when that entry
+         is notable). The reference for it is the median of the place's postcodes placed in step 1, else
+         the agreeing shops found by name or address whose address names the place, except shops whose
+         own postcode GeoNames lists only under other places (_place_points). First, a GeoNames row that
+         lies more than PLACE_KM from its own place's point no longer counts in its postcode's point
+         (the average of its rows) when a row on another point still counts and the average of the rows
+         that count (the postcode's new point) lies within PLACE_KM of that place's point, unless the
+         place's reference lies nearer to that row than to the place's point ("far rows"): 42920's row
+         for Pelabuhan Klang lay in Kuala Lumpur, 42 km from Port Klang, and its other row, for Pulau
+         Indah, the island off the town, 4 km from Port Klang, is its point now.
+         Then any other postcode of the place goes to that point when its own point is more than
+         ANCHOR_KM from it and either all GeoNames rows of its place lie within ROUGH_KM of each other
+         (one rough point for the whole place, often a shared point for its PO boxes), or its point also
+         lies more than ANCHOR_KM from every other postcode of its place that lies within ANCHOR_KM of
+         the place point (an outlier from where the town is; a rural postcode named after its post town
+         goes to the town too: 21610 Merchang to Marang, 18 km; when no other postcode lies that near,
+         only in a place with fewer than COMPACT_MIN other postcodes or with a reference: none of
+         Nusajaya's 43 postcodes lies within ANCHOR_KM of the point of Iskandar Puteri, other name
+         Nusajaya, no shop names Nusajaya, and none goes there), or its only shop found by name or
+         address lies within ANCHOR_KM of the place point and more than ANCHOR_KM from its own point. A
+         postcode with several places goes to a point all of them share, or to the one point among
+         theirs that its only shop agrees with. A place name that GeoNames lists in 2 states counts only
+         in the state where the place list has it. A postcode goes only to a point nearer to the
+         reference of the place(s) whose point it is than its own point is; at the same distance it
+         stays. Places whose rows spread keep their points unless a rule above applies.
       3. Set aside: any other postcode is left out when its point (the average of its rows) is more
          than PLACE_KM from the median of the other postcodes of its place (same state and place
          name; at least PLACE_MIN others, on at least PLACE_POINTS different points at 4 decimals,
@@ -802,22 +852,39 @@ def check_postcodes(rows: dict, geo: dict, places: list | None = None, addresses
          place to judge by. In a compact place (at least COMPACT_MIN others, COMPACT_SHARE of them, on
          at least PLACE_POINTS different points, within COMPACT_KM / 2 of their median) a point more
          than COMPACT_KM from that median is left out too. Whether a place is compact is judged with
-         the others moved in step 2 at their GeoNames points (from the same median): moved postcodes
-         all sit on the place's one point, which is no sign that the place is compact. A postcode
-         moved in step 2 is never left out. The app then places a postcode left out from the
-         postcodes that share its first 4, 3 or 2 digits.
-      4. Every other postcode keeps the average of its rows, also when the rows lie far apart.
+         the others moved in step 2 counted but never inside the core: they all sit on the place's one
+         point, which is no sign that the place is compact, and their GeoNames points were found wrong.
+         A postcode moved in step 2 is never left out.
+      4. Far from its first digits: any other postcode is left out when its point lies more than
+         PREFIX_KM from each of the confirmed postcodes that share its first PREFIX_DIGITS digits (at
+         least PREFIX_MIN of them). Confirmed: placed from shops or kept in step 1, moved to its place's
+         point in step 2, or already within ANCHOR_KM of that point there, and not left out in step 3.
+         A confirmed postcode is never left out here or in step 5. GeoNames puts 98057 to 98059 Baram on
+         one point in Betong, 431 km from the confirmed postcodes of Miri that start 980 (the place list
+         has no Baram). The nearest of them counts, not their median: the confirmed postcodes of one
+         group can lie in 2 towns (those that start 890 in Keningau and in Kudat, 187 km apart), and
+         their median would judge one town's own postcodes by the other.
+      5. Rows far apart: any other postcode is left out when its point, the average of its rows (those
+         that count), lies more than PLACE_KM from each of those rows: it is in none of its places.
+         GeoNames lists 81920 under Ayer Tawar 2 to 5, three of them east of Kota Tinggi and one near
+         Muar, 170 km west, so that their average lay 38 km from the nearest of them.
+         The app places a postcode left out in step 3, 4 or 5 from the postcodes that share its first
+         4, 3 or 2 digits.
+      6. Every other postcode keeps the average of its rows that count, also when they lie far apart.
     No postcode is added: a shop's postcode that GeoNames does not have is not used.
-    In the 2026-11-16 GeoNames table, 66 of the 84 postcodes placed from shops lay more than 2 km
+    In the 2026-11-16 GeoNames table, 63 of the 81 postcodes placed from shops lay more than 2 km
     from their shops (Muar 84000 by 29 km, Bintulu 97000 by 120 km), and 79570 Nusajaya (Johor)
     lay in Kedah. Kept: 30200 Ipoh, whose 2 shops (Ipoh, Batu Gajah) would have put it about 10 km
     from Ipoh, and 98107 Lutong. Compact: 88000 Kota Kinabalu, the city centre, lay 18.4 km from the
     median of the city's 205 other postcodes, 90% of which lie within 4.5 km of it, and the app
     showed shoppers there the shops of Putatan.
     Returns {"postcodes": {postcode: [lat, lon]} (4 decimals, sorted), "checks": {"from_shops",
-    "moved" (more than MOVED_KM), "set_aside"}, "moves": [(km, postcode, place)] largest first,
-    "set_aside": [(postcode, place, reason)], "kept": [(postcode, place, reason)]}. With a place list,
-    also checks["to_place"] and "to_place": [(km, postcode, place, reason)] largest first.
+    "moved" (more than MOVED_KM), "set_aside" (steps 3, 4 and 5)}, "moves": [(km, postcode, place)]
+    largest first, "set_aside": [(postcode, place, reason)] by postcode, "kept": [(postcode, place,
+    reason)]}. With a place list, also checks["to_place"], "to_place": [(km, postcode, place, reason)]
+    and "far_rows": [(km the point moved, postcode, place, reason)], both largest first.
+    checks["far_from_prefix"] and checks["far_from_rows"], how many of set_aside steps 4 and 5 left
+    out, are there only when they left out any.
     """
     # A place is its state and its name as place_key() spells it: Tanjong Bungah and Tanjung Bungah are one.
     rows = {pc: [(place_key(k), n, p) for k, n, p in v] for pc, v in rows.items()}
@@ -832,11 +899,18 @@ def check_postcodes(rows: dict, geo: dict, places: list | None = None, addresses
         if not close:
             continue
         apart = km(*close[0], *close[1]) if len(close) == 2 else 0.0
+        if apart <= ANCHOR_KM:
+            shops[pc] = _median_point(close)
+            continue
+        # Only 2 shops agree and they lie more than ANCHOR_KM apart: their middle can be in neither town
+        # (42700 Banting: 2 shops 18 km apart), so they do not place the postcode; one near its point backs it.
         near = min(km(*p, *average[pc]) for p in close)
-        if apart > ANCHOR_KM and near <= BACKED_KM:
+        if near <= BACKED_KM:
             backed[pc] = (f"its 2 shops lie {apart:.1f} km apart and one of them is {near:.1f} km "
                           f"from that point")
-        else:
+        elif not places:
+            # Without a place list no town's point can take over, and the middle of the 2 shops lay nearer to
+            # each of them than the GeoNames point (84900 Tangkak: 6.6 km from a shop, against 16.5 km).
             shops[pc] = _median_point(close)
     point = {pc: shops.get(pc, average[pc]) for pc in rows}
     places_of: dict[str, set] = {}
@@ -845,10 +919,43 @@ def check_postcodes(rows: dict, geo: dict, places: list | None = None, addresses
             if key:
                 places_of.setdefault(key, set()).add(pc)
     names = {pc: " / ".join(sorted({r[1] for r in v if r[1]})) for pc, v in rows.items()}
-    to_place, moved = [], {}
+    counted = {pc: [r[2] for r in v] for pc, v in rows.items()}   # the GeoNames rows a postcode's point averages
+    to_place, moved, at_place = [], {}, set()   # at_place: already within ANCHOR_KM of their place's point
+    far_rows = []
     if places:
         known = _place_points(places_of, shops, geo, places, addresses or {})
         gpoint = {k: g for k, (g, _) in known.items() if g is not None}
+        # A row more than PLACE_KM from its own place's point does not count while a row on another point does,
+        # when the average of the postcode's other rows (its new point) lies within PLACE_KM of that place's point:
+        # GeoNames names the right place and has a wrong point for it. It lists 42920 under Pelabuhan Klang on a
+        # point in Kuala Lumpur, 42 km from that town's point, and under Pulau Indah, the island off the town, 4 km
+        # from it. Not when that average lies far from that place too (81500's row of Sungai Mati lies 145 km from
+        # the place list's Sungai Mati, near Muar, and its row of Pekan Nenas 109 km: it may name another Sungai
+        # Mati), nor when the place's shops lie nearer to that row than to its point. A point with a row that
+        # counts still counts (27000 Jerantut's row in Selangor lies on the point of its row in Pahang, 67 km from
+        # Jerantut).
+        def far_row(key, p) -> bool:
+            if key not in gpoint or km(*p, *gpoint[key]) <= PLACE_KM:
+                return False
+            ref = known[key][1]
+            return ref is None or km(*p, *ref) > km(*gpoint[key], *ref)
+
+        for pc, v in sorted(rows.items()):
+            if pc in shops or pc in backed:
+                continue
+            off = [r for r in v if far_row(r[0], r[2])]
+            rest = [r[2] for r in v if r not in off]
+            if not rest or set(rest) == {r[2] for r in v}:
+                continue
+            new = _mean_point(rest)
+            gone = [r for r in off if r[2] not in rest]
+            if any(km(*new, *gpoint[r[0]]) > PLACE_KM for r in gone):
+                continue
+            why = "; ".join(sorted({f"its row of {r[1]} lies {km(*r[2], *gpoint[r[0]]):.1f} km from that place's "
+                                    "point" for r in gone}))
+            counted[pc] = rest
+            far_rows.append((km(*average[pc], *new), pc, names[pc], why))
+            average[pc] = point[pc] = new
         spread: dict[tuple, tuple] = {}   # place keys -> (GeoNames rows, largest distance between two of them)
         for pc, v in sorted(rows.items()):
             keys = tuple(sorted({r[0] for r in v if r[0]}))
@@ -864,6 +971,7 @@ def check_postcodes(rows: dict, geo: dict, places: list | None = None, addresses
             if len(cands) == 1 and all(k in gpoint for k in keys):   # one point for all its places
                 g = gpoint[keys[0]]
                 if km(*average[pc], *g) <= ANCHOR_KM:
+                    at_place.add(pc)
                     continue
                 if keys not in spread:
                     pts = [r[2] for k in keys for o in places_of[k] for r in rows[o] if r[0] == k]
@@ -873,7 +981,11 @@ def check_postcodes(rows: dict, geo: dict, places: list | None = None, addresses
                 if spread[keys][1] <= ROUGH_KM:
                     why = (f"all {spread[keys][0]} GeoNames rows of its place lie within {ROUGH_KM:g} km of each "
                            f"other" if spread[keys][0] > 1 else "its place has no other GeoNames row")
-                elif all(km(*average[pc], *point[o]) > ANCHOR_KM for o in near):
+                # With no other postcode near the point, only a place of fewer than COMPACT_MIN other postcodes, or one
+                # whose shops say where it is, goes there: none of Nusajaya's 43 postcodes lies within ANCHOR_KM of the
+                # point of Iskandar Puteri (other name Nusajaya), and no shop names Nusajaya.
+                elif (near or len(others) < COMPACT_MIN or any(known[k][1] is not None for k in keys)) and all(
+                        km(*average[pc], *point[o]) > ANCHOR_KM for o in near):
                     why = (f"more than {ANCHOR_KM:g} km from each of the {len(near)} other postcodes of its place "
                            f"near that point" if near else "no other postcode of its place lies near that point")
             if why is None:
@@ -894,8 +1006,7 @@ def check_postcodes(rows: dict, geo: dict, places: list | None = None, addresses
                 continue
             moved[pc] = g
             to_place.append((km(*average[pc], *g), pc, names[pc], why))
-    # The compact test reads the points before the moves above (before), the rest the points after them.
-    before, point = point, {**point, **moved}
+    point = {**point, **moved}
     out, moves, aside, kept = {}, [], [], []
     for pc, v in sorted(rows.items()):
         name = names[pc]
@@ -914,23 +1025,62 @@ def check_postcodes(rows: dict, geo: dict, places: list | None = None, addresses
                 mid = _median_point(pts)
                 d = km(*average[pc], *mid)
                 why = f"{d:.1f} km from the median of the {len(others)} other postcodes of its place"
-                # Postcodes moved to their place's point all sit on that one point, a guess: they count here
-                # at their GeoNames points, or 8 of them on Kuantan's point would make Kuantan look compact.
-                core = _compact_core([before[o] for o in sorted(others)], mid)
+                # Postcodes moved to their place's point all sit on that one point, a guess, and their GeoNames
+                # points lay far out: they count among the others but never inside the core. On the place's
+                # point, 8 of them made Kuantan look compact; at GeoNames points near the median, they could too.
+                core = _compact_core([point[o] for o in sorted(others) if o not in moved], mid, len(others))
                 if d > PLACE_KM:
                     aside.append((pc, name, why))
                     continue
                 if core is not None and d > COMPACT_KM:
                     aside.append((pc, name, f"{why}, {COMPACT_SHARE:.0%} of which lie within {core:.1f} km of it"))
                     continue
-        out[pc] = [round(point[pc][0], 4), round(point[pc][1], 4)]
+        out[pc] = point[pc]
+    # 4. Far from the confirmed postcodes that share its first PREFIX_DIGITS digits: 98057 Baram lay in Betong.
+    # Confirmed: placed from shops, kept, moved to its place's point or within ANCHOR_KM of it, and not set aside.
+    confirmed = (set(shops) | set(backed) | set(moved) | at_place) & set(out)
+    group: dict[str, list] = {}
+    for pc in sorted(confirmed):
+        group.setdefault(pc[:PREFIX_DIGITS], []).append(point[pc])
+    far = []
+    for pc in sorted(out):
+        ref = group.get(pc[:PREFIX_DIGITS], [])
+        if pc in confirmed or len(ref) < PREFIX_MIN:
+            continue
+        # The nearest of them, not their median: the confirmed postcodes of one group can lie in 2 towns
+        # (those that start 890 in Keningau and in Kudat, 187 km apart), and a median then judges each town's
+        # own postcodes by the other town.
+        d = min(km(*point[pc], *r) for r in ref)
+        if d > PREFIX_KM:
+            far.append((pc, names[pc], f"{d:.1f} km from the nearest of the {len(ref)} confirmed postcodes that "
+                                       f"start {pc[:PREFIX_DIGITS]}"))
+    for pc, _, _ in far:
+        del out[pc]
+    # 5. Its rows lie so far apart that their average is in none of its places: GeoNames lists 81920 under
+    # Ayer Tawar 2 to 5, 3 of them east of Kota Tinggi and one near Muar, 170 km west.
+    apart = []
+    for pc in sorted(out):
+        pts = set(counted[pc])
+        if pc in confirmed or len(pts) < 2:
+            continue
+        d = min(km(*point[pc], *p) for p in pts)
+        if d > PLACE_KM:
+            apart.append((pc, names[pc], f"{d:.1f} km from the nearest of its {len(counted[pc])} GeoNames rows, "
+                                         "whose average it is"))
+    for pc, _, _ in apart:
+        del out[pc]
+    aside = sorted(aside + far + apart)
     moves.sort(key=lambda m: (-m[0], m[1]))
-    # The place list's count and list are there only when the check used a place list.
+    # The place list's count and list are there only when the check used a place list, and the counts of the
+    # postcodes set aside by their first digits or by their own rows only when there are any (part of set_aside).
     checks = {"from_shops": len(shops), "moved": len(moves), **({"to_place": len(to_place)} if places else {}),
-              "set_aside": len(aside)}
-    res = {"postcodes": dict(sorted(out.items())), "checks": checks, "moves": moves, "set_aside": aside, "kept": kept}
+              "set_aside": len(aside), **({"far_from_prefix": len(far)} if far else {}),
+              **({"far_from_rows": len(apart)} if apart else {})}
+    res = {"postcodes": {pc: [round(p[0], 4), round(p[1], 4)] for pc, p in sorted(out.items())}, "checks": checks,
+           "moves": moves, "set_aside": aside, "kept": kept}
     if places:
         res["to_place"] = sorted(to_place, key=lambda m: (-m[0], m[1]))
+        res["far_rows"] = sorted(far_rows, key=lambda m: (-m[0], m[1]))
     return res
 
 
@@ -1198,15 +1348,24 @@ def main(argv: list[str] | None = None) -> int:
     if pc:
         c = pc["checks"]
         gaz = "to_place" in c
+        rows_off = pc.get("far_rows", [])
+        parts = [(k, t) for k, t in (("far_from_prefix", "far from the confirmed postcodes that share their first "
+                                                         f"{PREFIX_DIGITS} digits"),
+                                     ("far_from_rows", "far from each of their own GeoNames rows")) if k in c]
         print(f"postcode table: {len(pc['postcodes']):,} postcodes from GeoNames, checked against shops found by "
               f"OpenStreetMap{' and the GeoNames place list' if gaz else ''}: {c['from_shops']} placed at those "
               f"shops ({c['moved']} moved more than {MOVED_KM:g} km), "
               + (f"{c['to_place']} moved to their place's point in the place list, " if gaz else "")
-              + f"{c['set_aside']} set aside")
+              + (f"{len(rows_off)} placed without a GeoNames row far from its place's point, " if rows_off else "")
+              + f"{c['set_aside']} set aside"
+              + (" (" + ", ".join(f"{c[k]}{' of them' if not i else ''} as {t}" for i, (k, t) in enumerate(parts))
+                 + ")" if parts else ""))
         for d, code, name in pc["moves"][:10]:
             print(f"  moved {code} {name}: {d:.1f} km")
         for d, code, name, why in pc.get("to_place", [])[:10]:
             print(f"  to place point {code} {name}: {d:.1f} km ({why})")
+        for d, code, name, why in rows_off:
+            print(f"  without a far row {code} {name}: {d:.1f} km ({why})")
         for code, name, why in pc["set_aside"]:
             print(f"  set aside {code} {name}: {why}")
         for code, name, why in pc["kept"]:
