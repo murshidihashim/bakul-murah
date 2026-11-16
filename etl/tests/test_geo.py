@@ -411,7 +411,7 @@ def test_anchor_must_be_in_the_shop_state_and_near_its_district():
 
     def districts(rows, cache=None):
         return gp.Districts({k: {"key": k, "lat": str(p[0]), "lon": str(p[1])} for k, p in rows.items()},
-                            geocoder(Fake()), cache or {})
+                            geocoder(Fake()), cache or {}, places)
 
     d = districts({"Johor|Johor Bahru": JB_CENTRE, "Kelantan|Kota Bharu": KB_CENTRE})
     jb = {"premise_code": "1", "premise": "KEDAI", "district": "Johor Bahru", "state": "Johor"}
@@ -427,11 +427,19 @@ def test_anchor_must_be_in_the_shop_state_and_near_its_district():
     kb = {"premise_code": "2", "premise": "KEDAI", "district": "Kota Bharu", "state": "Kelantan"}
     a = gp.anchor_for({**kb, "address": "NO 1, KAMPUNG X, KUALA KRAI"}, places, d)
     assert (a["kind"], a["point"]) == ("district", KB_CENTRE)
-    # "18000 KUALA KRAI" (the postcode's own GeoNames place right after it) is strong: it may lie
-    # up to 80 km away, but only when nothing nearer is in the address (Ketereh, 19 km).
+    # "18000 KUALA KRAI" (the postcode's own GeoNames place right after it) is strong evidence, but
+    # 66 km away with only GeoNames' point to go on it is not used. When shops OpenStreetMap found
+    # vouch for where 18000 is, it may lie up to 80 km away, but only when nothing nearer is in the
+    # address (Ketereh, 19 km).
     a = gp.anchor_for({**kb, "address": "NO 1, KAMPUNG X, 18000 KUALA KRAI"}, places, d)
-    assert (a["kind"], a["label"]) == ("postcode", "18000") and a["strong"] is True
-    a = gp.anchor_for({**kb, "address": "NO 1, KAMPUNG X, 18000 KUALA KRAI, KETEREH"}, places, d)
+    assert (a["kind"], a["point"]) == ("district", KB_CENTRE)
+    vouched = gp.Places(fpc.parse(MY_TXT + "\n" + KB_TXT))
+    vouched.learn([({"state": "Kelantan", "district": "Kuala Krai", "address": f"NO {i}, 18000 KUALA KRAI"},
+                    (5.53 + i / 1000, 102.20)) for i in (1, 2)])
+    a = gp.anchor_for({**kb, "address": "NO 1, KAMPUNG X, 18000 KUALA KRAI"}, vouched, d)
+    assert (a["kind"], a["label"], a["strong"], a["vouched"]) == ("postcode", "18000", True, True)
+    assert a["point"] == pytest.approx((5.5315, 102.20))   # where the found shops are
+    a = gp.anchor_for({**kb, "address": "NO 1, KAMPUNG X, 18000 KUALA KRAI, KETEREH"}, vouched, d)
     assert (a["kind"], a["label"]) == ("town", "Ketereh") and a["strong"] is False
     # A shared centre is not trusted: the median of the district's located shops is the reference.
     shared = districts({"Kelantan|Kota Bharu": KB_CENTRE, "Kelantan|Bachok": KB_CENTRE},
@@ -456,24 +464,31 @@ def test_anchor_must_be_in_the_shop_state_and_near_its_district():
     assert gp.anchor_for({**odd, "address": "81100 JOHOR BAHRU"}, places, near_kb)["kind"] == "district"
     assert gp.anchor_for({**odd, "address": "15000 KOTA BHARU"}, places, districts({})) is None
     # Limbang's centre is in the middle of a large district, 44 km from its town. "98700 LIMBANG"
-    # and "LIMBANG" (the district's name) are strong evidence, so they still count.
+    # and "LIMBANG" (the district's name) are strong evidence: with shops OpenStreetMap found there
+    # to vouch for the point they count; with only GeoNames' point that far out they do not (the
+    # real table puts 98700 at 81 km from the town).
     lb = {"premise_code": "3", "premise": "KEDAI", "district": "Limbang", "state": "Sarawak", "address": "98700 LIMBANG"}
     centre = (4.352, 115.060)
     plain = districts({"Sarawak|Limbang": centre})
     assert gp.km(*centre, 4.75, 115.0) == pytest.approx(44.8, abs=0.1)
-    assert (gp.anchor_for(lb, places, plain)["label"], gp.anchor_for(lb, places, plain)["strong"]) == ("98700", True)
-    assert gp.anchor_for({**lb, "address": "PASAR LIMBANG"}, places, plain)["kind"] == "town"
+    assert gp.anchor_for(lb, places, plain)["kind"] == "district"
+    assert gp.anchor_for({**lb, "address": "PASAR LIMBANG"}, places, plain)["kind"] == "district"
+    seen = gp.Places(fpc.parse(MY_TXT + "\n" + KB_TXT))
+    seen.learn([({"state": "Sarawak", "district": "Limbang", "address": f"NO {i}, 98700 LIMBANG"},
+                 (4.75, 115.0 + i / 1000)) for i in (1, 2)])
+    assert (gp.anchor_for(lb, seen, plain)["label"], gp.anchor_for(lb, seen, plain)["strong"]) == ("98700", True)
+    assert gp.anchor_for({**lb, "address": "PASAR LIMBANG"}, seen, plain)["kind"] == "town"
     # Postcode or town points from an earlier run do not vouch for the district (they may be the
     # wrong ones, as at Kalabakan): the centre is still the reference ...
-    near_town = {c: cache_row(c, 4.69, 114.98 + c / 1000, "postcode", district="Limbang", state="Sarawak")
-                 for c in (9, 10)}
+    near_town = {c: cache_row(c, 4.69, 114.98 + c / 1000, "postcode", district="Limbang", state="Sarawak",
+                              query="98700", postcode="98700") for c in (9, 10)}
     limbang = districts({"Sarawak|Limbang": centre}, near_town)
     assert limbang.trusted("Sarawak", "Limbang") == centre and limbang.references("Sarawak", "Limbang") == [centre]
-    assert gp.anchor_for(lb, places, limbang)["label"] == "98700"
-    # ... but a shop with no postcode or town is searched for around them (38 km from the centre),
-    # not in the middle of the district.
-    a = gp.anchor_for({**lb, "address": "KAMPUNG X"}, places, limbang)
-    assert a["kind"] == "district" and a["point"] == pytest.approx((4.69, 114.9895))
+    # ... but a shop is searched for around them (38 km from the centre: they are named after the
+    # district), not in the middle of the district.
+    for address in ("98700 LIMBANG", "KAMPUNG X"):
+        a = gp.anchor_for({**lb, "address": address}, places, limbang)
+        assert a["kind"] == "district" and a["point"] == pytest.approx((4.69, 114.9895))
     # Shops OpenStreetMap found there are a reference, and then the centre is not trusted.
     found = {c: cache_row(c, 4.69, 114.98 + c / 1000, "address", district="Limbang", state="Sarawak")
              for c in (9, 10)}
@@ -495,11 +510,14 @@ def test_road_towns_and_lot_numbers_do_not_move_shops(tmp_path):
                        [{"key": "Kelantan|Kota Bharu", "lat": str(KB_CENTRE[0]), "lon": str(KB_CENTRE[1])},
                         {"key": "Johor|Johor Bahru", "lat": str(JB_CENTRE[0]), "lon": str(JB_CENTRE[1])}])
     fake = Fake()
-    gp.run(data, cache, dcache, geocoder(fake), postcodes_path=pc, today=TODAY)
+    st = gp.run(data, cache, dcache, geocoder(fake), postcodes_path=pc, today=TODAY)
     rows = read_rows(cache)
     kb, jb = rows["21684"], rows["20860"]
     assert (kb["precision"], kb["query"]) == ("town", "Ketereh")
     assert gp.km(float(kb["lat"]), float(kb["lon"]), 5.9561, 102.2432) < 0.1
+    # Ketereh is 19 km from the centre, and no shop OpenStreetMap found vouches for its point:
+    # fine for a town that is not the district's own, but counted for a look by hand.
+    assert gp.km(*KB_CENTRE, 5.9561, 102.2432) > gp.GUESS_KM and st["unvouched_far"] == 1
     assert (jb["precision"], jb["postcode"]) == ("district", "")
     assert gp.km(float(jb["lat"]), float(jb["lon"]), *JB_CENTRE) < 0.1
     boxes = {c["q"]: c["viewbox"] for c in fake.calls}
@@ -550,36 +568,48 @@ KUALA_ROMPIN_SHOPS = [
 
 
 def test_a_town_named_after_the_district_may_be_further_away(tmp_path):
-    """Kuala Rompin is 43 km from Rompin's centre and 27 km beyond the shops OpenStreetMap found:
-    it is in the district's name, so it counts (up to 80 km). A weak town that far does not."""
+    """Kuala Rompin is 43 km from Rompin's centre and 27 km beyond the shops OpenStreetMap found in
+    Muadzam Shah: it is in the district's name, so it counts (up to 80 km) when shops OpenStreetMap
+    found there vouch for its point. With only GeoNames' point it does not (the real table puts
+    Kuala Rompin 18 km from the town). A weak town that far never counts."""
     assert gp.km(*ROMPIN_CENTRE, *KUALA_ROMPIN) == pytest.approx(42.9, abs=0.1)
-    pc = write_postcodes(tmp_path / "postcodes_my.csv", ROMPIN_TXT)
-    found = [(14840 + i, "BS FRESHMART", "JALAN MEDAN MEWAH 12,BANDAR MUADZAM SHAH,MUADZAM SHAH") for i in range(4)]
-    data = write_build(tmp_path / "data", {("Pahang", "Rompin"): [
-        (c, f"KEDAI {c}", a) for c, a in KUALA_ROMPIN_SHOPS] + found + [
-        (10214, "TUNAS MANJA (MUADZAM SHAH)", "LOT. PT232,MUKIM BEBAR,MUADZAM SHAH"),
-        (30000, "KEDAI SELENDANG", "NO 1, KAMPUNG SELENDANG,SELENDANG")]})
-    v1 = [cache_row(c, *ROMPIN_CENTRE, "district", district="Rompin", state="Pahang", query="Rompin, Pahang")
-          for c, _ in KUALA_ROMPIN_SHOPS + [(10214, "")]]
-    v1 += [cache_row(c, *MUADZAM, "address", district="Rompin", state="Pahang", tries=1, last="2026-11-01")
-           for c, *_ in found]
-    cache = write_csv(tmp_path / "premise_geo.csv", gp.FIELDS, v1)
-    dcache = write_csv(tmp_path / "district_geo.csv", ["key", "lat", "lon"],
-                       [{"key": "Pahang|Rompin", "lat": str(ROMPIN_CENTRE[0]), "lon": str(ROMPIN_CENTRE[1])}])
-    fake = Fake()
-    gp.run(data, cache, dcache, geocoder(fake), postcodes_path=pc, today=TODAY)
-    rows = read_rows(cache)
-    for c, _ in KUALA_ROMPIN_SHOPS:
-        r = rows[str(c)]
-        assert (r["precision"], r["query"], r["tries"]) == ("town", "Kuala Rompin", "1"), c
-        assert gp.km(float(r["lat"]), float(r["lon"]), *KUALA_ROMPIN) < 0.1
-    boxes = {c["q"].split(",")[0]: c["viewbox"] for c in fake.calls}
-    assert boxes["KEDAI 1152"] == gp.viewbox(*KUALA_ROMPIN, 0.15)
-    assert (rows["10214"]["precision"], rows["10214"]["query"]) == ("town", "Muadzam Shah")   # 26 km: weak is fine
-    # A weak town 43 km from the centre (and 66 km from the found shops) is still not used.
-    assert gp.km(*ROMPIN_CENTRE, 2.52, 103.345) == pytest.approx(43.5, abs=0.2)
-    assert rows["30000"]["precision"] == "district"
-    assert gp.km(float(rows["30000"]["lat"]), float(rows["30000"]["lon"]), *ROMPIN_CENTRE) < 0.1
+    for vouched in (True, False):
+        work = tmp_path / str(vouched)
+        work.mkdir()
+        pc = write_postcodes(work / "postcodes_my.csv", ROMPIN_TXT)
+        found = [(14840 + i, "BS FRESHMART", "JALAN MEDAN MEWAH 12,BANDAR MUADZAM SHAH,MUADZAM SHAH") for i in range(4)]
+        in_town = [(14850 + i, "PASARAYA", "JALAN BESAR, KUALA ROMPIN, PAHANG") for i in range(2)] if vouched else []
+        data = write_build(work / "data", {("Pahang", "Rompin"): [
+            (c, f"KEDAI {c}", a) for c, a in KUALA_ROMPIN_SHOPS] + found + in_town + [
+            (10214, "TUNAS MANJA (MUADZAM SHAH)", "LOT. PT232,MUKIM BEBAR,MUADZAM SHAH"),
+            (30000, "KEDAI SELENDANG", "NO 1, KAMPUNG SELENDANG,SELENDANG")]})
+        v1 = [cache_row(c, *ROMPIN_CENTRE, "district", district="Rompin", state="Pahang", query="Rompin, Pahang")
+              for c, _ in KUALA_ROMPIN_SHOPS + [(10214, "")]]
+        v1 += [cache_row(c, *MUADZAM, "address", district="Rompin", state="Pahang", tries=1, last="2026-11-01")
+               for c, *_ in found]
+        v1 += [cache_row(c, KUALA_ROMPIN[0] + (c - 14850) / 1000, KUALA_ROMPIN[1], "name", district="Rompin",
+                         state="Pahang", tries=1, last="2026-11-01") for c, *_ in in_town]
+        cache = write_csv(work / "premise_geo.csv", gp.FIELDS, v1)
+        dcache = write_csv(work / "district_geo.csv", ["key", "lat", "lon"],
+                           [{"key": "Pahang|Rompin", "lat": str(ROMPIN_CENTRE[0]), "lon": str(ROMPIN_CENTRE[1])}])
+        fake = Fake()
+        gp.run(data, cache, dcache, geocoder(fake), postcodes_path=pc, today=TODAY)
+        rows = read_rows(cache)
+        for c, _ in KUALA_ROMPIN_SHOPS:
+            r = rows[str(c)]
+            if vouched:
+                assert (r["precision"], r["query"], r["tries"]) == ("town", "Kuala Rompin", "1"), c
+                assert gp.km(float(r["lat"]), float(r["lon"]), *KUALA_ROMPIN) < 0.1
+            else:
+                assert (r["precision"], r["tries"]) == ("district", "1"), c
+        boxes = {c["q"].split(",")[0]: c["viewbox"] for c in fake.calls}
+        in_town_median = (KUALA_ROMPIN[0] + 0.0005, KUALA_ROMPIN[1])
+        assert boxes["KEDAI 1152"] == (gp.viewbox(*in_town_median, 0.15) if vouched else gp.viewbox(*ROMPIN_CENTRE, 0.3))
+        assert (rows["10214"]["precision"], rows["10214"]["query"]) == ("town", "Muadzam Shah")   # 26 km: weak is fine
+        # A weak town 43 km from the centre (and 66 km from the found shops) is still not used.
+        assert gp.km(*ROMPIN_CENTRE, 2.52, 103.345) == pytest.approx(43.5, abs=0.2)
+        assert rows["30000"]["precision"] == "district"
+        assert gp.km(float(rows["30000"]["lat"]), float(rows["30000"]["lon"]), *ROMPIN_CENTRE) < 0.1
 
 
 TAWAU_TXT = "\n".join("\t".join(r) for r in [
@@ -594,16 +624,60 @@ def test_a_postcode_followed_by_its_own_place_is_strong():
     tw = gp.Places(fpc.parse(TAWAU_TXT))
     near = [KALABAKAN]
     assert gp.km(*KALABAKAN, *TAWAU) == pytest.approx(59.7, abs=0.1)
-    for address in ("TAMAN SEMARAK, 91000 TAWAU, SABAH,", "PUSAT KOMERSIAL GAYA, 91000TAWAU, SABAH,",
-                    "PUSAT KOMERSIAL GAYA, 91000\rTAWAU, SABAH,", "MILE 5, 91000, TAWAU"):
+    addresses = ("TAMAN SEMARAK, 91000 TAWAU, SABAH,", "PUSAT KOMERSIAL GAYA, 91000TAWAU, SABAH,",
+                 "PUSAT KOMERSIAL GAYA, 91000\rTAWAU, SABAH,", "MILE 5, 91000, TAWAU")
+    for address in addresses:
         assert gp.postcodes_in(address, tw, "Sabah") == ["91000"], address
-        assert tw.postcode_anchor(["91000"], "Sabah", near, address) == ("91000", TAWAU, True), address
+        # Strong, but with only GeoNames' point to go on: within 15 km (GUESS_KM), not 60.
+        assert tw.postcode_anchor(["91000"], "Sabah", [(4.30, 117.89)], address) == ("91000", TAWAU, True)
+        assert tw.postcode_anchor(["91000"], "Sabah", near, address) is None, address
+    # Shops OpenStreetMap found that name 91000 vouch for its point: it may then lie up to 80 km away.
+    tw.learn([({"state": "Sabah", "district": "Tawau", "address": f"NO {i}, 91000 TAWAU"}, (TAWAU[0] + i / 1000, TAWAU[1]))
+              for i in (1, 2)])
+    for address in addresses:
+        assert tw.postcode_anchor(["91000"], "Sabah", near, address) == (
+            "91000", pytest.approx((TAWAU[0] + 0.0015, TAWAU[1])), True), address
     # Another place after it, or none: weak, so 60 km is too far.
     for address in ("91000 SEMPORNA", "TAMAN SEMARAK, 91000", "91000 JALAN APAS"):
         assert tw.postcode_anchor(["91000"], "Sabah", near, address) is None, address
         assert tw.postcode_anchor(["91000"], "Sabah", [TAWAU], address)[2] is False
     assert tw.postcode_anchor(["91000"], "Sabah", near, "91000 TAWAU", gp.CHECK_KM) is None
     assert tw.postcode_anchor(["91000"], "Sabah", [(5.98, 116.07)], "91000 TAWAU") is None   # 220 km
+
+
+def test_a_spread_postcode_is_strong_only_through_its_named_place():
+    """91000's rows in a table made from old addresses: Tawau town plus far Kalabakan points. Their
+    average is nowhere; '91000 TAWAU' means the Tawau rows."""
+    rows = TAWAU_TXT + "\n" + "\n".join("\t".join(r) for r in [
+        ["MY", "91000", "Tawau", "Sabah", "12", "", "", "", "", "4.2500", "117.8900", "4"],
+        ["MY", "91000", "Kalabakan", "Sabah", "12", "", "", "", "", "4.7245", "117.3897", "4"],
+        ["MY", "91000", "Kalabakan", "Sabah", "12", "", "", "", "", "4.7300", "117.3800", "4"]])
+    tw = gp.Places(fpc.parse(rows))
+    tawau_rows = (4.2474, 117.8906)   # the median of the two Tawau rows
+    near_tawau = (4.30, 117.89)       # 6 km from them: strong evidence counts without found shops
+    for address in ("TAMAN SEMARAK, 91000 TAWAU, SABAH,", "PUSAT KOMERSIAL GAYA, 91000TAWAU, SABAH,"):
+        assert tw.postcode_anchor(["91000"], "Sabah", [near_tawau], address) == ("91000", pytest.approx(tawau_rows), True)
+    assert tw.spread_postcodes == {"91000"}
+    pc, point, strong = tw.postcode_anchor(["91000"], "Sabah", [OLD_91000], "KAMPUNG X, 91000 KALABAKAN")
+    assert strong and point == pytest.approx((4.72725, 117.38485))
+    # A bare 91000 is weak evidence: within 35 km only (at the postcode's usual point, the average).
+    east = (4.25, 118.40)   # 56 km from the Tawau rows, far from the others
+    seen = gp.Places(fpc.parse(rows))   # found shops vouch for 91000 at Tawau: strong may reach 56 km
+    seen.learn([({"state": "Sabah", "district": "Tawau", "address": f"NO {i}, 91000 TAWAU"}, tawau_rows)
+                for i in (1, 2)])
+    assert seen.postcode_anchor(["91000"], "Sabah", [east], "TAMAN SEMARAK, 91000 TAWAU")[2] is True
+    assert seen.postcode_anchor(["91000"], "Sabah", [east], "TAMAN SEMARAK, 91000") is None
+    assert tw.postcode_anchor(["91000"], "Sabah", [east], "TAMAN SEMARAK, 91000") is None
+    pc, point, strong = tw.postcode_anchor(["91000"], "Sabah", [KALABAKAN], "TAMAN SEMARAK, 91000")
+    assert not strong and point == pytest.approx(tw.postcode("91000"))   # 25 km away: weak is enough
+    assert gp.km(*tw.postcode("91000"), *TAWAU) > gp.CHECK_KM
+    assert tw.postcode_anchor(["91000"], "Sabah", [TAWAU], "TAMAN SEMARAK, 91000") is None
+    # Its own place's rows spread too: weak.
+    split = gp.Places(fpc.parse(rows.replace("4.2500\t117.8900", "4.5000\t117.6000")))
+    assert split.postcode_anchor(["91000"], "Sabah", [KALABAKAN], "91000 TAWAU, SABAH")[2] is False
+    assert split.postcode_anchor(["91000"], "Sabah", [east], "91000 TAWAU, SABAH") is None
+    # Postcodes whose rows agree are unchanged (the average of all their rows, strong as before).
+    assert tw.postcode_anchor(["91007"], "Sabah", [near_tawau], "MEROTAI, 91007 TAWAU") == ("91007", TAWAU, True)
 
 
 # The real Kalabakan shops and their rows from the first run: four '91000 TAWAU' shops were put
@@ -621,31 +695,239 @@ KALABAKAN_SHOPS = [
 ]
 
 
-def test_old_postcode_points_do_not_vouch_for_themselves(tmp_path):
-    """Kalabakan: only shops OpenStreetMap found (name or address) say where a district's shops
-    are. The four wrong '91000 TAWAU' rows move to Tawau on the retry; '91007 TAWAU' too."""
+# Shops OpenStreetMap found in Tawau town whose address has 91000 (the real build has four).
+TAWAU_FOUND = [(30100 + i, f"KEDAI TAWAU {i}", f"NO {i}, JALAN BESAR, 91000 TAWAU, SABAH") for i in range(2)]
+
+
+def kalabakan_files(tmp_path):
+    """The Kalabakan shops with their first-run rows, and two shops OpenStreetMap found in Tawau."""
     pc = write_postcodes(tmp_path / "postcodes_my.csv", TAWAU_TXT)
-    data = write_build(tmp_path / "data", {("Sabah", "Kalabakan"): [(c, n, a) for c, n, a, _ in KALABAKAN_SHOPS]})
+    data = write_build(tmp_path / "data", {("Sabah", "Kalabakan"): [(c, n, a) for c, n, a, _ in KALABAKAN_SHOPS],
+                                           ("Sabah", "Tawau"): TAWAU_FOUND})
     v1 = [cache_row(c, *(OLD_91000 if p == "postcode" else KALABAKAN), p, district="Kalabakan", state="Sabah",
                     query="91000" if p == "postcode" else "Kalabakan, Sabah",
                     postcode="91000" if p == "postcode" else "")
           for c, _, _, p in KALABAKAN_SHOPS]
+    v1 += [cache_row(c, TAWAU[0] + (c - 30100) / 1000 - 0.0005, TAWAU[1], "name", district="Tawau", state="Sabah")
+           for c, *_ in TAWAU_FOUND]
     cache = write_csv(tmp_path / "premise_geo.csv", gp.FIELDS[:8], v1)
     dcache = write_csv(tmp_path / "district_geo.csv", ["key", "lat", "lon"],
                        [{"key": "Sabah|Kalabakan", "lat": str(KALABAKAN[0]), "lon": str(KALABAKAN[1])}])
+    return pc, data, cache, dcache
+
+
+def test_old_postcode_points_do_not_vouch_for_themselves(tmp_path):
+    """Kalabakan: only shops OpenStreetMap found (name or address) say where a district's shops
+    are. The four wrong '91000 TAWAU' rows are 77 km from where the shops OpenStreetMap found with
+    91000 are: they move to Tawau before any search (and stay there after the retry)."""
+    pc, data, cache, dcache = kalabakan_files(tmp_path)
     d = gp.Districts(read_rows(dcache), geocoder(Fake()), read_rows(cache))
     assert d.references("Sabah", "Kalabakan") == [KALABAKAN]   # not the median of the wrong rows
-    gp.run(data, cache, dcache, geocoder(Fake()), postcodes_path=pc, today=TODAY)
+    st = gp.run(data, cache, dcache, geocoder(Fake()), postcodes_path=pc, today=TODAY)
+    assert st["corrected_offline"] == 4
     rows = read_rows(cache)
-    for code in ("2641", "17634", "17849", "17853", "2637"):
+    for code in ("2641", "17634", "17849", "17853"):
         r = rows[code]
         assert (r["precision"], r["tries"]) == ("postcode", "1"), code
         assert gp.km(float(r["lat"]), float(r["lon"]), *TAWAU) < 0.1, code
+    # "91007 TAWAU" is strong evidence too, but no found shop vouches for 91007's GeoNames point,
+    # and it is 60 km from the centre; "MEROTAI BESAR, TAWAU": a town alone is weak, and that far.
+    for code in ("2637", "17280"):
+        assert rows[code]["precision"] == "district"
+        assert gp.km(float(rows[code]["lat"]), float(rows[code]["lon"]), *KALABAKAN) < 0.1
     assert rows["2637"]["postcode"] == "91007"
-    # "MEROTAI BESAR, TAWAU": a town alone is weak, and Tawau is 60 km from the centre.
-    assert rows["17280"]["precision"] == "district"
-    assert gp.km(float(rows["17280"]["lat"]), float(rows["17280"]["lon"]), *KALABAKAN) < 0.1
     assert rows["21963"]["precision"] == "address"   # found by OpenStreetMap: not retried
+
+
+def test_far_rows_from_strong_evidence_do_not_move_the_search_box(tmp_path):
+    """After the retry moved the Kalabakan rows to Tawau ('91000 TAWAU', strong, 60 km from the
+    centre), a Kalabakan shop with no postcode or town is still searched around the district's own
+    point, not in Tawau. Rows named after the district ('98700 LIMBANG') still move the search."""
+    pc, data, cache, dcache = kalabakan_files(tmp_path)
+    gp.run(data, cache, dcache, geocoder(Fake()), postcodes_path=pc, today=TODAY)
+    assert sum(read_rows(cache)[str(c)]["precision"] == "postcode" for c, *_ in KALABAKAN_SHOPS) == 4
+    later = gp.Districts(read_rows(dcache), geocoder(Fake()), read_rows(cache), gp.Places.load(pc))
+    assert later.centre("Sabah", "Kalabakan") == KALABAKAN
+    data2 = write_build(tmp_path / "data2", {("Sabah", "Kalabakan"): [(30001, "KEDAI LUASONG", "KAMPUNG LUASONG, KALABAKAN")]})
+    fake = Fake()
+    gp.run(data2, cache, dcache, geocoder(fake), postcodes_path=pc, today=TODAY)
+    assert {c["viewbox"] for c in fake.calls} == {gp.viewbox(*KALABAKAN, 0.3)}
+    row = read_rows(cache)["30001"]
+    assert row["precision"] == "district" and gp.km(float(row["lat"]), float(row["lon"]), *KALABAKAN) < 0.1
+    # Limbang: postcode rows at the town, 38 km from the middle point; GeoNames names 98700 LIMBANG.
+    places = gp.Places(fpc.parse(KB_TXT))
+    rows = {c: cache_row(c, 4.69, 114.98 + c / 1000, "postcode", district="Limbang", state="Sarawak", query="98700")
+            for c in (9, 10)}
+    rows[11] = cache_row(11, 4.70, 114.99, "town", district="Limbang", state="Sarawak", query="Limbang")
+    lb = gp.Districts({"Sarawak|Limbang": {"key": "Sarawak|Limbang", "lat": "4.352", "lon": "115.060"}},
+                      geocoder(Fake()), rows, places)
+    assert lb.centre("Sarawak", "Limbang") == pytest.approx((4.69, 114.99))
+    # A far postcode row whose place is another town does not count, nor one GeoNames does not know.
+    rows = {c: {**r, "query": "81100"} for c, r in rows.items() if c != 11}
+    lb = gp.Districts({"Sarawak|Limbang": {"key": "Sarawak|Limbang", "lat": "4.352", "lon": "115.060"}},
+                      geocoder(Fake()), rows, places)
+    assert lb.centre("Sarawak", "Limbang") == (4.352, 115.06)
+
+
+LIMBANG_SHOPS = [(2831, "CHOON CHEONG", "LOT 2230-2231, LIMBANG TOWN DISTRICT JALAN PANDARUAN,98700 LIMBANG,"),
+                 (2846, "LBG SOON SENG", "LOT 2117, 2118 & 2119, JALAN BANGKITA,98700 LIMBANG,SARAWAK.,"),
+                 (21545, "CHOON CHEONG 2", "LOT NO 61-62,BANK STREET,")]
+LIMBANG_CENTRE, LIMBANG_V1 = (4.351998, 115.060242), (4.689833, 114.977808)
+
+
+def test_without_a_table_old_postcode_rows_are_never_judged_wrong(tmp_path):
+    """Limbang: OpenStreetMap found none of its shops and its centre is in the middle of the
+    district, 38 km from the first run's postcode rows at the town. Without the GeoNames table
+    nothing new contradicts those rows, so a retry keeps them. With it they keep their point too:
+    their place is named after the district, and GeoNames' own point is no reason to move them."""
+    data = write_build(tmp_path / "data", {("Sarawak", "Limbang"): LIMBANG_SHOPS})
+    v1 = [cache_row(c, *LIMBANG_V1, "postcode", district="Limbang", state="Sarawak", query="98700", postcode="98700")
+          for c, *_ in LIMBANG_SHOPS[:2]]
+    v1.append(cache_row(21545, *LIMBANG_CENTRE, "district", district="Limbang", state="Sarawak"))
+    dcache_rows = [{"key": "Sarawak|Limbang", "lat": str(LIMBANG_CENTRE[0]), "lon": str(LIMBANG_CENTRE[1])}]
+    assert gp.km(*LIMBANG_V1, *LIMBANG_CENTRE) > gp.CHECK_KM
+    for table in (None, KB_TXT):   # KB_TXT has 98700 Limbang at the town
+        work = tmp_path / ("no_table" if table is None else "table")
+        work.mkdir()
+        cache = write_csv(work / "premise_geo.csv", gp.FIELDS[:8], v1)
+        dcache = write_csv(work / "district_geo.csv", ["key", "lat", "lon"], dcache_rows)
+        pc = write_postcodes(work / "postcodes_my.csv", table) if table else None
+        fake = Fake()
+        gp.run(data, cache, dcache, geocoder(fake), postcodes_path=pc, today=TODAY)
+        rows = read_rows(cache)
+        for c, *_ in LIMBANG_SHOPS[:2]:
+            r = rows[str(c)]
+            assert (r["precision"], r["tries"]) == ("postcode", "1"), (table is None, c)
+            assert gp.km(float(r["lat"]), float(r["lon"]), *LIMBANG_V1) < 0.1, (table is None, c)
+        # The shop with no postcode is searched at the town: the rows whose address names Limbang
+        # right after the postcode ("98700 LIMBANG") place the search, with the table or without.
+        r = rows["21545"]
+        assert r["precision"] == "district" and gp.km(float(r["lat"]), float(r["lon"]), *LIMBANG_V1) < 0.1, table
+        assert {c["viewbox"] for c in fake.calls if c["q"].startswith("CHOON CHEONG 2")} == {
+            gp.viewbox(*LIMBANG_V1, 0.3)}, table
+
+
+# Rows of the real GeoNames table (2026-11-16) far from their towns: 98700 is 81 km from Limbang
+# town, 85300 60 km from Labis, the 'Seri Manjung' row 47 km from Seri Manjung, 97100 76 km from
+# Sebauh. The first run's points for these shops came from OpenStreetMap.
+REAL_FAR_TXT = "\n".join("\t".join(["MY", pc, place, st, "", "", "", "", "", lat, lon, "3"]) for pc, place, st, lat, lon in [
+    ("98700", "Limbang", "Sarawak", "4.1371", "114.6005"), ("98707", "Limbang", "Sarawak", "4.3466", "115.1836"),
+    ("85000", "Segamat", "Johor", "2.3134", "102.9786"), ("85300", "Labis", "Johor", "2.2604", "103.5458"),
+    ("32040", "Seri Manjong", "Perak", "4.2200", "100.7541"), ("32040", "Seri Manjung", "Perak", "4.6020", "100.7979"),
+    ("97100", "Sebauh", "Sarawak", "2.7811", "112.6702"), ("97007", "Bintulu", "Sarawak", "3.1906", "113.0901")])
+LABIS_V1, SEGAMAT_CENTRE = (2.404107, 103.014033), (2.492210, 102.844922)
+
+
+def test_a_retry_keeps_old_points_that_only_geonames_disputes(tmp_path):
+    """Real Limbang and Labis shops, two runs 30 days apart, OpenStreetMap finds nothing. Their
+    first-run postcode points are 7 km from Limbang town and 2 km from Labis; GeoNames puts 98700
+    and 85300 81 and 60 km from those towns. The rows keep their points, and Limbang's search box
+    stays at its town."""
+    pc = write_postcodes(tmp_path / "postcodes_my.csv", REAL_FAR_TXT)
+    limbang = [(2831, "CHOON CHEONG", "LOT 2230-2231, LIMBANG TOWN DISTRICT JALAN PANDARUAN, P.O BOX 162,98700 LIMBANG, SARAWAK.,"),
+               (4666, "TAMU CINA LIMBANG", "MALAYAN BANKING STREET,98700, LIMBANG,SARAWAK."),
+               (17426, "THE PLACE", "LOT NO 2186-B1-2, B1-3,ASEMENT LIMBANG PLAZA,98700 LIMBANG, SARAWAK.")]
+    district_only = [(21544, "MK HYPERMART", "LOT 2266-2274, GROUND FLOOR LAKIL SHOPHOUSE,,JALAN MUHIBBAH,"),
+                     (21547, "HAPPY MART", "LOT 17-18, GROUND FLOOR,JALAN MERDEKA,")]
+    labis = [(1139, "PASAR AWAM LABIS", "PASAR AWAM LABIS,JLN TENANG,85300 LABIS, JOHOR."),
+             (17162, "PASARAYA DENWAY", "NO. 1,3,5,7,9,11,13,15,17 JALAN HIJAU ,TAMAN BANDAR JAYA,85300 LABIS, JOHOR.")]
+    data = write_build(tmp_path / "data", {("Sarawak", "Limbang"): limbang + district_only, ("Johor", "Segamat"): labis})
+    v1 = [cache_row(c, *LIMBANG_V1, "postcode", district="Limbang", state="Sarawak", query="98700", postcode="98700")
+          for c, *_ in limbang]
+    v1 += [cache_row(c, *LIMBANG_CENTRE, "district", district="Limbang", state="Sarawak") for c, *_ in district_only]
+    v1 += [cache_row(c, *LABIS_V1, "postcode", district="Segamat", state="Johor", query="85300", postcode="85300")
+           for c, *_ in labis]
+    cache = write_csv(tmp_path / "premise_geo.csv", gp.FIELDS[:8], v1)
+    dcache = write_csv(tmp_path / "district_geo.csv", ["key", "lat", "lon"],
+                       [{"key": "Sarawak|Limbang", "lat": str(LIMBANG_CENTRE[0]), "lon": str(LIMBANG_CENTRE[1])},
+                        {"key": "Johor|Segamat", "lat": str(SEGAMAT_CENTRE[0]), "lon": str(SEGAMAT_CENTRE[1])}])
+    places = gp.Places.load(pc)
+    assert gp.km(*places.postcode("98700"), *LIMBANG_V1) > 70 and gp.km(*places.postcode("85300"), *LABIS_V1) > 55
+    for day, tries in (("2026-11-16", "1"), ("2026-12-16", "2")):
+        fake = Fake()
+        gp.run(data, cache, dcache, geocoder(fake), postcodes_path=pc, today=day)
+        rows = read_rows(cache)
+        for c, *_ in limbang + labis:
+            r = rows[str(c)]
+            want = LIMBANG_V1 if r["district"] == "Limbang" else LABIS_V1
+            assert (r["precision"], r["tries"]) == ("postcode", tries), (day, c)
+            assert gp.km(float(r["lat"]), float(r["lon"]), *want) < 0.1, (day, c)
+        for c, *_ in district_only:   # searched, and saved, at the town (the rows named after it)
+            r = rows[str(c)]
+            assert r["precision"] == "district" and gp.km(float(r["lat"]), float(r["lon"]), *LIMBANG_V1) < 0.1
+        limbang_boxes = {x["viewbox"] for x in fake.calls if "viewbox" in x and "LIMBANG" not in x["q"]
+                         and x["q"].split(",")[0] in {n for _, n, _ in limbang + district_only}}
+        assert limbang_boxes == {gp.viewbox(*LIMBANG_V1, 0.3)}, day
+
+
+def test_found_shops_place_towns_and_postcodes_before_geonames(tmp_path):
+    """No time for searches (geo_minutes 0). Seri Manjung: GeoNames' 'Seri Manjung' row is 47 km
+    from the town, where five shops OpenStreetMap found that name it are; a 'location unknown'
+    shop of the town gets their median. Sebauh: GeoNames puts 97100 and Sebauh 76 km from the town,
+    and nothing vouches for that point; Bintulu, written after Sebauh, is the division, not where
+    the shop is. So the Sebauh shop stays 'location unknown' (at its district's centre, by the town)."""
+    pc = write_postcodes(tmp_path / "postcodes_my.csv", REAL_FAR_TXT)
+    manjung_found = [(5360, "PASAR AWAM SERI MANJUNG", "32040 SERI MANJUNG,PERAK,", (4.198096, 100.669201)),
+                     (18123, "99 SPEEDMART SERI MANJUNG", "NO. 66 & 67 (G), PERSIARAN 2B, FASA 2B,32040 SERI MANJUNG,PERAK.",
+                      (4.201667, 100.660036)),
+                     (21375, "PASARAYA BSK", "NO 594-598, LORONG KURAU 3, TAMAN SAMUDERA,,SERI MANJUNG,", (4.203373, 100.660689)),
+                     (21386, "PCK FRESHMART", "NO 385, TAMAN SAMUDERA,,SERI MANJUNG,", (4.203995, 100.662435))]
+    bintulu_found = [(30200 + i, f"KEDAI BINTULU {i}", f"NO {i}, JALAN TUN AHMAD ZAIDI, BINTULU", (3.17 + i / 1000, 113.04))
+                     for i in range(2)]
+    data = write_build(tmp_path / "data", {
+        ("Perak", "Manjung"): [(c, n, a) for c, n, a, _ in manjung_found] + [
+            (21378, "SEGI CASH & CARRY", "NO 11 -13G, JALAN SM 1C/15, FASA 1C4,,BANDAR BARU, SERI MANJUNG,"),
+            (16087, "AEON SERI MANJUNG", "PUSAT PERNIAGAAN MANJUNG POINT 3,32040 SERI MANJUNG, PERAK")],
+        ("Sarawak", "Sebauh"): [(4169, "LAU LIONG KEE", "NO. 48-49,MAIN BAZAAR,97100 SEBAUH,BINTULU,SARAWAK,")],
+        ("Sarawak", "Bintulu"): [(c, n, a) for c, n, a, _ in bintulu_found]})
+    manjung_centre, sebauh_centre = (4.334761, 100.634266), (3.108935, 113.269243)
+    rows = [cache_row(c, *p, "name", district="Manjung", state="Perak") for c, _, _, p in manjung_found]
+    rows += [cache_row(21378, *manjung_centre, "district", district="Manjung", state="Perak", tries=2, last="2026-11-01"),
+             cache_row(16087, 4.197879, 100.664847, "postcode", district="Manjung", state="Perak", query="32040"),
+             cache_row(4169, *sebauh_centre, "district", district="Sebauh", state="Sarawak", tries=2, last="2026-11-01")]
+    rows += [cache_row(c, *p, "name", district="Bintulu", state="Sarawak") for c, _, _, p in bintulu_found]
+    cache = write_csv(tmp_path / "premise_geo.csv", gp.FIELDS, rows)
+    dcache = write_csv(tmp_path / "district_geo.csv", ["key", "lat", "lon"], [
+        {"key": "Perak|Manjung", "lat": str(manjung_centre[0]), "lon": str(manjung_centre[1])},
+        {"key": "Sarawak|Sebauh", "lat": str(sebauh_centre[0]), "lon": str(sebauh_centre[1])},
+        {"key": "Sarawak|Bintulu", "lat": "3.187426", "lon": "113.047280"}])
+    fake = Fake()
+    st = gp.run(data, cache, dcache, gp.Geocoder(fetch=fake, delay=0, max_minutes=0), postcodes_path=pc, today=TODAY)
+    assert fake.calls == [] and st["upgraded_offline"] == 1
+    after = read_rows(cache)
+    found_median = (4.2025, 100.661563)   # of the four shops that name SERI MANJUNG
+    r = after["21378"]
+    assert (r["precision"], r["query"], r["tries"]) == ("town", "Seri Manjung", "2")
+    assert gp.km(float(r["lat"]), float(r["lon"]), *found_median) < 0.1
+    assert gp.km(4.602, 100.7979, *found_median) > 45   # GeoNames' point
+    # The first run's postcode point agrees with the found shops: kept.
+    assert (after["16087"]["lat"], after["16087"]["lon"]) == ("4.197879", "100.664847")
+    r = after["4169"]
+    assert (r["precision"], r["lat"], r["lon"]) == ("district", f"{sebauh_centre[0]:.6f}", f"{sebauh_centre[1]:.6f}")
+    places = gp.Places.load(pc)
+    assert gp.km(*places.postcode("97100"), *sebauh_centre) > 70
+
+
+def test_a_district_s_own_town_needs_found_shops_or_to_be_near():
+    """GeoNames often puts a district's own town (and its postcode) in the middle of the postcode's
+    wide area: with only that point, it counts within GUESS_KM (15 km) of where the district's
+    shops are. Another town, or a postcode whose place is another town, still counts within 35 km."""
+    places = gp.Places(fpc.parse(REAL_FAR_TXT))
+    assert gp.km(*places.postcode("85000"), *SEGAMAT_CENTRE) == pytest.approx(24.8, abs=0.2)
+    for district in ("Segamat", "Labis"):
+        own = district == "Segamat"
+        assert (places.postcode_anchor(["85000"], "Johor", [SEGAMAT_CENTRE], "85000 SEGAMAT", district=district)
+                is None) is own, district
+        assert (places.town_anchors("NO 1, SEGAMAT", "Johor", [SEGAMAT_CENTRE], district) == []) is own, district
+    # Within 15 km it counts; vouched by found shops, 35 km (and 80 km for strong evidence).
+    near = (2.40, 102.92)
+    assert gp.km(*places.postcode("85000"), *near) < gp.GUESS_KM
+    assert places.postcode_anchor(["85000"], "Johor", [near], "85000 SEGAMAT", district="Segamat")[0] == "85000"
+    places.learn([({"state": "Johor", "district": "Segamat", "address": f"NO {i}, 85000 SEGAMAT"}, (2.5148, 102.8158 + i / 1000))
+                  for i in (1, 2)])
+    assert places.postcode_anchor(["85000"], "Johor", [SEGAMAT_CENTRE], "85000 SEGAMAT", district="Segamat") == (
+        "85000", pytest.approx((2.5148, 102.8173)), True)
+    assert places.town_anchors("NO 1, SEGAMAT", "Johor", [SEGAMAT_CENTRE], "Segamat")[0][0] == "Segamat"
 
 
 CYBER_TXT = "\n".join("\t".join(r) for r in [
@@ -696,6 +978,145 @@ def test_cyberjaya_and_kl_shops_may_use_selangor_places():
         assert gp.anchor_for({**kch, "address": address}, places, d)["kind"] == "district"
 
 
+# Kuching's district (its shops and town) and Kota Samarahan, for route names.
+SAMARAHAN_TXT = CYBER_TXT + "\n" + "MY\t94300\tKota Samarahan\tSarawak\t13\t\t\t\t\t1.4600\t110.4900\t4"
+
+
+def test_abbreviated_routes_are_not_towns():
+    """'KM 12 KUCHING-SAMARAHAN ROAD': SAMARAHAN is not a GeoNames place on its own and no street
+    word comes first, but the road word, the milestone and the end of KOTA SAMARAHAN each make it a
+    route, so Kuching is not where a Kota Samarahan shop is."""
+    places = gp.Places(fpc.parse(SAMARAHAN_TXT))
+    d = gp.Districts({k: {"key": k, "lat": str(p[0]), "lon": str(p[1])} for k, p in {
+        "Sarawak|Kota Samarahan": (1.4637, 110.4891), "W.P. Putrajaya|Cyberjaya": (2.914883, 101.669659)}.items()},
+        geocoder(Fake()), {}, places)
+    assert gp.km(1.5535, 110.3593, 1.4637, 110.4891) < gp.CHECK_KM   # near enough to pass the checks
+
+    def names(address):
+        return [n for n, _ in places.towns_in(address, "Sarawak")]
+
+    samarahan = {"premise_code": "1", "premise": "KEDAI", "state": "Sarawak", "district": "Kota Samarahan"}
+    for address in ("KM 12 KUCHING-SAMARAHAN ROAD", "BATU 10, KUCHING-SAMARAHAN EXPRESSWAY"):
+        assert names(address) == [], address
+        assert gp.anchor_for({**samarahan, "address": address}, places, d)["kind"] == "district", address
+    # Each rule on its own (BAU and MERANTI are not in this table):
+    for address in ("KUCHING-BAU ROAD", "SERIAN-BAU HIGHWAY", "KUCHING-BAU BY-PASS",        # a road word follows
+                    "KM 12 KUCHING-BAU", "BATU 4 1/2, KUCHING - BAU", "MILE 7 KUCHING-BAU",  # a milestone before
+                    "10 MILE KUCHING - BAU",
+                    "KUCHING-KCH", "KCH-SERIAN, TAMAN X", "SERIAN - KL",                    # a town written short
+                    "KUCHING-SAMARAHAN, TAMAN X", "SAMARAHAN-SERIAN, TAMAN X"):             # the end of a name
+        assert names(address) == [], address
+    # Not routes: a shop name, a number, a word that is none of these, or a dash with a town on
+    # the right of a non-place (the town on the left of a dash is not always a road either).
+    assert names("STAR GROCER CYBERSQUARE - KUCHING") == ["Kuching"]
+    assert names("SEKSYEN 13-SERIAN") == ["Serian"] and names("KAMPUNG MERANTI-SERIAN") == ["Serian"]
+    assert names("SERIAN - KOMPLEKS MERANTI, TAMAN X") == ["Serian"]
+    assert names("KUCHING-MERANTI, TAMAN X") == ["Kuching"] and names("SRI-SERIAN") == ["Serian"]
+    star = {"premise_code": "2", "premise": "STAR GROCER", "state": "W.P. Putrajaya", "district": "Cyberjaya",
+            "address": "Star Grocer Cybersquare - Cyberjaya,,Jalan Teknokrat 6,Cyber 5,"}
+    assert (gp.anchor_for(star, places, d)["kind"], gp.anchor_for(star, places, d)["label"]) == ("town", "Cyberjaya")
+
+
+def test_common_words_and_state_names_are_not_route_ends():
+    """Only a word that ends a single GeoNames name and is in no other (SAMARAHAN) stands for that
+    town in a route. JAYA, BARU and BESAR end several names, KEDAH and PERLIS are states, MALAYSIA
+    the country: ordinary address words. A milestone makes a route only right before a town at the
+    dash ("KM 12 KUCHING-..."), not before other words ("KM 5, TAMAN SERI-MACHANG")."""
+    p = gp.Places(fpc.parse("\n".join("\t".join(["MY", pc, place, st, "", "", "", "", "", lat, lon, "3"])
+                                      for pc, place, st, lat, lon in [
+        ("06000", "Jitra", "Kedah", "6.2675", "100.4210"), ("06600", "Kuala Kedah", "Kedah", "6.1000", "100.3000"),
+        ("06010", "Universiti Utara Malaysia", "Kedah", "6.4600", "100.5000"),
+        ("06100", "Bukit Besar", "Kedah", "6.0000", "100.5000"),
+        ("18500", "Machang", "Kelantan", "5.7667", "102.2167"), ("16300", "Bachok", "Kelantan", "6.0670", "102.3960"),
+        ("16600", "Kuala Besar", "Kelantan", "6.2000", "102.3000"),
+        ("01000", "Kangar", "Perlis", "6.4414", "100.1986"), ("02000", "Kuala Perlis", "Perlis", "6.4000", "100.1300"),
+        ("46000", "Petaling Jaya", "Selangor", "3.1000", "101.6000"), ("47500", "Subang Jaya", "Selangor", "3.0500", "101.5800"),
+        ("50300", "Kampung Baru", "Selangor", "3.1600", "101.7000"), ("44000", "Kubu Baru", "Selangor", "3.5600", "101.6600")])))
+
+    def names(address, state):
+        return [n for n, _ in p.towns_in(address, state)]
+
+    for address, state, town in (("NO 5, TAMAN SRI JAYA-JITRA", "Kedah", "Jitra"),
+                                 ("NO 5, TAMAN SEJAHTERA, JITRA-KEDAH", "Kedah", "Jitra"),
+                                 ("LOT 5, JITRA - MALAYSIA", "Kedah", "Jitra"), ("JITRA-BARU", "Kedah", "Jitra"),
+                                 ("PASAR BESAR - MACHANG", "Kelantan", "Machang"),
+                                 ("KM 5, TAMAN SERI-MACHANG", "Kelantan", "Machang"),
+                                 ("KEDAI BARU - BACHOK", "Kelantan", "Bachok"),
+                                 ("NO 1, PUSAT BANDAR BARU-KANGAR", "Perlis", "Kangar"),
+                                 ("NO 1, KANGAR-PERLIS", "Perlis", "Kangar")):
+        assert names(address, state) == [town], address
+    # Still routes: a milestone right before a town at the dash, also one of two words.
+    for address in ("KM 5 JITRA-ALOR", "BATU 3, JITRA - ALOR", "KM 5 KUALA KEDAH-ALOR, TAMAN X"):
+        assert names(address, "Kedah") == [], address
+
+
+def test_a_town_after_a_road_town_is_part_of_the_road():
+    """Shop 21890 is at Batu 17 of the Kuching-Serian road, far from Serian town."""
+    places = gp.Places(fpc.parse(SAMARAHAN_TXT))
+
+    def names(address):
+        return [n for n, _ in places.towns_in(address, "Sarawak")]
+
+    for address in ("BATU 17, JLN KUCHING SERIAN", "NO. 9-18, GOLDEN SQUARE BATU 17,,JLN KUCHING /SERIAN,,",
+                    "JALAN KUCHING - SERIAN, TAMAN X", "JALAN KOTA SAMARAHAN KUCHING SERIAN"):
+        assert names(address) == [], address
+    assert names("JALAN BESAR, SERIAN") == ["Serian"] and names("JLN KUCHING, SERIAN") == ["Serian"]
+    assert names("JALAN MERANTI SERIAN") == ["Serian"]   # MERANTI is no place: an ordinary road name
+    assert names("JLN KUCHING SERIAN, SERIAN") == ["Serian"]   # written again on its own
+
+
+def test_a_name_written_as_one_word_matches():
+    """GEORGETOWN is GeoNames' George Town; the other checks still apply."""
+    pg = gp.Places(fpc.parse(STATES_TXT + "\n" + "\n".join("\t".join(r) for r in [
+        ["MY", "10050", "George Town", "Pulau Pinang", "07", "", "", "", "", "5.4141", "100.3288", "4"],
+        ["MY", "11500", "Sg Ara", "Pulau Pinang", "07", "", "", "", "", "5.3270", "100.2740", "4"],
+        ["MY", "13000", "Butterworth", "Pulau Pinang", "07", "", "", "", "", "5.3991", "100.3638", "4"]])))
+    d = gp.Districts({k: {"key": k, "lat": str(p[0]), "lon": str(p[1])} for k, p in {
+        "Pulau Pinang|Timur Laut": (5.41, 100.33), "Pulau Pinang|Barat Daya": (5.33, 100.27),
+        f"{KL}|Bukit Bintang": (3.147, 101.711)}.items()}, geocoder(Fake()), {}, pg)
+
+    def anchor(district, address):
+        a = gp.anchor_for({"premise_code": "1", "premise": "KEDAI", "state": "Pulau Pinang", "district": district,
+                           "address": address}, pg, d)
+        return a["kind"], a["label"]
+
+    assert anchor("Timur Laut", "42B-G-9, SRI SAUJANA, GAT LEBUH MACALLUM,GEORGETOWN, PULAU PINANG,") == (
+        "town", "George Town")
+    assert anchor("Timur Laut", "NO 1, GEORGE TOWN") == ("town", "George Town")
+    assert anchor("Barat Daya", "NO 1, SG ARA") == ("town", "Sg Ara")
+    assert anchor("Barat Daya", "NO 1, SGARA")[0] == "district"                    # 5 letters: too short
+    assert anchor("Timur Laut", "NO 1, PULAUPINANG")[0] == "district"              # still the state's name
+    assert anchor("Timur Laut", "JALAN GEORGETOWN, KAMPUNG X")[0] == "district"    # still a road name
+    assert [n for n, _ in pg.towns_in("GEORGETOWN-BUTTERWORTH, TAMAN X", "Pulau Pinang")] == []   # a route
+    assert anchor("Timur Laut", "NO 1, GEORGETOWN, KUALA LUMPUR") == ("town", "George Town")
+    kl = {"premise_code": "1", "premise": "KEDAI", "state": KL, "district": "Bukit Bintang"}
+    assert gp.anchor_for({**kl, "address": "NO 1, GEORGETOWN"}, pg, d)["kind"] == "district"   # another state
+
+
+def test_george_town_is_the_pulau_pinang_rows_of_its_postcodes():
+    """The real GeoNames table has no 'George Town': its postcodes 10000-10990 are named after the
+    state, 'Pulau Pinang' (real shops 21359 and 22026: '...GEORGETOWN, PULAU PINANG')."""
+    rows = [("10050", 5.4170, 100.3300), ("10200", 5.4120, 100.3340), ("10400", 5.4300, 100.3150),
+            ("11400", 5.4083, 100.3086)]   # 11400 is Ayer Itam's, under the same name
+    real = gp.Places(fpc.parse("\n".join(
+        [f"MY\t{pc}\tPulau Pinang\tPulau Pinang\t07\t\t\t\t\t{lat}\t{lon}\t3" for pc, lat, lon in rows] +
+        ["MY\t13000\tButterworth\tPulau Pinang\t07\t\t\t\t\t5.3991\t100.3638\t3"])))
+    d = gp.Districts({"Pulau Pinang|Timur Laut": {"key": "Pulau Pinang|Timur Laut", "lat": "5.41", "lon": "100.33"}},
+                     geocoder(Fake()), {}, real)
+    shop = {"premise_code": "21359", "premise": "KEDAI", "state": "Pulau Pinang", "district": "Timur Laut"}
+    george_town = (5.419667, 100.326333)   # the average of the three 10xxx rows
+    for address in ("42B-G-9, SRI SAUJANA, GAT LEBUH MACALLUM,GEORGETOWN, PULAU PINANG,", "NO 1, GEORGE TOWN"):
+        a = gp.anchor_for({**shop, "address": address}, real, d)
+        assert (a["kind"], a["label"]) == ("town", "George Town"), address
+        assert a["point"] == pytest.approx(george_town)
+    # The state's own name is still not a town, nor a road named after George Town.
+    for address in ("NO 5, LEBUH CHULIA, PULAU PINANG", "JALAN GEORGETOWN, KAMPUNG X"):
+        assert gp.anchor_for({**shop, "address": address}, real, d)["kind"] == "district", address
+    # A table with its own George Town rows uses them.
+    own = gp.Places(fpc.parse(STATES_TXT + "\nMY\t10050\tGeorge Town\tPulau Pinang\t07\t\t\t\t\t5.4141\t100.3288\t4"))
+    assert own.town("NO 1, GEORGETOWN", "Pulau Pinang") == ("George Town", (5.4141, 100.3288))
+
+
 STATES_TXT = "\n".join("\t".join(r) for r in [
     ["MY", "75000", "Melaka", "Melaka", "04", "", "", "", "", "2.1960", "102.2480", "4"],
     ["MY", "77000", "Jasin", "Melaka", "04", "", "", "", "", "2.3096", "102.4281", "4"],
@@ -729,6 +1150,89 @@ def test_the_state_name_is_not_a_town():
     assert anchor("W.P. Labuan", "W.P Labuan", "JALAN POHON BATU, LABUAN") == ("town", "Labuan")
     # A postcode is still a postcode: "75000 MELAKA" is Melaka city.
     assert anchor("Melaka", "Jasin", "NO 5, 75000 MELAKA") == ("postcode", "75000")
+
+
+def test_the_state_name_comes_after_every_other_town():
+    """In a district named after its state the state's name may be the town, but only when the
+    address names no other town: 'TAMAN TEKNOLOGI CHENG, MELAKA' is in Cheng, not Melaka city."""
+    tie = gp.Places(fpc.parse("\n".join("\t".join(r) for r in [
+        ["MY", "75000", "Melaka", "Melaka", "04", "", "", "", "", "2.1960", "102.2480", "4"],
+        ["MY", "75250", "Cheng", "Melaka", "04", "", "", "", "", "2.2700", "102.2000", "4"],
+        ["MY", "80400", "Johor", "Johor", "01", "", "", "", "", "1.4784", "103.7758", "4"],
+        ["MY", "81750", "Masai", "Johor", "01", "", "", "", "", "1.4900", "103.8780", "4"]])))
+    d = gp.Districts({k: {"key": k, "lat": str(p[0]), "lon": str(p[1])} for k, p in {
+        "Melaka|Melaka Tengah": (2.20, 102.25), "Johor|Johor Bahru": (1.4927, 103.7414)}.items()},
+        geocoder(Fake()), {}, tie)
+
+    def anchor(state, district, address):
+        a = gp.anchor_for({"premise_code": "1", "premise": "KEDAI", "state": state, "district": district,
+                           "address": address}, tie, d)
+        return a["kind"], a["label"]
+
+    assert anchor("Melaka", "Melaka Tengah", "NO.19395, JALAN TTC 26,TAMAN TEKNOLOGI CHENG,MELAKA,") == ("town", "Cheng")
+    assert anchor("Melaka", "Melaka Tengah", "MELAKA, TAMAN TEKNOLOGI CHENG") == ("town", "Cheng")
+    assert anchor("Johor", "Johor Bahru", "NO 5, JALAN X, MASAI, JOHOR") == ("town", "Masai")
+    assert anchor("Melaka", "Melaka Tengah", "NO 5, JALAN HANG TUAH, MELAKA") == ("town", "Melaka")
+    assert [n for n, _, _ in tie.town_hits("CHENG, MELAKA", "Melaka", "Melaka Tengah")] == ["Cheng", "Melaka"]
+
+
+def test_a_spread_town_uses_its_rows_near_the_district():
+    """A town name with GeoNames rows far apart (Kulai: rows 25 km apart in a table made from
+    addresses) names several places. Only its rows within 10 km of where the district's shops are
+    count, and only if they agree."""
+    def table(rows):
+        return gp.Places(fpc.parse("\n".join("\t".join(["MY", pc, "Kulai", "Johor", "01", "", "", "", "",
+                                                          str(lat), str(lon), "4"]) for pc, lat, lon in rows)))
+
+    near_a, near_b, far = [("81000", 1.66, 103.60), ("81010", 1.67, 103.61)], [("81020", 1.66, 103.82)], [
+        ("81900", 1.95, 103.90)]
+    assert gp.km(1.66, 103.60, 1.95, 103.90) > 45 and gp.km(1.66, 103.60, 1.66, 103.82) > 24
+    kulai = {"premise_code": "1", "premise": "KEDAI", "state": "Johor", "district": "Kulai",
+             "address": "NO 1, BANDAR PUTRA, KULAI"}
+
+    def anchor(table_rows, centre, cache=None):
+        p = table(table_rows)
+        d = gp.Districts({"Johor|Kulai": {"key": "Johor|Kulai", "lat": str(centre[0]), "lon": str(centre[1])}},
+                         geocoder(Fake()), cache or {}, p)
+        a = gp.anchor_for(kulai, p, d)
+        return a["kind"], a["point"]
+
+    kind, point = anchor(near_a + far, (1.66, 103.60))   # one group near the district: its median
+    assert kind == "town" and point == pytest.approx((1.665, 103.605))
+    # Two groups, each near one of the district's references (its centre, and shops OpenStreetMap
+    # found 24 km east): which one? Neither.
+    found = {c: cache_row(c, 1.66, 103.82 + c / 10000, "name", district="Kulai", state="Johor") for c in (5, 6)}
+    assert anchor(near_a + near_b, (1.66, 103.60), found)[0] == "district"
+    assert anchor(near_a + near_b, (1.66, 103.60))[0] == "town"          # only the centre: group A
+    assert anchor(near_a + far, (1.66, 103.72))[0] == "district"         # 13 km away: not near enough
+    assert anchor(far + [("81910", 2.20, 104.10)], (1.66, 103.60))[0] == "district"   # spread, none near
+    # No trusted centre and no shops found by OpenStreetMap: the search centre picks the rows.
+    shared = {"Johor|Kulai": {"key": "Johor|Kulai", "lat": "1.66", "lon": "103.60", "shared": "1"}}
+    p = table(near_a + far)
+    d = gp.Districts(shared, geocoder(Fake()), {}, p)
+    assert d.references("Johor", "Kulai") == [] and gp.anchor_for(kulai, p, d)["kind"] == "town"
+    # Without anything to judge by, a spread name is not a town (as before).
+    assert p.town("NO 1, KULAI", "Johor") is None
+
+
+def test_a_spread_town_comes_after_the_locality_written_with_it():
+    """Real shop 17734 in Lipis: 'JALAN LAMA LIPIS RAUB,BENTA, KUALA LIPIS,PAHANG.' Kuala Lipis's
+    GeoNames rows lie far apart (the postal town of a wide area); Benta is where the shop is."""
+    lipis = gp.Places(fpc.parse("\n".join("\t".join(["MY", pc, place, "Pahang", "06", "", "", "", "", lat, lon, "3"])
+                                          for pc, place, lat, lon in [
+        ("27200", "Kuala Lipis", "4.1800", "102.0500"), ("27210", "Kuala Lipis", "4.4500", "102.3000"),
+        ("27300", "Benta", "4.0167", "101.9667"), ("27600", "Raub", "3.7900", "101.8600")])))
+    centre = (4.15, 102.03)
+    d = gp.Districts({"Pahang|Lipis": {"key": "Pahang|Lipis", "lat": str(centre[0]), "lon": str(centre[1])}},
+                     geocoder(Fake()), {}, lipis)
+    shop = {"premise_code": "17734", "premise": "PASARAYA MEMPAGA FRESH BENTA", "state": "Pahang", "district": "Lipis"}
+    address = "JALAN LAMA LIPIS RAUB,BENTA, KUALA LIPIS,PAHANG."
+    assert [n for n, _, _ in lipis.town_hits(address, "Pahang", "Lipis", [centre])] == ["Benta", "Raub", "Kuala Lipis"]
+    a = gp.anchor_for({**shop, "address": address}, lipis, d)
+    assert (a["kind"], a["label"]) == ("town", "Benta")
+    # Alone, the spread name still counts (its rows near the district).
+    a = gp.anchor_for({**shop, "address": "NO 1, KUALA LIPIS, PAHANG"}, lipis, d)
+    assert (a["kind"], a["label"], a["point"]) == ("town", "Kuala Lipis", (4.18, 102.05))
 
 
 def test_acceptance_radius_and_search_box(places):
@@ -828,9 +1332,10 @@ def test_errors_are_never_cached_as_results(tmp_path):
     # New shop: the offline postcode point, tries 0, so the next run looks it up again.
     assert rows["1"]["precision"] == "postcode" and rows["1"]["tries"] == "0" and rows["1"]["last_tried"] == ""
     assert float(rows["1"]["lat"]) == pytest.approx(3.212)
-    # Cached shop: exactly what it had.
-    assert rows["2"] == old
-    assert st["offline"] == 1 and st["kept"] == 1 and st["errors"] == 2
+    # Cached shop: what it had. The error changes nothing (tries 0, never tried); only the offline
+    # anchor every run gives a district row (KEPONG is a checked town) is there, from before the search.
+    assert rows["2"] == {**old, "precision": "town", "lat": "3.210000", "lon": "101.640000", "query": "Kepong"}
+    assert st["offline"] == 1 and st["kept"] == 1 and st["errors"] == 2 and st["upgraded_offline"] == 1
     # Next run, Nominatim works: both are looked up properly.
     shop_pt = (3.2147, 101.6439)
     fake = Fake({"AEON BIG ( KEPONG ), Kepong": shop_pt})
@@ -872,6 +1377,54 @@ def test_time_budget_stops_calls(tmp_path):
     assert rows["1"]["tries"] == "1"                                # 3 calls, all answered
     assert all(rows[str(i)]["tries"] == "0" for i in range(2, 11))  # skipped: never marked as tried
     assert rows["99"] == {**old, "tries": "0", "last_tried": ""}
+
+
+def test_offline_anchors_upgrade_district_rows_before_any_search(tmp_path):
+    """A run with no time for searches (geo_minutes 0) still gives a shop at district precision
+    its checked postcode or town. tries and last_tried stay, so OpenStreetMap is still asked on the
+    usual schedule. Rows already located, rows that fail the checks and shops not in the build are
+    not touched."""
+    pc = write_postcodes(tmp_path / "postcodes_my.csv", MY_TXT + "\n" + KB_TXT)
+    data = write_build(tmp_path / "data", {
+        (KL, "Kepong"): [(1, "KEDAI 1", "NO 5, JALAN METRO, 52100 KUALA LUMPUR"),     # a checked postcode
+                         (2, "KEDAI 2", "NO 6, JALAN METRO PRIMA, KEPONG"),             # a checked town
+                         (3, "KEDAI 3", "NO 7, JALAN ENAU, 81100 JOHOR BAHRU"),         # another state's
+                         (4, "KEDAI 4", "NO 8, JALAN 1"),                              # nothing to go on
+                         (5, "KEDAI 5", "NO 9, 52100 KUALA LUMPUR"),                  # found by name
+                         (6, "KEDAI 6", "NO 10, 52100 KEPONG"),                       # a town row
+                         (8, "KEDAI 8", "NO 12, KEPONG")],                            # no point
+        ("Kelantan", "Kota Bharu"): [(9, "KEDAI 9", "NO 1, KAMPUNG X, KUALA KRAI")]})   # 66 km: too far
+    rows = [cache_row(1, 3.2, 101.63, "district", tries=1, last="2026-11-01"),
+            cache_row(2, 3.2, 101.63, "district", tries=2, last="2026-10-01"),   # no more lookups due
+            cache_row(3, 3.2, 101.63, "district", tries=0, last=""),
+            cache_row(4, 3.2, 101.63, "district", tries=0, last=""),
+            cache_row(5, 3.205, 101.645, "name", tries=1, last="2026-11-01"),
+            cache_row(6, 3.215, 101.645, "town", tries=1, last="2026-11-01", query="Kepong Baru"),
+            {**cache_row(8, 0, 0, "district", tries=0, last=""), "lat": "", "lon": ""},
+            cache_row(9, *KB_CENTRE, "district", district="Kota Bharu", state="Kelantan", tries=0, last=""),
+            cache_row(7, 3.2, 101.63, "district", tries=0, last="")]           # not in the build
+    cache = write_csv(tmp_path / "premise_geo.csv", gp.FIELDS, rows)
+    dcache = write_csv(tmp_path / "district_geo.csv", ["key", "lat", "lon"],
+                       [{"key": f"{KL}|Kepong", "lat": "3.200000", "lon": "101.630000"},
+                        {"key": "Kelantan|Kota Bharu", "lat": str(KB_CENTRE[0]), "lon": str(KB_CENTRE[1])}])
+    fake = Fake()
+    st = gp.run(data, cache, dcache, gp.Geocoder(fetch=fake, delay=0, max_minutes=0), postcodes_path=pc, today=TODAY)
+    assert fake.calls == [] and st["requests"] == 0
+    after = read_rows(cache)
+    r1, r2, r8 = after["1"], after["2"], after["8"]
+    assert (r1["precision"], r1["query"], r1["postcode"], r1["tries"], r1["last_tried"]) == (
+        "postcode", "52100", "52100", "1", "2026-11-01")
+    assert (float(r1["lat"]), float(r1["lon"])) == pytest.approx((3.212, 101.643))
+    assert (r2["precision"], r2["query"], r2["tries"], r2["last_tried"]) == ("town", "Kepong", "2", "2026-10-01")
+    assert (r8["precision"], r8["query"], r8["tries"]) == ("town", "Kepong", "0")
+    for i, code in ((2, "3"), (3, "4"), (4, "5"), (5, "6"), (7, "9"), (8, "7")):
+        assert after[code] == {**rows[i], "postcode": after[code]["postcode"]}, code
+    assert st["upgraded_offline"] == 3
+    # The next run with time: the retry pass asks as usual, rows with no real location first.
+    fake = Fake()
+    st = gp.run(data, cache, dcache, geocoder(fake), postcodes_path=pc, today="2026-11-30")
+    assert shops_asked(fake) == ["KEDAI 3", "KEDAI 4", "KEDAI 9", "KEDAI 8", "KEDAI 6", "KEDAI 1"]
+    assert st["upgraded_offline"] == 0 and read_rows(cache)["1"]["tries"] == "2"
 
 
 def test_stats_count_only_shops_that_reached_nominatim(tmp_path):
@@ -925,6 +1478,88 @@ def test_retry_pass_order_and_limits(tmp_path):
     fake = Fake()
     gp.run(data, cache, dcache, geocoder(fake), today=TODAY)
     assert shops_asked(fake) == ["KEDAI 3"]
+
+
+def test_a_retry_keeps_an_old_point_for_the_same_postcode(tmp_path):
+    """OpenStreetMap finds nothing again. Today's anchor is the shop's own postcode at GeoNames'
+    point, 10 km from the old point (which came from OpenStreetMap): the old point stays. A shop
+    whose postcode changed (a lot number read as one before) gets today's anchor."""
+    old = [cache_row(1, 3.30, 101.643, "postcode", tries=0, last="", query="52100", postcode="52100"),
+           cache_row(2, 3.30, 101.643, "postcode", tries=0, last="", query="52109", postcode="52109")]
+    data, cache, dcache, pc = kepong(tmp_path, [(1, "KEDAI 1", "NO 1, JALAN 1, 52100 KUALA LUMPUR"),
+                                                (2, "KEDAI 2", "NO 2, JALAN 2, 52100 KUALA LUMPUR")], old)
+    places = gp.Places.load(pc)
+    assert gp.km(3.30, 101.643, *places.postcode("52100")) == pytest.approx(9.8, abs=0.1)
+    gp.run(data, cache, dcache, geocoder(Fake()), postcodes_path=pc, today=TODAY)
+    rows = read_rows(cache)
+    assert (rows["1"]["lat"], rows["1"]["query"], rows["1"]["tries"]) == ("3.300000", "52100", "1")
+    assert (rows["2"]["query"], rows["2"]["tries"]) == ("52100", "1")
+    assert (float(rows["2"]["lat"]), float(rows["2"]["lon"])) == pytest.approx(places.postcode("52100"))
+
+
+def test_found_shops_vouch_only_when_two_or_more_agree():
+    p = gp.Places(fpc.parse(MY_TXT))
+
+    def found(points):
+        return [({"state": KL, "district": "Kepong", "address": f"NO {i}, 52100 KEPONG"}, pt) for i, pt in enumerate(points)]
+
+    p.learn(found([(3.22, 101.65)]))                                   # one shop: no
+    assert p.vouched(KL, "postcode", "52100") is None and p.vouched(KL, "town", "Kepong") is None
+    p.learn(found([(3.22, 101.65), (3.23, 101.65)]))                   # two that agree: their median
+    assert p.vouched(KL, "postcode", "52100") == pytest.approx((3.225, 101.65))
+    assert p.vouched(KL, "town", "Kepong") == pytest.approx((3.225, 101.65))
+    assert p.vouched("Selangor", "postcode", "52100") is None          # per state
+    # Four shops, two of them together and two far apart: not most of them, so no.
+    p.learn(found([(3.22, 101.65), (3.23, 101.65), (3.60, 101.65), (2.90, 101.65)]))
+    assert p.vouched(KL, "postcode", "52100") is None
+    # Three of four together: the median of those three.
+    p.learn(found([(3.22, 101.65), (3.23, 101.65), (3.24, 101.65), (3.60, 101.65)]))
+    assert p.vouched(KL, "postcode", "52100") == pytest.approx((3.23, 101.65))
+
+
+def test_a_spread_town_uses_its_near_rows_before_found_shops():
+    """Jasin: GeoNames has 'Jasin' rows across the district (a postal town for a wide area), and the
+    two shops OpenStreetMap found that name JASIN are 14 km south of the town. The rows near the
+    district's shops place a Jasin shop; the found shops only when no row is near."""
+    p = gp.Places(fpc.parse("\n".join(["MY\t77000\tJasin\tMelaka\t04\t\t\t\t\t2.3100\t102.4300\t3",
+                                       "MY\t77300\tJasin\tMelaka\t04\t\t\t\t\t2.5500\t102.2500\t3"])))
+    p.learn([({"state": "Melaka", "district": "Jasin", "address": f"NO {i}, BANDAR JASIN, JASIN, MELAKA"}, pt)
+             for i, pt in enumerate([(2.15, 102.42), (2.21, 102.40)])])
+    assert ("melaka", "JASIN") in p.spread_towns and p.found_town[("melaka", "JASIN")] == pytest.approx((2.18, 102.41))
+    assert p.vouched("Melaka", "town", "Jasin") is None   # a spread name: its near rows come first
+    shop = {"premise_code": "21257", "premise": "HANTAI TRADING", "state": "Melaka", "district": "Jasin",
+            "address": "JC 2384 & JC 2385 TAMAN PERNIAGAAN JASIN,JASIN MELAKA,"}
+
+    def anchor(centre):
+        d = gp.Districts({"Melaka|Jasin": {"key": "Melaka|Jasin", "lat": str(centre[0]), "lon": str(centre[1])}},
+                         geocoder(Fake()), {}, p)
+        a = gp.anchor_for(shop, p, d)
+        return a["kind"], a["point"]
+
+    assert anchor((2.3058, 102.4223)) == ("town", (2.31, 102.43))              # the row near the district
+    assert anchor((2.17, 102.53)) == ("town", pytest.approx((2.18, 102.41)))  # no row near: the found shops
+
+
+def test_retries_are_due_more_than_20_days_after_the_last():
+    """A shop or a district point last asked exactly RETRY_DAYS (20) days ago is not due yet; one
+    asked 21 days ago is."""
+    assert TODAY == "2026-11-06"
+    shops = [{"premise_code": str(c), "state": KL, "district": "Kepong"} for c in (1, 2)]
+    cache = {"1": cache_row(1, 3.2, 101.63, "district", tries=1, last="2026-10-17"),   # 20 days ago
+             "2": cache_row(2, 3.2, 101.63, "district", tries=1, last="2026-10-16")}   # 21 days ago
+    assert [s["premise_code"] for s in gp.retry_queue(shops, cache, TODAY, 10)] == ["2"]
+    d = gp.Districts({}, geocoder(Fake()), {}, today=TODAY)
+    assert d._due({"last_tried": "2026-10-17"}) is False and d._due({"last_tried": "2026-10-16"}) is True
+
+
+def test_rows_upgraded_before_the_search_are_retried_after_the_district_rows(tmp_path):
+    """The offline pass makes shop 1 'town' (KEPONG in its address); it is then retried after the
+    shops still at district precision, in the same run."""
+    rows = [cache_row(1, 3.2, 101.63, "district", tries=0, last=""), cache_row(2, 3.2, 101.63, "district", tries=0, last="")]
+    data, cache, dcache, pc = kepong(tmp_path, [(1, "KEDAI 1", "NO 1, KEPONG"), (2, "KEDAI 2", "JALAN 2")], rows)
+    fake = Fake()
+    st = gp.run(data, cache, dcache, geocoder(fake), postcodes_path=pc, today=TODAY)
+    assert st["upgraded_offline"] == 1 and shops_asked(fake) == ["KEDAI 2", "KEDAI 1"]
 
 
 def test_retry_never_swaps_a_point_for_a_worse_one(tmp_path):
@@ -1072,7 +1707,7 @@ def test_a_district_answer_outside_its_state_is_not_used(tmp_path):
     assert ((float(lb["lat"]), float(lb["lon"])), lb["tries"], lb["shared"]) == (LABUAN, "1", "1")   # old point kept
     assert st["district_rejected"] == 2 and st["district_lookups"] == 3
     assert (float(d["W.P. Labuan|Kawasan Bandar"]["lat"]), d["W.P. Labuan|Kawasan Bandar"]["shared"]) == (5.29, "")
-    assert (d["Perlis|Kangar"]["lat"], d["Perlis|Kangar"]["tries"]) == ("", "1")   # a new district: no point
+    assert "Perlis|Kangar" not in d   # a new district: nothing saved, so the next run asks again
     rows = read_rows(cache)
     assert gp.km(float(rows["21275"]["lat"]), float(rows["21275"]["lon"]), *LABUAN) < 1
     assert "1" not in rows   # nothing to place it by: not placed near KL either
@@ -1085,6 +1720,37 @@ def test_a_district_answer_outside_its_state_is_not_used(tmp_path):
     bare = gp.Districts({}, geocoder(Fake({"Kangar, Perlis, Malaysia": (3.2, 101.6)})), {})
     bare.prepare([("Perlis", "Kangar")])
     assert bare.trusted("Perlis", "Kangar") == (3.2, 101.6) and bare.rejected == 0
+
+
+def test_a_rejected_new_district_is_asked_again_and_empty_points_are_retried(tmp_path):
+    """A wrong answer for a district new to district_geo.csv saves nothing, so the next run asks
+    again. A district with no point (nothing found) is asked again every RETRY_DAYS days."""
+    pc = write_postcodes(tmp_path / "postcodes_my.csv")
+    data = write_build(tmp_path / "data", {("Perlis", "Kangar"): [(1, "KEDAI 1", "JALAN 1")]})
+    cache, dcache = tmp_path / "p.csv", tmp_path / "d.csv"
+    answers = {"Kangar, Perlis, Malaysia": (3.2, 101.6)}   # near KL: more than 50 km from Perlis
+    fake = Fake(answers)
+    st = gp.run(data, cache, dcache, geocoder(fake), postcodes_path=pc, today="2026-11-02")
+    assert st["district_rejected"] == 1 and read_rows(dcache) == {} and st["missed"] == 1
+    gp.run(data, cache, dcache, geocoder(fake), postcodes_path=pc, today="2026-11-09")
+    assert fake.queries().count("Kangar, Perlis, Malaysia") == 2 and read_rows(dcache) == {}
+    answers["Kangar, Perlis, Malaysia"] = None   # nothing found: saved with no point
+    gp.run(data, cache, dcache, geocoder(fake), postcodes_path=pc, today="2026-11-16")
+    row = read_rows(dcache)["Perlis|Kangar"]
+    assert (row["lat"], row["tries"], row["last_tried"]) == ("", "1", "2026-11-16")
+    gp.run(data, cache, dcache, geocoder(fake), postcodes_path=pc, today="2026-12-01")   # 15 days later
+    assert fake.queries().count("Kangar, Perlis, Malaysia") == 3
+    answers["Kangar, Perlis, Malaysia"] = (6.44, 100.2)
+    st = gp.run(data, cache, dcache, geocoder(fake), postcodes_path=pc, today="2026-12-07")   # 21 days later
+    assert fake.queries().count("Kangar, Perlis, Malaysia") == 4 and st["district_requeried"] == 1
+    row = read_rows(dcache)["Perlis|Kangar"]
+    assert (row["lat"], row["tries"], row["last_tried"]) == ("6.440000", "2", "2026-12-07")
+    assert read_rows(cache)["1"]["precision"] == "district"
+    # An old row with no point and no date (from before last_tried) is due at once.
+    d = gp.Districts({"Perlis|Arau": {"key": "Perlis|Arau", "lat": "", "lon": "", "tries": "1"}},
+                     geocoder(Fake({"Arau, Perlis, Malaysia": (6.43, 100.27)})), {}, today="2026-12-07")
+    d.prepare([("Perlis", "Arau")])
+    assert d.trusted("Perlis", "Arau") == (6.43, 100.27) and d.requeried == 1
 
 
 # ---------- cache files ----------
@@ -1101,7 +1767,7 @@ def test_old_cache_files_without_tries_still_load(tmp_path):
     assert list(rows["2"]) == gp.FIELDS
     assert rows["2"]["tries"] == "0" and rows["2"]["last_tried"] == ""   # not in the build: left alone
     assert rows["1"]["tries"] == "1"
-    assert list(read_rows(dcache)[f"{KL}|Kepong"]) == ["key", "lat", "lon", "tries", "shared"]
+    assert list(read_rows(dcache)[f"{KL}|Kepong"]) == ["key", "lat", "lon", "tries", "shared", "last_tried"]
 
 
 def test_postcode_column_is_worked_out_again_on_every_write(tmp_path):

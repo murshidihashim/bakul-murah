@@ -130,7 +130,11 @@ def test_comparison_with_the_live_build(tmp_path, good):
     empty.write_text("", encoding="utf-8")
     for p in (tmp_path / "none.json", empty):
         res = cd.check(good, p)
-        assert res["fails"] == [] and "No live build" in res["notes"][0]
+        assert res["fails"] == [] and "No live build" in res["notes"][0] and "missing, empty or unreadable" in res["notes"][0]
+    nan = tmp_path / "nan.json"   # Python can write this; it is not JSON
+    nan.write_text('{"data_date": "2026-10-29", "stats": {"premises": NaN, "rows_kept": 1000000}}', encoding="utf-8")
+    res = cd.check(good, nan)
+    assert res["fails"] == [] and res["notes"] == ["No live build to compare with (previous meta.json holds NaN or Infinity)."]
     html = tmp_path / "page.json"
     html.write_text("<html>not found</html>", encoding="utf-8")
     assert cd.check(good, html)["fails"] == []
@@ -237,6 +241,47 @@ def test_odd_precision_values_warn_and_never_crash(tmp_path, monkeypatch, capsys
     assert cd.main(["--data", str(make_build(tmp_path / "good"))]) == 1
     out, err = capsys.readouterr()
     assert out.startswith("## Data check: FAIL") and "TypeError: boom" in out and err == ""
+
+
+def test_nan_infinity_and_impossible_points_are_named(tmp_path, capsys):
+    """Python writes NaN and Infinity into JSON, but browsers cannot read such a file; a latitude
+    of 999 is no place. These fail, naming the file (and the shop). A point outside Malaysia warns."""
+    def build(name, change=None, meta=None):
+        root = make_build(tmp_path / name)
+        if change:
+            edit_json(root / "d" / "state-1--district-1.json", change)
+        if meta:
+            edit_json(root / "meta.json", meta)
+        return root
+
+    cases = {"lat NaN": lambda d: d["premises"][0].__setitem__(4, float("nan")),
+             "lat Infinity": lambda d: d["premises"][0].__setitem__(4, float("inf")),
+             "lon -Infinity": lambda d: d["premises"][0].__setitem__(5, float("-inf")),
+             "price NaN": lambda d: d["prices"]["1"][0].__setitem__(1, float("nan"))}
+    for name, change in cases.items():
+        res = cd.check(build(name.replace(" ", "_"), change))
+        assert any("NaN or Infinity" in f and "d/state-1--district-1.json" in f for f in res["fails"]), name
+    res = cd.check(build("meta_nan", meta=lambda m: m["stats"].update(rows_kept=float("nan"))))
+    assert len(res["fails"]) == 1 and "meta.json" in res["fails"][0] and "NaN or Infinity" in res["fails"][0]
+    for name, lat, lon in (("lat_999", 999, 101.6), ("lon_200", 3.1, 200.0), ("lat_huge", 1e400, 101.6)):
+        root = build(name, lambda d, lat=lat, lon=lon: d["premises"][1].__setitem__(4, lat) or d["premises"][1].__setitem__(5, lon))
+        if name == "lat_huge":   # written as a number too big for a float: it reads as infinity
+            f = root / "d" / "state-1--district-1.json"
+            f.write_text(f.read_text(encoding="utf-8").replace("Infinity", "1e400"), encoding="utf-8")
+        res = cd.check(root)
+        assert any("outside -90..90" in f and "d/state-1--district-1.json shop 101" in f for f in res["fails"]), name
+        assert cd.main(["--data", str(root)]) == 1 and capsys.readouterr().out.startswith("## Data check: FAIL")
+    # A real point outside Malaysia (Bangkok) is a warning naming the shop, not a failure.
+    root = build("thailand", lambda d: d["premises"][2].__setitem__(4, 13.75) or d["premises"][2].__setitem__(5, 100.5))
+    res = cd.check(root)
+    assert res["fails"] == [] and any("outside Malaysia" in w and "d/state-1--district-1.json shop 102" in w
+                                      for w in res["warns"])
+    assert cd.main(["--data", str(root)]) == 0
+    # A price written as a 401-digit integer: Python reads it, browsers read it as Infinity.
+    res = cd.check(build("price_huge", lambda d: d["prices"]["1"][0].__setitem__(1, 10 ** 400)))
+    assert any("1 price row(s)" in f for f in res["fails"])
+    assert cd._num(float("nan")) is None and cd._num(float("inf")) is None and cd._num(10 ** 400) is None
+    assert cd._num(10 ** 300) == 10 ** 300 and cd._num(4.5) == 4.5
 
 
 def test_workflow_live_meta_download_is_optional_and_time_limited():

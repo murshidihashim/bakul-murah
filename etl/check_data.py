@@ -2,14 +2,17 @@
 
 Fails (exit 1), so the live site keeps its last good data, when:
   - meta.json is missing, unreadable or the wrong shape, has no data date, or is marked synthetic
+  - meta.json or a district file holds NaN or Infinity (not JSON: browsers cannot read the file)
   - there are fewer than 150 districts, 1,900 shops (stats.premises) or 300 items
   - a district in meta.json has no d/<slug>.json, or a district file cannot be read (or has the wrong shape)
   - a price row points at a shop index that is not in its file (every file is checked)
-  - with --previous (the live meta.json; skipped when missing or empty): shops down more than
+  - a shop's latitude is outside -90..90 or its longitude outside -180..180
+  - with --previous (the live meta.json; skipped when missing, empty or unreadable): shops down more than
     15%, kept price rows down more than 25%, or a data date older than the live one
 Warns (exit 0) when:
   - more than 30% of shops have no real location (precision "district", or none at all)
   - a shop's location precision is not name, address, postcode, town or district
+  - a located shop lies outside Malaysia (latitude 0..8, longitude 99..120)
   - the postcode table has fewer than 2,000 postcodes
   - the data date is more than 10 days before the build date
   - fewer than 10 located shops lie within 5 km of one of the towns in TOWNS
@@ -50,6 +53,7 @@ TOWNS = [("Kuala Lumpur", 3.139, 101.687), ("Shah Alam", 3.073, 101.518),
          ("Alor Setar", 6.121, 100.367), ("Kuala Terengganu", 5.330, 103.137)]
 EXACT, APPROX = ("name", "address"), ("postcode", "town")
 PRECISIONS = EXACT + APPROX + ("district",)
+MALAYSIA = (0.0, 8.0, 99.0, 120.0)   # a generous box: lat from, lat to, lon from, lon to
 
 
 def km(a_lat, a_lon, b_lat, b_lon) -> float:
@@ -58,9 +62,23 @@ def km(a_lat, a_lon, b_lat, b_lon) -> float:
     return 2 * 6371.0 * math.asin(math.sqrt(h))
 
 
+class NotFinite(ValueError):
+    """The file holds NaN, Infinity or -Infinity: Python reads them, browsers do not."""
+
+
+def _no_constant(name: str):
+    raise NotFinite(name)
+
+
+NOT_FINITE = object()   # what _read_json returns for such a file
+
+
 def _read_json(path: Path):
+    """The parsed file; None when it is missing or unreadable; NOT_FINITE when it holds NaN or Infinity."""
     try:
-        return json.loads(path.read_text(encoding="utf-8-sig"))
+        return json.loads(path.read_text(encoding="utf-8-sig"), parse_constant=_no_constant)
+    except NotFinite:
+        return NOT_FINITE
     except (OSError, ValueError):
         return None
 
@@ -70,7 +88,14 @@ def _dict(x) -> dict:
 
 
 def _num(x):
-    return x if isinstance(x, (int, float)) and not isinstance(x, bool) else None
+    """A finite number, else None (bools, text, NaN and infinities are not numbers here, nor an
+    integer too big for a float: browsers read it as Infinity)."""
+    if isinstance(x, bool) or not isinstance(x, (int, float)):
+        return None
+    try:
+        return x if math.isfinite(float(x)) else None
+    except OverflowError:
+        return None
 
 
 def _date(x) -> date | None:
@@ -82,6 +107,15 @@ def _date(x) -> date | None:
 
 def _col(cols: list, name: str, default: int) -> int:
     return cols.index(name) if name in cols else default
+
+
+def _bad_point(lat, lon) -> bool:
+    """True when a shop's lat or lon is a number but no place on Earth: NaN or infinite, a
+    latitude outside -90..90 or a longitude outside -180..180 (a missing or text value is not this)."""
+    for v, limit in ((lat, 90), (lon, 180)):
+        if isinstance(v, (int, float)) and not isinstance(v, bool) and (_num(v) is None or not -limit <= v <= limit):
+            return True
+    return False
 
 
 def _row_ok(r, n_premises: int, n_min: int) -> bool:
@@ -97,6 +131,9 @@ def check(data_dir: Path, previous: Path | None = None, today: date | None = Non
     res = {"fails": [], "warns": [], "notes": [], "facts": {}, "locations": Counter(), "towns": []}
     fail, warn, note = res["fails"].append, res["warns"].append, res["notes"].append
     meta = _read_json(data_dir / "meta.json")
+    if meta is NOT_FINITE:
+        fail(f"meta.json in {data_dir} holds NaN or Infinity, which browsers cannot read.")
+        return res
     if not isinstance(meta, dict):
         fail(f"meta.json is missing or unreadable in {data_dir}.")
         return res
@@ -133,13 +170,16 @@ def check(data_dir: Path, previous: Path | None = None, today: date | None = Non
         fail(f"Only {items} items (expected at least {min_items}).")
 
     # District files: present, readable, price rows pointing at real shops.
-    missing, unreadable = [], []
+    missing, unreadable, not_finite, bad_points, abroad = [], [], [], [], []
     bad_rows = stale_rows = n_rows = 0
     located = []
     odd = Counter()  # precision values outside the contract, as text
     for st, a in areas:
         slug = a.get("slug") if isinstance(a.get("slug"), str) and re.fullmatch(r"[\w-]+", a["slug"]) else ""
         d = _read_json(data_dir / "d" / f"{slug}.json") if slug else None
+        if d is NOT_FINITE:
+            not_finite.append(f"d/{slug}.json")
+            continue
         if d is None:
             (missing if not slug or not (data_dir / "d" / f"{slug}.json").exists() else unreadable).append(
                 slug or f"{st} / {a.get('district')}")
@@ -161,10 +201,14 @@ def check(data_dir: Path, previous: Path | None = None, today: date | None = Non
                 if not _row_ok(r, n, 2):
                     bad_rows += 1
         cols = d.get("premise_cols") or []
+        icode = _col(cols, "premise_code", 0)
         ilat, ilon, iprec = _col(cols, "lat", 4), _col(cols, "lon", 5), _col(cols, "geo_precision", 6)
         for p in d["premises"]:
             get = (lambda i: p[i] if isinstance(p, list) and len(p) > i else None)
             lat, lon, prec = _num(get(ilat)), _num(get(ilon)), get(iprec)
+            if _bad_point(get(ilat), get(ilon)):
+                bad_points.append(f"d/{slug}.json shop {get(icode)} ({get(ilat)}, {get(ilon)})")
+                lat = lon = None
             if prec not in PRECISIONS:
                 odd[str(prec)] += 1
             if prec == "district":
@@ -176,7 +220,15 @@ def check(data_dir: Path, previous: Path | None = None, today: date | None = Non
                 kind = "exact" if prec in EXACT else "approximate" if prec in APPROX else str(prec)
                 res["locations"][kind] += 1
                 located.append((lat, lon))
+                if not (MALAYSIA[0] <= lat <= MALAYSIA[1] and MALAYSIA[2] <= lon <= MALAYSIA[3]):
+                    abroad.append(f"d/{slug}.json shop {get(icode)} ({lat:.4f}, {lon:.4f})")
     f.update(price_rows=n_rows, located=len(located))
+    if not_finite:
+        fail(f"{len(not_finite)} district file(s) hold NaN or Infinity, which browsers cannot read: "
+             f"{', '.join(not_finite[:5])}{' ...' if len(not_finite) > 5 else ''}")
+    if bad_points:
+        fail(f"{len(bad_points)} shop(s) have a latitude outside -90..90 or a longitude outside -180..180: "
+             f"{', '.join(bad_points[:5])}{' ...' if len(bad_points) > 5 else ''}")
     if missing:
         fail(f"{len(missing)} district file(s) missing: {', '.join(missing[:5])}{' ...' if len(missing) > 5 else ''}")
     if unreadable:
@@ -188,8 +240,10 @@ def check(data_dir: Path, previous: Path | None = None, today: date | None = Non
     # Compared with the live site.
     if previous is not None:
         prev = _read_json(previous) if previous.exists() and previous.stat().st_size > 0 else None
-        if not isinstance(prev, dict):
-            note("No live build to compare with (previous meta.json missing or empty).")
+        if prev is NOT_FINITE:
+            note("No live build to compare with (previous meta.json holds NaN or Infinity).")
+        elif not isinstance(prev, dict):
+            note("No live build to compare with (previous meta.json missing, empty or unreadable).")
         else:
             ps = _dict(prev.get("stats"))
             pp, pr, pd_ = _num(ps.get("premises")), _num(ps.get("rows_kept")), _date(prev.get("data_date"))
@@ -211,6 +265,9 @@ def check(data_dir: Path, previous: Path | None = None, today: date | None = Non
     if odd:
         warn(f"{sum(odd.values()):,} shop(s) have a location precision that is not name, address, postcode, "
              f"town or district: {', '.join(sorted(odd)[:5])}{' ...' if len(odd) > 5 else ''}.")
+    if abroad:
+        warn(f"{len(abroad):,} located shop(s) lie outside Malaysia (latitude {MALAYSIA[0]:g} to {MALAYSIA[1]:g}, "
+             f"longitude {MALAYSIA[2]:g} to {MALAYSIA[3]:g}): {', '.join(abroad[:5])}{' ...' if len(abroad) > 5 else ''}.")
     pcs = _dict(meta.get("geo")).get("postcodes")
     n_pc = len(pcs) if isinstance(pcs, (dict, list)) else 0
     f["postcodes"] = n_pc
@@ -270,7 +327,8 @@ def report(res: dict) -> str:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data", default=str(ROOT / "web" / "data"))
-    ap.add_argument("--previous", help="an older meta.json, e.g. the live site's; skipped when missing or empty")
+    ap.add_argument("--previous", help="an older meta.json, e.g. the live site's; skipped when missing, empty "
+                    "or unreadable")
     ap.add_argument("--min-districts", type=int, default=MIN_DISTRICTS)
     ap.add_argument("--min-premises", type=int, default=MIN_PREMISES)
     ap.add_argument("--min-items", type=int, default=MIN_ITEMS)
