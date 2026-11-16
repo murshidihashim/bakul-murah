@@ -132,8 +132,10 @@ parts of towns), each at its own point, so they are an independent check on the 
 town points above. Abandoned, historical and destroyed places are left out. `alt` holds the place's
 other Latin-script names joined by `|` ("Sri Manjung"), `code` is the GeoNames feature code (PPLA,
 PPLA2... for state and district capitals, PPL for other places, PPLX for a part of a town), and
-`state` is GeoNames' name of the state ("Pulau Pinang"; compare states with `state_key()`). The list is
-downloaded again after 90 days, like the postcode table; if the download fails, the old list is kept.
+`state` is GeoNames' name of the state ("Pulau Pinang", "Kuala Lumpur", "Labuan", "Putrajaya";
+compared with the shop's state the way `state_key()` does, which also reads "Penang" as Pulau Pinang
+and "W.P. Kuala Lumpur" as Kuala Lumpur). The list is downloaded again after 90 days, like the
+postcode table; if the download fails, the old list is kept.
 `etl/build_dataset.py` uses it to check the shoppers' postcode table (see "The shoppers' postcode
 table" below). Without a usable file the build checks that table against shops only, and its log
 line and `geo.postcode_source` then leave the place list out.
@@ -160,10 +162,27 @@ in the list, G, is found like this:
   district, but its points are rough. Pengkalan Hulu's only place, "Keruh", is 35.05 km from the
   shops OpenStreetMap found in Hulu Perak (at Gerik); its table point is 14 km from them and 27 km
   from Keruh, which is the town. A table point that is itself far out does not vouch: Bukit Pasir's
-  is 33 km from where Batu Pahat's shops are (the "TAMAN BUKIT PASIR" written in a Batu Pahat
-  address names a housing estate, not the town of Muar district), and Lenggong's and Ajil's are
-  39-40 km from where their districts' shops are, so those shops stay where they were. Points this
-  far (and the own town's) count only when nothing in the address lies within 35 km.
+  is 33 km from where Batu Pahat's shops are, and Lenggong's and Ajil's are 39-40 km from where
+  their districts' shops are. Points this far (and the own town's) count only when nothing in the
+  address lies within 35 km.
+- When every place of the name is dropped as too far, and the town's point in the postcode table
+  lies within 20 km of one of them, that table point is the far town's too (two points that close
+  are one place), so it is not used either: the shop gets the next town in its address, else its
+  district ("location unknown"), and an old town row within 10 km of that point is wrong. Bukit
+  Pasir's table point is 13.7 km from the list's only Bukit Pasir, in Muar, 43.5 km from where Batu
+  Pahat's shops are: shop 21036 ("NO 246 JALAN KLUANG,,TAMAN BUKIT PASIR," in Batu Pahat: a
+  housing estate there) was at that point, about 35 km from where it is, and counted inside the
+  radius; it is now "location unknown". It is the only shop of the 2026-11-16 data whose row this
+  changes. Sungai Siput's table point, 14.9 km from where Kuala Kangsar's shops are, is 50 km from
+  Perak's far "Sungai Siput", and is still used. (Lenggong's, Ajil's and Tawau's table points lie
+  within 5 km of their far places too, but already more than 35 km from where those districts'
+  shops are.) The rule cannot tell a far homonym from the shop's own town lying just beyond 35 km:
+  Ajil's far place, 40.4 km out, is Ajil itself, so were where Hulu Terengganu's shops are 5 km
+  nearer, Ajil's table point (34 km out then, 4.6 km from the town) would still not be used, and
+  Ajil's four shops would stay "location unknown"; and hiding the found shops of Endau (Mersing),
+  the list's Endau lies 35.1 km out (34.8 km with them, so its own point is used today), and the
+  hidden shop 21941 gets its district instead of Endau's table point, 15 km from where it was
+  found. Such shops are "location unknown", not counted inside the radius.
 - Of the rest, the one nearest those points; but when two of them more than 10 km apart both lie
   within 15 km, there is no telling which, and the town gets no point from the list.
 - A district with neither a trusted centre nor 2 found shops has nothing to check a place against:
@@ -171,7 +190,11 @@ in the list, G, is found like this:
 Without the file, or when it is unreadable, has no `name`, `asciiname`, `lat`, `lon` or `state`
 column, or no row with a name, a state and a real point (rows with `nan`, `inf` or a point outside
 -90..90 / -180..180 are left out), the run prints a warning and places towns as it did before the
-list existed.
+list existed: every rule that needs the list is off (the place points, a postcode's town, far
+towns, smaller places). The rules that need no list still apply (a wrong point is never kept, and
+a written town's row is never turned into an unwritten postcode place's row): on the files of
+2026-11-16, a run without the list and with no time for searches differs from such a run before
+those rules in one row, 5304 (see "Wrong old points").
 
 ## How a shop gets its point
 
@@ -212,7 +235,8 @@ list existed.
      PriceCatcher, while a weak Selangor town for a KL shop is often a road ("JALAN GENTING KLANG").
    - Its point is where shops OpenStreetMap found say it is, when they do (see "Where a postcode or
      town is"); else, for a town, its own point in the place list (see places_my.csv above); else
-     its point in the postcode table. For a town name whose postcode-table rows lie far apart, its
+     its point in the postcode table, but not when that is the point of a far town of that name
+     (see places_my.csv above). For a town name whose postcode-table rows lie far apart, its
      rows near where the district's shops are come first (see postcodes_my.csv above), then the
      shops, then the place list. A postcode whose town has one rough point for all its postcodes
      gives the shop the town's own point in the place list instead, as a town (see "Where a
@@ -239,6 +263,96 @@ list existed.
      Otherwise the next postcode or town in the address is tried, then the district centre.
      (If the table spells a state in a way the script does not know, the run says so; that
      state's postcodes then count only when the distance check can be made.)
+   - A smaller place written in the address vetoes a far town (with the place list): no town
+     anchor (a town written in the address, or a postcode's town, see "Where a postcode or town
+     is") is used when the address also names a smaller place that rules it out, and the next
+     evidence is tried, then the district centre. A smaller place is a place of the list in the
+     shop's state whose name or ascii name is written as whole words (KG and KAMPONG read as
+     KAMPUNG), of at least 4 letters, and no postal town: not a town of the postcode table, nor
+     part of one written there, of the state's name or of the district's name ("KOTA PADAWAN" in
+     district Kota Padawan); not made only of generic address words (TAMAN, KAMPUNG, KG, PEKAN,
+     BANDAR, KOTA, BATU, BUKIT, SUNGAI, SIMPANG, CHABANG, JAYA, BARU, UTAMA, INDAH, PERDANA,
+     street words; and words for the buildings, parts and features of a place that GeoNames also
+     has as places of their own: KEDAI, BALAI, KILANG, PEJABAT, BANGUNAN, MEDAN, GERAI, MASJID,
+     SURAU, SEKOLAH, STESEN, BAWAH, ATAS, DALAM, LUAR, HILIR, LAMA, PANTAI, LEMBAH, KOLAM, MELAYU,
+     BAHAGIA, MAWAR: "KEDAI" is a place in Sarawak, so "KEDAI NO 5, KAPIT" would rule Kapit out,
+     and "TINGKAT BAWAH" is a ground floor), numbers (BATU 10, SIMPANG EMPAT) and words found in 100
+     or more names of the list (43 in the 2026 list: KAMPUNG PADANG, KAMPUNG GONG are no place); not
+     a road (right after JALAN, LORONG...), a subdistrict (right after MUKIM or DAERAH) or a housing
+     estate (TAMAN ..., or right after TAMAN or TMN: the same estate names are used all over the
+     country). On the files of 2026-11-16 those added words and TMN change no anchor; 9 addresses
+     no longer name a smaller place by them (KAMPUNG MELAYU, KAMPUNG PANTAI, KAMPUNG LEMBAH, KAMPUNG
+     KOLAM, KAMPUNG SURAU, LUAR, TMN BERAPIT). It rules a town's point out when a place of that name
+     lies within 35 km of where the district's shops are (or of the town's point, when that lies
+     further out, as the district's own town may), and every place called that, by any of its
+     names, with or without a leading KAMPUNG, lies more than 10 km from the town's point
+     ("...KINARUT,PAPAR": Kinarut is 16.0 km from Papar; "PEKAN TRUSAN,LAWAS": Trusan is 17.1 km
+     from Lawas town, which is 45 km from Lawas's district centre). For the district's own town (its
+     name is or contains the district's) the place may lie within 45 km: an address that ends in
+     the district's name may name only the district, and a large district's villages lie further
+     out. Shop 5316 ("NO 63 & 64 ,JALAN BESAR NENASI,PEKAN, PAHANG") was at Pekan's point, 40.9 km
+     from Nenasi, which is 37.4 km from where Pekan's shops are, and counted inside the radius; it
+     is now "location unknown". With 40 km a 3 km move of where Pekan's shops are gave it Pekan
+     back; 45 and 50 km change no other anchor on the files of 2026-11-16, and from 60 km a
+     homonym 57 km out began to rule Dungun out ("KAMPUNG NYIOR", shop 17976).
+     The smaller place's own point is not used as an anchor: hiding each found shop of 2026-11-16
+     that names such a place, the nearest place of that name lay a median 1.0 km from it, but more
+     than 10 km for 7 of 121 (5.8%: more than the 5% that would allow it), mostly another place of
+     the same name ("KAMPUNG PENAMBANG" in Kota Bharu is not the list's, 28 km away; "KG WAKAF ZIN"
+     is not its "Kampung Wakaf"). Hiding each found shop that names a smaller place in turn, the veto
+     changed the anchor of 5 of the 41 whose anchor was a town: 4 were more than 10 km from that
+     town (Tenang Station, Pauh Lima, Wakaf Tapai twice), the fifth 9.6 km (it writes TAWANG and
+     lies 1.4 km from Tawang). On the files of 2026-11-16 a run with the veto differs from one
+     without it in 13 rows: 10 town rows of the file become district rows (Nenasi above, Manik
+     Urai, Kampung Awah, Beseri, Juasseh, Kampung Bakap, Kampung Gual Ipoh, Kampung Pangkal Chuit,
+     Kampung Berdang, Kampung Jakar), 2 district rows of the file stay district rows instead of
+     becoming town rows (Kinarut and Trusan above), and one moves 8.7 km within Permaisuri, to the
+     town's own point near Kampung Saujana. Known limits, all on the side of "location unknown":
+     a place whose name begins a longer name written there can still match ("KAMPUNG WAKAF" in "KG
+     WAKAF ZIN", "BANDAR PERMAS" in "BANDAR PERMAS JAYA"); only the word right before a name is
+     looked at, so a name in a road or building name still counts ("JALAN APAS BALUNG", "TINAGAT
+     PLAZA", "JALAN MEDAN BESERI"; "JALAN BESAR NENASI" names Nenasi the same way), and so does a
+     name right before a road word or a Sarawak land district ("JAKAR ROAD", "MUARA TUANG LAND
+     DISTRICT", "SIMANGGANG TOWN DISTRICT"); and a name may be another place of that name within
+     reach: shop 1455 ("PASIR MAS, KELANTAN,NO.C KG JAKAR, POHON TANJUNG") writes Kampung Jakar,
+     whose two places lie 29-34 km out (likely other villages of that name), while its Pohon
+     Tanjung (the list's "Kampong Pohon Tanjong", which the address does not match) is 6.7 km from
+     its Pasir Mas row, which became a district row. On 2026-11-16 the first limit costs a found
+     shop its anchor: 21765 ("KG WAKAF ZIN,,TAWANG") was found 7.1 km from Bachok's point, and
+     only "KAMPUNG WAKAF", 22 km from that point, rules Bachok out; the TAWANG it writes, 1.4 km
+     from where it was found, is 8.2 km from Bachok's point and rules nothing out. No row changes
+     (the shop was found; with its own point hidden, as in the holdout above, Bachok's point lies
+     10.9 km from Tawang). Of the rest, only Beseri changed a row (shop 20892 writes KANGAR, a town
+     30 km from where its district's shops are, so its district is the likelier answer); BALUNG
+     and TINAGAT change nothing for their two Tawau shops (the anchor is their found postcode, and
+     the search text stays TAWAU); and of the 6 shops that write a list place right before a road
+     word or LAND/TOWN DISTRICT, none loses a town by it (21650's Sarikei point is 9.3 km from one
+     of the two Jakar places, 18209's Sri Aman point 1.7 km from Simanggang).
+   - A written town beats an unwritten postcode place: when the address writes a postal town but
+     none of its postcode's own place names in the table, that postcode does not give its town's
+     point (with the place list, see "Where a postcode or town is"), and the written town's anchor
+     is used instead: "45400 KUALA SELANGOR" (45400's place is Sekinchan, 24.6 km from where
+     OpenStreetMap found that shop) gets Kuala Selangor, "TAMAN PAGOH JAYA, 84500 PAGOH" (84500's
+     place is Panchor) Pagoh. And for a shop whose row is a town row for a town its address
+     writes, such a postcode is not used at all, so a retry never turns that row into the
+     postcode's row: '..., 34100 IPOH' (34100 is Selama's postcode, 35 km from where Kinta's shops
+     are) keeps its "Ipoh" row, should 34100's point come within 35 km (this part needs no place
+     list). On the files of 2026-11-16
+     this changes the anchor of 5 shops and no row (they are found shops, or postcode rows that a
+     town anchor never replaces), and it is a known limit: the rule cannot tell a postcode typo
+     from an address that writes its district's main town after the right postcode. 4015 is not
+     among them: the smaller place it writes, PASIR PENAMBANG (23.8 km from Sekinchan's point),
+     already rules Sekinchan out (see above; without that veto, this rule moves its anchor from
+     24.6 km to 1.5 km from where it was found). 20943's anchor moves from 2.6 to 5.1 km from its
+     postcode row, the anchors of two found shops move further from where they were found: 20920
+     ("85300 SEGAMAT": found 6.4 km from Labis, 85300's place, 27.0 km from Segamat) and 12742
+     ("81800 JOHOR BAHRU": found 3.9 km from Ulu Tiram, 8.9 km from Johor Bahru's point); and those
+     of two postcode rows move further from those rows, which need not be where the shops are:
+     17976 ("JALAN BESAR KAMPUNG NYIOR,23100 DUNGUN": its row is 1.0 km from Paka, 23100's place,
+     and 4.1 km from the list's Kampung Nyiur; Dungun is 14.6 km from it) and 18402 ("02100 KAKI
+     BUKIT": 1.0 to 10.6 km; 02100's place is Padang Besar, the district's own town, so the written
+     Kaki Bukit may be the better anchor). A new shop with such an address, or a retry search of
+     one, is placed or searched around the written town.
 2. Up to 3 OpenStreetMap searches in a box around the anchor (0.15 degrees around a postcode or
    town, 0.3 around a district centre), stopping at the first good hit:
    `<shop name>, <town or district>`, then the cleaned address, then the shop name alone.
@@ -303,6 +417,17 @@ furthest off are those whose postcode rows spread more than 10 km while one of t
 (44000 Kuala Kubu Baru, 84900 Tangkak, 35000 Tapah, 36000 Teluk Intan, 33300 Gerik): their postcode
 points are kept, as for big towns.
 
+A postcode whose own place the address does not write, while it writes another postal town, gives
+no town point this way (see step 1 of "How a shop gets its point": a written town beats an
+unwritten postcode place). Known limits, both decided to stay as they are:
+- An address that writes the postcode's own place keeps that place's point even when the shop is
+  elsewhere: 6437 ("98200 BATU NIAH") gets Niah's own point, 11.7 km from where OpenStreetMap found
+  it (Batu Niah is a separate place of the list). 6437 is a found shop: no row is affected.
+- Found shops come first: when 2 of them agree on a point, the town is placed there, even if the
+  place list puts the town elsewhere. Jeli's two found shops (1446, "KG.BATU MELINTANG, JELI", and
+  16467) lie west of the town, 8.9 km from the list's Jeli (under 10 km, so they agree with it), and
+  Jeli's town rows sit at their median, about 9 km from the town.
+
 ## Wrong old points
 
 An old postcode or town point is wrong when found shops put its postcode or town (the row's
@@ -312,9 +437,14 @@ A town row is wrong, too, when it lies within 10 km of the found shops of a spre
 count for its district (Sibu Jaya's shop at Sibu town, see above). When no found shop says where
 the postcode or town is, with the place list: a town row more than 10 km from the town's own point
 in the list, when that is where today's anchor puts the town (the old rows of Bagan Serai, Benta
-and Julau, 19-27 km off); a postcode row more than 10 km from its town's point, when today's anchor
-does not use the postcode's point (one rough point for the town, see above; a row near the town's
-point may have come from OpenStreetMap, and stays). For an old row, one rough point means all the
+and Julau, 19-27 km off), or within 10 km of the town's postcode-table point when that is a far
+town's (shop 21036 at Bukit Pasir, see places_my.csv above), or anywhere a smaller place written in
+the address rules its point out (see step 1 of "How a shop gets its point": Kinarut for a row at
+Papar); a postcode row more than 10 km from its town's point, when today's anchor does not use the
+postcode's point (one rough point for the town, see above; a row near the town's point may have
+come from OpenStreetMap, and stays), but not when that town is not where the address says (the
+address writes another town and not the postcode's place, or names a smaller place that rules the
+town's point out: then that point judges no row). For an old row, one rough point means all the
 town's rows within 5 km of each other: where they spread 5-10 km, the town's postcodes have points
 of their own, and an old row far from the town may be OpenStreetMap's point for a village in the
 postcode's area (shop 17730 in Kampung Anak Ikan, "22020 JERTEH": its row is 2.9 km from the
@@ -322,24 +452,38 @@ village, which is 20.5 km from Jerteh; it stays). Otherwise, when it lies more t
 where the district's shops are (80 km when its place is named after the district: Limbang's
 "98700" rows at the town, 38 km from the middle of the district), e.g. a lot number read as
 another state's postcode. But a town row within 10 km of the only place of the list called that
-(by any of its names) is not judged by its own distance while that place lies within 35 km of the
-town's point in the postcode table and that point within 35 km of where the district's shops are:
-the row is at the town, and the table puts the town near the district. Without this, the place
-list's own limits (35 km for the place, 15 km for the table's point, see places_my.csv above)
-decided old rows too: on the data of 2026-11-16, moving where Hulu Perak's shops are by 1.1 km
-judged Pengkalan Hulu's four rows at Keruh wrong and sent them back to the table's point, 27 km
-off (and the next move back sent them to Keruh again). With it, moving where each district's
-shops are by 1.1 km in any of 8 directions makes no postcode or town row wrong (4 before), by 2 km
-one, a row at Bukit Pasir's table point 33 km out (6 before), by 5 km 10 (15 before); counted on
-the rows a run with no time for searches leaves, from the files of 2026-11-16. A new shop still
-gets the place list's point only within its limits. The postcode table's own point never makes an
-old point wrong. Without the postcode table nothing is judged wrong. A wrong point is replaced:
-before any search (below) when today's anchor is a postcode or town at least as precise, else on
-the retry, by whatever it finds (a wrong point is worse than an honest "district"). As before any
-search a row is never made less precise, a wrong row whose shop has no postcode or town anchor
-today keeps its point until its retry: on 2026-11-16, with no time for searches, one shop, Sibu
-Jaya's 5304 at Sibu town (16.5 km off). Its tries are 0, so the next run with time searches it and
-makes it a district row when OpenStreetMap finds nothing.
+(by any of its names) is not judged by its own distance while the place list's own limits for
+that place (see places_my.csv above), each 5 km wider, still hold: the place lies within 40 km of
+where the district's shops are, or within 40 km of the town's point in the postcode table while
+that point lies within 20 km of them. The row is at the town, and the town is about where the
+list would still put it. Such a row lies at most 70 km from where the district's shops are (10 +
+40 + 20; the first version of this rule, with 35 km for both, kept rows up to about 80 km out).
+Without this, the place list's own limits decided old rows too: on the data of 2026-11-16, moving
+where Hulu Perak's shops are by 1.1 km judged Pengkalan Hulu's four rows at Keruh wrong and sent
+them back to the table's point, 27 km off (and the next move back sent them to Keruh again). With
+it, moving where each district's shops are by 1.1, 2, 3 or 5 km in any of 8 directions makes 0, 0,
+2 and 3 postcode or town rows newly wrong (0, 1, 3 and 10 with the first version; its 1 at 2 km was
+21036, now corrected, and 5316 at Pekan, 41 km from Nenasi, is corrected too, see step 1 of "How a
+shop gets its point"): the 81440 rows of 1325 and 16157, and at 5 km the 28000 row of 20745, by the
+distance check. Counted on the rows a run with no time for searches leaves, from the files of
+2026-11-16; such a run after the move turns no row of the shops that a smaller place rules out
+back into a town row.
+A new shop still gets the place list's point only within its limits. The postcode table's own
+point never makes an old point wrong. Without the postcode table nothing is judged wrong.
+
+A wrong point is never kept (a wrong point is worse than an honest "district"): before any search
+(below) it takes today's anchor when that is a postcode or town at least as precise, and when the
+shop has no postcode or town anchor today it becomes a district row at once (its tries and
+last_tried stay, so a run with time still searches it on its schedule). On the files of 2026-11-16
+a run with no time for searches makes 12 such rows district rows: Sibu Jaya's 5304 at Sibu town
+(16.5 km off, judged by the found shops of Sibu), 21036 at Bukit Pasir's table point (the place
+list; see places_my.csv above) and 10 town rows that a smaller place written in the address rules
+out (see step 1 of "How a shop gets its point"); a second such run changes nothing, and no row is
+left judged wrong. A wrong postcode row whose anchor today is a town written in the address (less
+precise, and not its postcode's town) keeps its point until its retry, which replaces it by
+whatever it finds, and for good once it has had its 2 lookups (no retry is left then): the rule
+that a row never becomes less precise before any search comes first there (no such row on
+2026-11-16).
 
 ## Before any search
 
@@ -352,9 +496,11 @@ is wrong (see "Wrong old points"), when today's anchor is a postcode or town at 
 this also corrects rows given a GeoNames point by an earlier run once found shops or the place
 list say where that postcode or town is, even rows that will not be searched again. `tries` and
 `last_tried` stay as they were, so OpenStreetMap is still asked on the usual schedule (below). This
-never makes a row less precise, with one exception: a postcode row becomes a town row when today's
+never makes a row less precise, with two exceptions: a postcode row becomes a town row when today's
 anchor is its postcode's town at the town's own point, because the table has one rough point for
-that town (see "Where a postcode or town is"). Rows of shops not in the build are not touched. A
+that town (see "Where a postcode or town is"); and a wrong row whose shop has no postcode or town
+anchor today becomes a district row (the district centre; with no centre, no point at all), as a
+wrong point is never kept (see "Wrong old points"). Rows of shops not in the build are not touched. A
 row that already holds today's anchor (the same point, precision, postcode or town, district and
 state) is left as it is and not counted, even when it is judged wrong (found shops place the town
 elsewhere, but a postcode's town takes its point from the place list): so the next run does not
@@ -375,10 +521,16 @@ The run's summary counts these rows in `upgraded_offline` and `corrected_offline
   days ago (exactly 20 days ago is not due yet), until the time runs out (`--retry` caps the
   number, 3000 by default). A retry that finds nothing keeps an old postcode or town point for
   the same postcode or town, and never swaps a point for a less precise one, unless the old
-  point is wrong (see "Wrong old points"). A town row of a postcode whose town has one rough
-  point in the table (made from the postcode, see "Where a postcode or town is") counts as that
-  postcode's: a retry whose anchor is only that rough point keeps it (Pengkalan Hulu's 33100 row
-  at Keruh, should where Hulu Perak's shops are move a little).
+  point is wrong (see "Wrong old points"). With the place list, a town row for the town of a
+  postcode whose town has one rough point in the table (see "Where a postcode or town is"; the
+  town is the postcode's place written right after it, else its only place name) counts as that
+  postcode's row, whatever made it: a retry whose anchor is only that rough point keeps it
+  (Pengkalan Hulu's 33100 row at Keruh, should where Hulu Perak's shops are move a little).
+  Without the list this rule is off, as before the list existed. A town row for a town the
+  address writes is never turned into the row of a postcode whose place the address does not
+  write: for such a shop that postcode is not used at all, its anchor is the written town's (see
+  step 1 of "How a shop gets its point"). This rule, and that a wrong point is never kept, need
+  no list and apply without it too.
 - The last line of the run is a JSON summary. `looked_up` (new shops) and `retried` count shops
   that reached OpenStreetMap, even if a search then failed (`errors`); `skipped` counts shops
   not sent because calls had stopped, new shops and shops due for a retry alike (they keep their
@@ -398,7 +550,8 @@ The run's summary counts these rows in `upgraded_offline` and `corrected_offline
   town names (once per district) this run looked at and the list could not place: two near places
   of that name, or all of them too far. A run with time for searches looks at more shops than one
   without, so these two can differ between runs on the same files. On the data of 2026-11-16,
-  with no time for searches: 77, 6, 29, 2 and 7; 54 shops left "location unknown" (471 to 417).
+  with no time for searches: 76, 6, 41, 2 and 7; 40 shops left "location unknown" (471 to 431;
+  before the far-town, smaller-place and wrong-point rules, 54: 471 to 417).
 
 ## The shoppers' postcode table
 

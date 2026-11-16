@@ -39,7 +39,8 @@ Live site: https://murshidihashim.github.io/bakul-murah/
   shop level where possible ("1.2 km"), else at its postcode or town ("~2 km"). A town's point comes from shops
   OpenStreetMap found there, else from the GeoNames list of towns and villages, which puts each town at its own
   point; the postcode table's points are often 10-80 km off, so they are checked against both, and a postcode whose
-  town has only one rough point in that table takes the town's point from the list. Shops that can only be placed
+  town has only one rough point in that table takes the town's point from the list. A shop whose address names a
+  smaller place far from that town (a village 16 km out) does not get the town's point. Shops that can only be placed
   in their district are listed as "location unknown" and are never counted inside the radius. Details:
   [etl/geo/README.md](etl/geo/README.md).
 - **Postcode locations:** [GeoNames](https://www.geonames.org/) postal codes for Malaysia, CC BY 4.0, checked

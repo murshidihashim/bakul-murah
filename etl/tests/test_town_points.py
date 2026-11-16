@@ -468,7 +468,9 @@ def test_an_old_postcode_row_is_judged_by_the_town_point_only_when_the_towns_row
     search, 2.9 km from the village; Jerteh's own point (the list's 'Jertih') is 20.5 km away. Jerteh's postal
     rows lie 7.7 km apart: one rough point for a new shop's anchor (within 10 km), but not to judge an old
     row (within 5 km), so the row stays. Where the town's rows share one point, an old row far from the
-    town is still wrong."""
+    town is still wrong. (Since round 2 the village written in this address also rules out Jerteh's point,
+    see test_a_smaller_place_vetoes_a_far_town: the shop's anchor is its district, and Jerteh's point judges
+    no row of it; an address that names no village gets Jerteh's point as before.)"""
     old_pt = (5.66284, 102.63425)
     assert gp.km(*old_pt, *ANAK_IKAN) < 3 and gp.km(*JERTIH, *ANAK_IKAN) > 20 and gp.km(*old_pt, *JERTIH) > gp.ANCHOR_KM
     assert gp.ONE_POINT_ROW_KM < gp.km(5.6111, 102.5729, 5.6795, 102.5851) < gp.ONE_POINT_KM
@@ -477,14 +479,17 @@ def test_an_old_postcode_row_is_judged_by_the_town_point_only_when_the_towns_row
     d = districts({"Terengganu|Besut": BESUT_CENTRE}, places)
     shop = {"premise_code": "17730", "premise": "PKT", "state": "Terengganu", "district": "Besut",
             "address": "CAWANGAN KAMPUNG ANAK IKAN,LOT 7870 - 7875. KAMPUNG ANAK IKAN JABI,22020 JERTEHTERENGGANU"}
-    a = gp.anchor_for(shop, places, d)
+    plain = {**shop, "address": "LOT 7870 - 7875, 22020 JERTEH, TERENGGANU"}
+    assert gp.anchor_for(shop, places, d)["kind"] == "district"
+    a = gp.anchor_for(plain, places, d)
     assert (a["kind"], a["label"], a["via"]) == ("town", "Jerteh", "postcode town") and a["point"] == pytest.approx(JERTIH)
     row = cache_row(17730, old_pt, "postcode", "Besut", "Terengganu", "22020", tries=0, last="")
-    assert gp.wrong_by(row, shop, places, d) is None
+    assert gp.wrong_by(row, shop, places, d) is None and gp.wrong_by(row, plain, places, d) is None
     tight = table([(pc, "Jerteh", "Terengganu", 5.6795, 102.5851) for pc in ("22000", "22010", "22020")], plist)
     d = districts({"Terengganu|Besut": BESUT_CENTRE}, tight)
-    assert gp.wrong_by(row, shop, tight, d) == "place"
-    assert gp.wrong_by(cache_row(1, (5.7300, 102.4900), "postcode", "Besut", "Terengganu", "22020"), shop, tight, d) is None
+    assert gp.wrong_by(row, plain, tight, d) == "place"
+    assert gp.wrong_by(row, shop, tight, d) is None    # Jerteh's point is ruled out for this shop: no judge
+    assert gp.wrong_by(cache_row(1, (5.7300, 102.4900), "postcode", "Besut", "Terengganu", "22020"), plain, tight, d) is None
 
 
 HULU_PERAK_SHOPS, KERUH, PH_POSTAL, GERIK = (5.428714, 101.128814), (5.71667, 101.0), (5.4731, 101.0105), (5.41667, 101.13333)
@@ -918,19 +923,25 @@ def test_a_towns_name_does_not_depend_on_the_order_of_the_postcode_tables_rows()
 
 
 def test_a_row_at_its_towns_only_place_needs_the_place_near_the_towns_table_point():
-    """The tolerance at its edges: the row within 10 km of the place, the place within 35 km of the town's
-    postcode-table point, and that point within 35 km of where the district's shops are. Else the row is
-    judged by its own distance, as before."""
+    """The tolerance at its edges: place_point's own limits, each 5 km wider. The row within 10 km of the place,
+    and the place within 40 km of where the district's shops are, or within 40 km of the town's postcode-table
+    point while that point lies within 20 km of them. Else the row is judged by its own distance, as before.
+    (The table point lies more than 15 km out or more than 35 km from the place, so the place list itself has no
+    point for the town, and more than 20 km from the place, so it is no far town's point either.)"""
     r = HULU_PERAK_SHOPS
 
     def why(postal_km, place_km, row_km):
         p = table([("33900", "Sungai Jauh", "Perak", *north(r, postal_km))], [(1, "Sungai Jauh", "Perak", *north(r, place_km), "")])
         shop = {"premise_code": "1", "premise": "KEDAI", "state": "Perak", "district": "Hulu Perak", "address": "NO 1, SUNGAI JAUH"}
-        return gp.wrong_by(cache_row(1, north(r, row_km), "town", "Hulu Perak", "Perak", "Sungai Jauh"), shop, p,
-                           districts({"Perak|Hulu Perak": r}, p))
-    assert why(20.0, 54.0, 54.0) is None and why(20.0, 56.0, 56.0) == "district"    # place 34 / 36 km from the table point
-    assert why(20.0, 54.0, 63.9) is None and why(20.0, 54.0, 64.1) == "district"    # row 9.9 / 10.1 km from the place
-    assert why(34.0, 60.0, 60.0) is None and why(36.0, 60.0, 60.0) == "district"    # table point 34 / 36 km out
+        d = districts({"Perak|Hulu Perak": r}, p)
+        assert p.place_point("Perak", "SUNGAI JAUH", [r]) is None
+        return gp.wrong_by(cache_row(1, north(r, row_km), "town", "Hulu Perak", "Perak", "Sungai Jauh"), shop, p, d)
+    assert why(-16.0, 39.9, 39.9) is None and why(-16.0, 40.1, 40.1) == "district"  # place 39.9 / 40.1 km out
+    assert why(18.0, 57.9, 57.9) is None and why(18.0, 58.1, 58.1) == "district"    # place 39.9 / 40.1 km from the table point
+    assert why(19.9, 50.0, 50.0) is None and why(20.1, 50.0, 50.0) == "district"    # table point 19.9 / 20.1 km out
+    assert why(18.0, 50.0, 59.9) is None and why(18.0, 50.0, 60.1) == "district"    # row 9.9 / 10.1 km from the place
+    # The old band (place within 35 km of a table point 35 km out) kept rows up to 80 km out; now at most 70 km.
+    assert why(34.0, 60.0, 60.0) == "district"
 
 
 def test_a_retry_turns_a_town_row_into_its_postcodes_row_unless_that_has_only_its_towns_rough_point(tmp_path):
@@ -963,3 +974,849 @@ def test_a_place_list_without_its_columns_says_which(tmp_path, capsys):
     path = write_csv(tmp_path / "places_my.csv", ["id", "town", "x", "y"], [{"id": "1", "town": "Bagan Serai", "x": "5.0108", "y": "100.541"}])
     assert gp.read_places(path) is None
     assert "has no name, asciiname, lat, lon, state column" in capsys.readouterr().err
+
+
+# ---------- round 2: retries, far homonyms, wrong rows, written towns, smaller places, edges ----------
+
+def retry_run(tmp_path, sub, shops, rows, centres, postal, place_list, minutes=None, fetch=None):
+    """One run on its own files in tmp_path/sub (shops: {(state, district): [(code, name, address)]}); a run whose
+    searches find nothing (minutes None: no time limit; 0: no time for searches). -> (rows, summary)."""
+    work = tmp_path / sub
+    write_build(work / "data", shops)
+    cache = write_csv(work / "premise_geo.csv", gp.FIELDS, rows)
+    dc = write_csv(work / "district_geo.csv", ["key", "lat", "lon"],
+                   [{"key": k, "lat": str(p[0]), "lon": str(p[1])} for k, p in centres.items()])
+    pc = write_csv(work / "postcodes_my.csv", fpc.FIELDS, postal_rows(postal))
+    pl = write_csv(work / "places_my.csv", fpl.FIELDS, place_rows(place_list)) if place_list is not None else None
+    st = gp.run(work / "data", cache, dc, gp.Geocoder(fetch=fetch or (lambda params: []), delay=0, max_minutes=minutes),
+                postcodes_path=pc, today=TODAY, places_path=pl)
+    return read_rows(cache), st
+
+
+ROUGH_NEAR = (5.93, 116.08)   # a rough point Putatan's postcodes share, within 10 km of the town: its postcodes keep it
+
+
+def test_without_the_place_list_a_retry_turns_a_town_row_into_its_postcodes_row(tmp_path):
+    """The retry rule for a postcode's one-point town needs the place list: without it a run is as before the list
+    (the town row becomes the postcode's row); with it the town row stays."""
+    assert gp.km(*ROUGH_NEAR, *PUTATAN) < gp.ANCHOR_KM
+    postal = [(f"8820{i}", "Putatan", "Sabah", *ROUGH_NEAR) for i in range(5)]
+    shops = {("Sabah", "Putatan"): [(3, "KEDAI C", "LOT 3, 88200 PUTATAN")]}
+    old = [cache_row(3, PUTATAN, "town", "Putatan", "Sabah", "Putatan", last="2026-10-01")]
+    for sub, place_list, want in (("list", PLACES, ("town", "Putatan")), ("none", None, ("postcode", "88200"))):
+        rows, st = retry_run(tmp_path, sub, shops, old, {"Sabah|Putatan": PUTATAN_CENTRE}, postal, place_list)
+        assert (rows["3"]["precision"], rows["3"]["query"], st["retried"]) == (*want, 1), sub
+
+
+def test_a_retry_keeps_a_town_row_of_a_two_name_postcode_only_for_the_place_written_after_it(tmp_path):
+    """88200 has two place names (Putatan and Kinarut, each with one rough point). A town row for Putatan stays when the
+    address writes PUTATAN right after the postcode (the town postcode_pick would take); with no place written there,
+    which town? none: the retry gives the postcode's own point, as it does for a postcode with no town."""
+    postal = [(f"8820{i}", "Putatan", "Sabah", *ROUGH_NEAR) for i in range(5)] + [("88200", "Kinarut", "Sabah", *ROUGH_NEAR)]
+    places = table(postal, PLACES)
+    assert [" ".join(n) for n in places.postcode_places["88200"]] == ["PUTATAN", "KINARUT"]
+    assert places.one_point_town("88200", "Sabah") is None
+    assert places.one_point_town("88200", "Sabah", "PUTATAN") == "PUTATAN"
+    for sub, address, want in (("written", "LOT 3, 88200 PUTATAN", ("town", "Putatan")),
+                               ("unwritten", "LOT 3, JALAN 2, 88200", ("postcode", "88200"))):
+        rows, _ = retry_run(tmp_path, sub, {("Sabah", "Putatan"): [(3, "KEDAI C", address)]},
+                            [cache_row(3, PUTATAN, "town", "Putatan", "Sabah", "Putatan", last="2026-10-01")],
+                            {"Sabah|Putatan": PUTATAN_CENTRE}, postal, PLACES)
+        assert (rows["3"]["precision"], rows["3"]["query"]) == want, sub
+
+
+# T2-1: Batu Pahat's shops (refs), Muar's Bukit Pasir (the list's only one, 43.5 km out), the 84300 table point.
+BATU_PAHAT_SHOPS = (1.85, 102.93)
+BUKIT_PASIR_FAR = (2.10, 102.6388)
+PARIT_RAJA = (1.87, 103.11)
+
+
+def bukit_pasir(postal_from_place_km):
+    """The table's Bukit Pasir point lies postal_from_place_km east of the list's (far) Bukit Pasir; Parit Raja is
+    a near town of Batu Pahat. -> (places, districts)"""
+    postal = (BUKIT_PASIR_FAR[0], BUKIT_PASIR_FAR[1] + postal_from_place_km / (6371.0 * math.pi / 180 * math.cos(math.radians(2.1))))
+    places = table([("84300", "Bukit Pasir", "Johor", *postal), ("86400", "Parit Raja", "Johor", 1.87, 103.10)],
+                   [(1, "Bukit Pasir", "Johor", *BUKIT_PASIR_FAR, ""), (2, "Parit Raja", "Johor", *PARIT_RAJA, "")])
+    return places, districts({"Johor|Batu Pahat": BATU_PAHAT_SHOPS}, places), postal
+
+
+def test_a_far_towns_table_point_is_not_used_either():
+    """Shop 21036 ('NO 246 JALAN KLUANG,,TAMAN BUKIT PASIR,' in Batu Pahat): the list's only Bukit Pasir is 43.5 km
+    out (dropped), and the table's point, 33 km out, lies 13.7 km from it: both are that far town. The shop does not
+    get the table's point: the next town in its address, else its district. An old row at that point is wrong; a
+    table point more than 20 km from every dropped place (Sungai Siput's) is still used."""
+    places, d, postal = bukit_pasir(13.7)
+    assert gp.km(*BUKIT_PASIR_FAR, *BATU_PAHAT_SHOPS) > 40 and gp.CHECK_KM - 3 < gp.km(*postal, *BATU_PAHAT_SHOPS) < gp.CHECK_KM
+    assert places.place_point("Johor", "BUKIT PASIR", [BATU_PAHAT_SHOPS]) is None
+    assert places.far_town("Johor", "BUKIT PASIR", [BATU_PAHAT_SHOPS], postal)
+    assert anchor("Johor", "Batu Pahat", "NO 246 JALAN KLUANG,,TAMAN BUKIT PASIR,", places, d)["kind"] == "district"
+    a = anchor("Johor", "Batu Pahat", "TAMAN BUKIT PASIR, PARIT RAJA", places, d)
+    assert (a["label"], a["via"]) == ("Parit Raja", "place")
+    shop = {"premise_code": "21036", "premise": "KEDAI", "state": "Johor", "district": "Batu Pahat",
+            "address": "NO 246 JALAN KLUANG,,TAMAN BUKIT PASIR,"}
+    assert gp.wrong_by(cache_row(21036, postal, "town", "Batu Pahat", "Johor", "Bukit Pasir"), shop, places, d) == "place"
+    near_shops = north(BATU_PAHAT_SHOPS, 5)   # a row far from the far town's point: judged by its distance, as before
+    assert gp.wrong_by(cache_row(21036, near_shops, "town", "Batu Pahat", "Johor", "Bukit Pasir"), shop, places, d) is None
+    for gap_km, kind in ((19.9, "district"), (20.1, "town")):
+        places, d, postal = bukit_pasir(gap_km)
+        assert anchor("Johor", "Batu Pahat", "TAMAN BUKIT PASIR", places, d)["kind"] == kind, gap_km
+    # A row at the town's only place that place_point's limits, 5 km wider, still accept stays even where the table's
+    # point is that same far town's (the tolerance of test_a_row_at_its_towns_only_place_..._table_point comes first);
+    # a row at that table point and not at the place is wrong.
+    r = BATU_PAHAT_SHOPS
+    near_far = table([("84300", "Bukit Pasir", "Johor", *north(r, 30))], [(1, "Bukit Pasir", "Johor", *north(r, 38), "")])
+    d = districts({"Johor|Batu Pahat": r}, near_far)
+    assert near_far.far_town("Johor", "BUKIT PASIR", [r], north(r, 30))
+    assert gp.wrong_by(cache_row(21036, north(r, 34), "town", "Batu Pahat", "Johor", "Bukit Pasir"), shop, near_far, d) is None
+    assert gp.wrong_by(cache_row(21036, north(r, 27), "town", "Batu Pahat", "Johor", "Bukit Pasir"), shop, near_far, d) == "place"
+    without = table([("84300", "Bukit Pasir", "Johor", *bukit_pasir(13.7)[2])], None)   # no list: as before it existed
+    a = anchor("Johor", "Batu Pahat", "TAMAN BUKIT PASIR", without, districts({"Johor|Batu Pahat": BATU_PAHAT_SHOPS}, without))
+    assert (a["kind"], a["via"]) == ("town", "rows")
+
+
+SIBU_JAYA_ROW = (2.295, 111.835)   # shop 5304's old row at Sibu town, 16 km from Sibu Jaya
+
+
+def sibu_files(tmp_path, sub, rows, centres=None):
+    shops = {("Sarawak", "Sibujaya"): [(5304, "PASAR BASAH SIBUJAYA", "MENYAN LAND DISTRICT,SIBU JAYA,SIBU, SARAWAK")],
+             ("Sarawak", "Sibu"): [(1, "A", "NO 1, JALAN PULAU, SIBU"), (2, "B", "NO 2, JALAN PULAU, SIBU")]}
+    found = [cache_row(1, (2.29, 111.83), "name", "Sibu", "Sarawak"), cache_row(2, (2.30, 111.84), "name", "Sibu", "Sarawak")]
+    centres = centres if centres is not None else {"Sarawak|Sibu": SIBU_CENTRE, "Sarawak|Sibujaya": SIBUJAYA_CENTRE}
+    return retry_run(tmp_path, sub, shops, found + rows, centres, SIBU_POSTAL, [(1, "Sibu", "Sarawak", *SIBU_TOWN, "")], minutes=0)
+
+
+def test_a_wrong_point_with_no_better_anchor_becomes_a_district_row_before_any_search(tmp_path):
+    """Shop 5304's old row at Sibu town is wrong (found shops of another district), and its anchor today is its
+    district: a run with no time for searches makes it a district row at once (the district centre), with its tries
+    and last_tried, and counts it; a second such run changes nothing; a run with time still searches it."""
+    rows, st = sibu_files(tmp_path, "one", [cache_row(5304, SIBU_JAYA_ROW, "town", "Sibujaya", "Sarawak", "Sibu", tries=0, last="")])
+    r = rows["5304"]
+    assert (r["precision"], r["query"], r["tries"], r["last_tried"]) == ("district", "Sibujaya, Sarawak", "0", "")
+    assert (float(r["lat"]), float(r["lon"])) == pytest.approx(SIBUJAYA_CENTRE, abs=1e-5)
+    assert (st["corrected_offline"], st["place_corrected"], st["upgraded_offline"]) == (1, 0, 0)
+    first = (tmp_path / "one" / "premise_geo.csv").read_bytes()
+    rows2, st2 = sibu_files(tmp_path, "two", list(rows.values()))
+    assert (tmp_path / "two" / "premise_geo.csv").read_bytes() == first
+    assert (st2["corrected_offline"], st2["upgraded_offline"]) == (0, 0)
+    assert gp.retry_queue([{"premise_code": "5304"}], rows2, TODAY, 10) == [{"premise_code": "5304"}]
+
+
+def test_a_wrong_point_whose_district_has_no_centre_becomes_a_row_with_no_point(tmp_path):
+    """No district centre and no other shops in the district: no anchor at all. The wrong row still goes (a district
+    row with no point: 'location unknown', as the build reads a row with no point)."""
+    rows, st = sibu_files(tmp_path, "nocentre", [cache_row(5304, SIBU_JAYA_ROW, "town", "Sibujaya", "Sarawak", "Sibu", tries=1)],
+                          centres={"Sarawak|Sibu": SIBU_CENTRE})
+    r = rows["5304"]
+    assert (r["precision"], r["lat"], r["lon"], r["query"], r["tries"]) == ("district", "", "", "Sibujaya, Sarawak", "1")
+    assert st["corrected_offline"] == 1
+
+
+def test_a_row_at_a_far_towns_table_point_becomes_a_district_row_before_any_search(tmp_path):
+    """Shop 21036 in a run with no time for searches: its row at the far town's table point is wrong (the place
+    list says so) and nothing better is written, so it becomes a district row, counted in place_corrected."""
+    places, d, postal = bukit_pasir(13.7)
+    rows, st = retry_run(tmp_path, "run", {("Johor", "Batu Pahat"): [(21036, "KEDAI", "NO 246 JALAN KLUANG,,TAMAN BUKIT PASIR,")]},
+                         [cache_row(21036, postal, "town", "Batu Pahat", "Johor", "Bukit Pasir", tries=0, last="")],
+                         {"Johor|Batu Pahat": BATU_PAHAT_SHOPS},
+                         [("84300", "Bukit Pasir", "Johor", *postal), ("86400", "Parit Raja", "Johor", 1.87, 103.10)],
+                         [(1, "Bukit Pasir", "Johor", *BUKIT_PASIR_FAR, ""), (2, "Parit Raja", "Johor", *PARIT_RAJA, "")], minutes=0)
+    assert (rows["21036"]["precision"], rows["21036"]["query"]) == ("district", "Batu Pahat, Johor")
+    assert (st["corrected_offline"], st["place_corrected"], st["place_dropped"]) == (1, 1, 1)
+
+
+# T2-3: a written town beats an unwritten postcode place (2026 points).
+KS_SHOPS, SEKINCHAN, KUALA_SELANGOR = (3.34, 101.26), (3.5074, 101.1041), (3.35, 101.25)
+KS_POSTAL = [("45400", "Sekinchan", "Selangor", 3.3788, 101.2798), ("45000", "Kuala Selangor", "Selangor", 3.2457, 101.3678)]
+KS_PLACES = [(1, "Sekinchan", "Selangor", *SEKINCHAN, ""), (2, "Kuala Selangor", "Selangor", *KUALA_SELANGOR, "")]
+
+
+def test_a_written_town_beats_an_unwritten_postcode_place():
+    """4015 ('45400 KUALA SELANGOR'): 45400's place is Sekinchan (one rough point, 24 km from the town's own point),
+    which the address does not write, while it writes Kuala Selangor: the shop gets Kuala Selangor, not Sekinchan.
+    With no town written the postcode's town is used as before; so it is when the address writes it."""
+    places = table(KS_POSTAL, KS_PLACES)
+    d = districts({"Selangor|Kuala Selangor": KS_SHOPS}, places)
+    assert gp.km(3.3788, 101.2798, *SEKINCHAN) > gp.ANCHOR_KM
+    a = anchor("Selangor", "Kuala Selangor", "202 & 203 (Q),PEKAN PASIR PENAMBANG,45400 KUALA SELANGOR, SELANGOR", places, d)
+    assert (a["kind"], a["label"], a["via"]) == ("town", "Kuala Selangor", "place") and a["point"] == pytest.approx(KUALA_SELANGOR)
+    for address in ("LOT 1, JALAN 2, 45400", "LOT 1, 45400 SEKINCHAN", "LOT 1, SEKINCHAN, 45400 KUALA SELANGOR"):
+        a = anchor("Selangor", "Kuala Selangor", address, places, d)
+        assert (a["kind"], a["label"], a["via"]) == ("town", "Sekinchan", "postcode town"), address
+    # 20943 ('TAMAN PAGOH JAYA, 84500 PAGOH'): 84500's place is Panchor, 30 km from 84500's point; Pagoh is written.
+    places = table([("84500", "Panchor", "Johor", 2.0423, 102.9538), ("84600", "Pagoh", "Johor", 2.087, 102.8871)],
+                   [(1, "Panchor", "Johor", 2.1722, 102.7083, "Pancur"), (2, "Pagoh", "Johor", 2.1495, 102.7704, "")])
+    d = districts({"Johor|Muar": (2.10, 102.80)}, places)
+    a = anchor("Johor", "Muar", "NO 9, 11 & 13 JALAN JAYA 1/5 A,TAMAN PAGOH JAYA,84500 PAGOH", places, d)
+    assert (a["label"], a["via"]) == ("Pagoh", "place")
+    assert anchor("Johor", "Muar", "NO 9, JALAN JAYA, 84500", places, d)["label"] == "Panchor"
+
+
+def test_a_postcode_place_written_in_the_address_still_gives_its_town():
+    """6437 ('98200 BATU NIAH'): the address writes Niah, 98200's place, so the postcode gives Niah's own point as
+    before (11.7 km from where OpenStreetMap found that shop: a known limit, see etl/geo/README.md)."""
+    niah = (3.86203, 113.71521)
+    places = table([("98200", "Niah", "Sarawak", 3.195, 112.6848)], [(1, "Niah", "Sarawak", *niah, "Kampong Niah")])
+    d = districts({"Sarawak|Subis": (3.80, 113.78)}, places)
+    assert not places.place_unwritten("98200", "LOT 1, 98200 BATU NIAH", "Sarawak", "Subis")
+    a = anchor("Sarawak", "Subis", "LOT 1, 98200 BATU NIAH", places, d)
+    assert (a["label"], a["via"]) == ("Niah", "postcode town") and a["point"] == pytest.approx(niah)
+
+
+KINTA_SHOPS, IPOH = (4.60, 101.08), (4.5975, 101.0901)
+
+
+def test_a_retry_never_turns_a_written_towns_row_into_an_unwritten_postcode_places_row(tmp_path):
+    """12352 ('... OFF JALAN KG BERCHAM, 34100 IPOH'): 34100 is Selama's postcode. Should its point come within 35 km
+    of where Kinta's shops are, a retry that finds nothing keeps the 'Ipoh' row (before, it became a postcode row at
+    Selama, 34 km off). A new shop with that address still gets the postcode: the rule is for the written town's row."""
+    selama = north(KINTA_SHOPS, 34)
+    postal = [("30000", "Ipoh", "Perak", *IPOH), ("34100", "Selama", "Perak", *selama)]
+    place_list = [(1, "Ipoh", "Perak", *IPOH, ""), (2, "Selama", "Perak", *selama, "")]
+    address = "NO 1, OFF JALAN KG BERCHAM, 34100 IPOH"
+    places = table(postal, place_list)
+    a = anchor("Perak", "Kinta", address, places, districts({"Perak|Kinta": KINTA_SHOPS}, places))
+    assert (a["kind"], a["label"]) == ("postcode", "34100")
+    for minutes in (0, None):
+        rows, st = retry_run(tmp_path, f"run-{minutes}", {("Perak", "Kinta"): [(12352, "KEDAI", address)]},
+                             [cache_row(12352, IPOH, "town", "Kinta", "Perak", "Ipoh", last="2026-10-01")],
+                             {"Perak|Kinta": KINTA_SHOPS}, postal, place_list, minutes=minutes)
+        assert (rows["12352"]["precision"], rows["12352"]["query"], st["retried"]) == ("town", "Ipoh", 0 if minutes == 0 else 1)
+        assert (float(rows["12352"]["lat"]), float(rows["12352"]["lon"])) == pytest.approx(IPOH, abs=1e-5)
+    # A town row for a town the address does not write (Kampar) gets no such protection: the postcode's row.
+    kampar = north(KINTA_SHOPS, -20)
+    rows, _ = retry_run(tmp_path, "kampar", {("Perak", "Kinta"): [(12352, "KEDAI", address)]},
+                        [cache_row(12352, kampar, "town", "Kinta", "Perak", "Kampar", last="2026-10-01")],
+                        {"Perak|Kinta": KINTA_SHOPS}, postal + [("31900", "Kampar", "Perak", *kampar)],
+                        place_list + [(3, "Kampar", "Perak", *kampar, "")])
+    assert (rows["12352"]["precision"], rows["12352"]["query"]) == ("postcode", "34100")
+
+
+def test_an_old_postcode_row_is_not_judged_by_an_unwritten_postcode_place():
+    """17976 ('LOT 2142,JALAN BESAR KAMPUNG NYIOR,23100 DUNGUN'): 23100's place is Paka, which the address does not
+    write. Today's anchor does not use Paka, so Paka's point does not judge the old postcode row either; the district
+    check does. Written as '23100 PAKA', the row far from Paka is wrong as before. A place name is written only as whole
+    words: 'KG PAKAN' does not write PAKA."""
+    paka, rough = (4.6372, 103.4366), (4.50, 103.30)
+    places = table([("23100", "Paka", "Terengganu", *rough), ("23000", "Dungun", "Terengganu", 4.76, 103.41)],
+                   [(1, "Paka", "Terengganu", *paka, ""), (2, "Dungun", "Terengganu", 4.7566, 103.4119, "")])
+    d = districts({"Terengganu|Dungun": (4.70, 103.42)}, places)
+    shop = {"premise_code": "17976", "premise": "KEDAI", "state": "Terengganu", "district": "Dungun",
+            "address": "LOT 2142,JALAN BESAR KAMPUNG NYIOR,23100 DUNGUN TERENGGANU"}
+    row = cache_row(17976, rough, "postcode", "Dungun", "Terengganu", "23100")
+    assert gp.km(*rough, *paka) > gp.ANCHOR_KM and gp.km(*rough, 4.70, 103.42) < gp.CHECK_KM
+    assert gp.wrong_by(row, shop, places, d) is None
+    assert gp.wrong_by(row, {**shop, "address": "LOT 2142, 23100 PAKA"}, places, d) == "place"
+    pakan = "LOT 2142, KG PAKAN, 23100 DUNGUN"
+    assert places.place_unwritten("23100", pakan, "Terengganu", "Dungun")
+    assert gp.wrong_by(row, {**shop, "address": pakan}, places, d) is None
+
+
+# T2-2: a more specific place vetoes a far town (2026 points).
+PAPAR_SHOPS, PAPAR, KINARUT = (5.70, 115.98), (5.73333, 115.93333), (5.8231, 116.0466)
+PAPAR_POSTAL = [("89600", "Papar", "Sabah", 5.5174, 115.9036)]
+LAWAS_CENTRE, LAWAS, TRUSAN = (4.455121, 115.427188), (4.8604, 115.409), (4.78486, 115.27463)
+LAWAS_POSTAL = [("98850", "Lawas", "Sarawak", 3.9117, 114.0909), ("98857", "Lawas", "Sarawak", 4.8211, 115.4274)]
+
+
+def test_a_smaller_place_vetoes_a_far_town():
+    """21246 ('...KINARUT,PAPAR'): Kinarut, a place of the list but no postal town, lies 16 km from Papar's point: the
+    shop does not get Papar (its district instead), and an old row at Papar is wrong. 18109 ('PEKAN TRUSAN,LAWAS'):
+    Trusan is 17 km from Lawas town; both lie 40-45 km from Lawas's district centre, so the place counts within 35 km
+    of the town itself. No veto when a place of that name (any of its names) lies within 10 km of the town, or when
+    every place of that name lies more than 35 km from the district's shops and the town (another place), 45 km for
+    the district's own town, as Papar (see test_a_smaller_place_rules_out_the_districts_own_town_from_further_out)."""
+    assert gp.km(*KINARUT, *PAPAR) > gp.ANCHOR_KM and gp.km(*KINARUT, *PAPAR_SHOPS) < gp.CHECK_KM
+
+    def papar(kinarut_places):
+        places = table(PAPAR_POSTAL, [(1, "Papar", "Sabah", *PAPAR, "")] + kinarut_places)
+        return places, districts({"Sabah|Papar": PAPAR_SHOPS}, places)
+    places, d = papar([(2, "Kinarut", "Sabah", *KINARUT, "Kinarut Station")])
+    address = "TINGKAT 1-2, LOT 72,,THE PALM SQUARE COMMERCIAL CENTRE KINARUT,PAPAR"
+    assert anchor("Sabah", "Papar", "LOT 72, PAPAR", places, d)["label"] == "Papar"
+    assert anchor("Sabah", "Papar", address, places, d)["kind"] == "district"
+    shop = {"premise_code": "21246", "premise": "KEDAI", "state": "Sabah", "district": "Papar", "address": address}
+    assert gp.wrong_by(cache_row(21246, PAPAR, "town", "Papar", "Sabah", "Papar"), shop, places, d) == "place"
+    assert gp.wrong_by(cache_row(21246, PAPAR, "town", "Papar", "Sabah", "Papar"), {**shop, "address": "LOT 72, PAPAR"},
+                       places, d) is None
+    near_papar = north(PAPAR, 9.9)
+    places, d = papar([(2, "Kinarut", "Sabah", *KINARUT, ""), (3, "Kinarut Lama", "Sabah", *near_papar, "Kinarut")])
+    assert anchor("Sabah", "Papar", address, places, d)["label"] == "Papar"     # a place called Kinarut 9.9 km from Papar
+    places, d = papar([(2, "Kinarut", "Sabah", *KINARUT, ""), (3, "Kinarut Lama", "Sabah", *north(PAPAR, 10.1), "Kinarut")])
+    assert anchor("Sabah", "Papar", address, places, d)["kind"] == "district"  # ... 10.1 km: no
+    far = north(PAPAR_SHOPS, 46)    # the town lies within 35 km of the district's shops, so only they count
+    assert gp.km(*far, *PAPAR_SHOPS) > gp.OWN_VETO_KM > gp.CHECK_KM > gp.km(*PAPAR, *PAPAR_SHOPS)
+    places, d = papar([(2, "Kinarut", "Sabah", *far, "")])
+    assert anchor("Sabah", "Papar", address, places, d)["label"] == "Papar"     # another Kinarut, 46 km away
+    places, d = papar([(2, "Kinarut", "Sabah", *north(PAPAR_SHOPS, 36), "")])
+    assert anchor("Sabah", "Papar", address, places, d)["kind"] == "district"  # 36 km: Papar is the district's own town
+    places = table(LAWAS_POSTAL, [(1, "Lawas", "Sarawak", *LAWAS, ""), (2, "Trusan", "Sarawak", *TRUSAN, "Terusan")])
+    d = districts({"Sarawak|Lawas": LAWAS_CENTRE}, places)
+    assert gp.km(*TRUSAN, *LAWAS_CENTRE) > gp.CHECK_KM and gp.km(*LAWAS, *LAWAS_CENTRE) > gp.CHECK_KM
+    assert gp.ANCHOR_KM < gp.km(*TRUSAN, *LAWAS) < gp.CHECK_KM
+    assert anchor("Sarawak", "Lawas", "PASAR LAWAS,LAWAS,", places, d)["label"] == "Lawas"
+    assert anchor("Sarawak", "Lawas", "PEKAN TRUSAN,LAWAS,", places, d)["kind"] == "district"
+
+
+def test_a_smaller_place_vetoes_a_postcodes_town_and_lets_the_next_town_count():
+    """17147 ('TENANG STATION, 85000 SEGAMAT'): Tenang lies 16.6 km from Segamat's own point, which 85000 (one rough
+    point) would give, and which the written SEGAMAT gives too: no town; the district. A town written that lies within
+    10 km of Tenang still counts; Labis, 14 km away, does not."""
+    segamat, tenang, labis = (2.5148, 102.8158), (2.3729, 102.8954), (2.3834, 103.0217)
+    sepang_jaya = north(tenang, 5)   # a made-up postal town 5 km from Tenang
+    places = table([("85000", "Segamat", "Johor", 2.65, 102.70), ("85300", "Labis", "Johor", 2.38, 103.02),
+                    ("85310", "Sepang Jaya", "Johor", *sepang_jaya)],
+                   [(1, "Segamat", "Johor", *segamat, ""), (2, "Tenang", "Johor", *tenang, ""), (3, "Labis", "Johor", *labis, ""),
+                    (4, "Sepang Jaya", "Johor", *sepang_jaya, "")])
+    d = districts({"Johor|Segamat": (2.45, 102.85)}, places)
+    assert gp.km(*tenang, *segamat) > gp.ANCHOR_KM and gp.km(2.65, 102.70, *segamat) > gp.ANCHOR_KM
+    a = anchor("Johor", "Segamat", "NO 48 & 49, 85000, SEGAMAT,JOHOR,", places, d)
+    assert (a["label"], a["via"]) == ("Segamat", "postcode town")
+    assert anchor("Johor", "Segamat", "NO 48 & 49,TENANG STATION,85000, SEGAMAT,JOHOR,", places, d)["kind"] == "district"
+    assert gp.ANCHOR_KM < gp.km(*tenang, *labis) < gp.CHECK_KM
+    assert anchor("Johor", "Segamat", "NO 48 & 49,TENANG STATION,LABIS, JOHOR,", places, d)["kind"] == "district"
+    a = anchor("Johor", "Segamat", "NO 48 & 49,TENANG STATION,SEPANG JAYA, JOHOR,", places, d)
+    assert (a["kind"], a["label"]) == ("town", "Sepang Jaya")
+
+
+def test_what_names_a_smaller_place():
+    """Not a smaller place: a postal town (or part of one written there), the state's or the district's name, a name of
+    generic words or numbers (KOTA, BATU 10, SIMPANG EMPAT, CHABANG EMPAT), of words found in 100 or more names of the
+    list (KAMPUNG GONG; the places' names count, not their ascii or alt names), a road (JALAN TENANG), a subdistrict
+    (MUKIM SALA), a housing estate (TAMAN MEWAH, or a name right after TAMAN), a name of fewer than 4 letters, another
+    state's place. KG reads as KAMPUNG; a name matches by its ascii name too."""
+    centre = (6.0, 100.4)
+    common = [(100 + i, f"Kampung Gong Bendang {i}", "Kedah", 6.0, 100.4, "") for i in range(100)]   # the decided 100
+    common += [(300 + i, f"Kampung Tualang {i}", "Kedah", 6.0, 100.4, "") for i in range(99)]
+    # TUALANG in a 100th place's ascii name only (its name has an accent) and in a 101st's alt name only: still 99 names.
+    common += [(400, "Kampung Tu\u00e2lang", "Kedah", 6.0, 100.4, ""), (401, "Kampung Seratus", "Kedah", 6.0, 100.4, "Kampung Tualang")]
+    plist = [(1, "Kota", "Kedah", 6.01, 100.41, ""), (2, "Batu 10", "Kedah", 6.01, 100.41, ""),
+             (3, "Simpang Empat", "Kedah", 6.01, 100.41, ""), (4, "Chabang Empat", "Kedah", 6.01, 100.41, ""),
+             (5, "Kampung Gong", "Kedah", 6.01, 100.41, ""), (6, "Tenang", "Kedah", 6.01, 100.41, ""),
+             (7, "Sala", "Kedah", 6.01, 100.41, ""), (8, "Taman Mewah", "Kedah", 6.01, 100.41, ""),
+             (9, "Awah", "Kedah", 6.01, 100.41, ""), (10, "Ulu", "Kedah", 6.01, 100.41, ""),
+             (11, "Jitra", "Kedah", 6.01, 100.41, ""), (12, "Kubang Pasu", "Kedah", 6.01, 100.41, ""),
+             (13, "Kedah", "Kedah", 6.01, 100.41, ""), (14, "Kampung Bakap", "Kedah", 6.01, 100.41, ""),
+             (15, "Kampong Tok Lebai", "Kedah", 6.01, 100.41, ""), (16, "Perai", "Pulau Pinang", 6.01, 100.41, ""),
+             (17, "Bukit Kayu Hitam", "Kedah", 6.01, 100.41, ""), (19, "Kayu Hitam", "Kedah", 6.01, 100.41, ""),
+             (18, "Changloon", "Kedah", 6.01, 100.41, "")] + common
+    rows = place_rows(plist)
+    ascii_names = {"18": "Changlun", "400": "Kampung Tualang"}   # Changloon, ascii name Changlun
+    for r in rows:
+        r["asciiname"] = ascii_names.get(r["geonameid"], r["asciiname"])
+    places = gp.Places(postal_rows([("06000", "Jitra", "Kedah", *centre), ("06050", "Bukit Kayu Hitam", "Kedah", *centre),
+                                    ("13700", "Seberang Jaya", "Pulau Pinang", 5.40, 100.40)]), rows)
+    assert "GONG" in places.common_words and "BENDANG" in places.common_words and "TUALANG" not in places.common_words
+
+    def names(address):
+        return [w for w, _ in places.smaller_places(address, "Kedah", "Kubang Pasu")]
+    assert names("KOTA, BATU 10, SIMPANG EMPAT, CHABANG EMPAT, KAMPUNG GONG, JITRA") == []
+    assert names("JALAN TENANG, MUKIM SALA, TAMAN MEWAH, TAMAN AWAH INDAH, ULU, KUBANG PASU, KEDAH, PERAI") == []
+    assert names("NO 1, BUKIT KAYU HITAM") == [] and names("NO 1, KAYU HITAM") == ["KAYU HITAM"]  # part of a postal town
+    assert names("KAMPUNG, BAKAP") == []    # the words of one name are written next to each other
+    assert names("KG BAKAP, TENANG, AWAH, KG TOK LEBAI, CHANGLUN") == ["KAMPUNG TOK LEBAI", "KAMPUNG BAKAP", "TENANG",
+                                                                         "AWAH", "CHANGLUN"]
+    assert gp.Places(postal_rows([("06000", "Jitra", "Kedah", *centre)]), None).smaller_places("NO 1, TENANG", "Kedah") == []
+
+
+def test_a_kampung_name_and_its_core_are_one_place_for_the_veto():
+    """21769 ('KEDAI KAMPUNG BERANGAN,TUMPAT'): the list's 'Kampung Berangan' lies 15 km from Tumpat, but its
+    'Berangan' 1.4 km: that may be the place written, so Tumpat is not ruled out."""
+    tumpat, far_berangan, berangan = (6.1978, 102.171), (6.06, 102.20), (6.19, 102.16)
+    postal = [("16200", "Tumpat", "Kelantan", *tumpat)]
+    one = table(postal, [(1, "Tumpat", "Kelantan", *tumpat, ""), (2, "Kampung Berangan", "Kelantan", *far_berangan, "")])
+    two = table(postal, [(1, "Tumpat", "Kelantan", *tumpat, ""), (2, "Kampung Berangan", "Kelantan", *far_berangan, ""),
+                         (3, "Berangan", "Kelantan", *berangan, "")])
+    assert gp.km(*far_berangan, *tumpat) > gp.ANCHOR_KM > gp.km(*berangan, *tumpat)
+    for places, kind in ((one, "district"), (two, "town")):
+        d = districts({"Kelantan|Tumpat": (6.15, 102.17)}, places)
+        assert anchor("Kelantan", "Tumpat", "417-B, KEDAI KAMPUNG BERANGAN,TUMPAT,", places, d)["kind"] == kind
+
+
+def test_a_vetoed_town_row_becomes_a_district_row_before_any_search(tmp_path):
+    """A run with no time for searches: 21246's old row at Papar is wrong (Kinarut), and nothing better is written: a
+    district row, counted in place_corrected; a second such run changes nothing."""
+    plist = [(1, "Papar", "Sabah", *PAPAR, ""), (2, "Kinarut", "Sabah", *KINARUT, "")]
+    shops = {("Sabah", "Papar"): [(21246, "KEDAI", "TINGKAT 1-2, LOT 72,,THE PALM SQUARE COMMERCIAL CENTRE KINARUT,PAPAR")]}
+    rows, st = retry_run(tmp_path, "one", shops, [cache_row(21246, PAPAR, "town", "Papar", "Sabah", "Papar", tries=0, last="")],
+                         {"Sabah|Papar": PAPAR_SHOPS}, PAPAR_POSTAL, plist, minutes=0)
+    assert (rows["21246"]["precision"], rows["21246"]["query"]) == ("district", "Papar, Sabah")
+    assert (st["corrected_offline"], st["place_corrected"]) == (1, 1)
+    rows2, st2 = retry_run(tmp_path, "two", shops, list(rows.values()), {"Sabah|Papar": PAPAR_SHOPS}, PAPAR_POSTAL, plist, minutes=0)
+    assert rows2 == rows and (st2["corrected_offline"], st2["upgraded_offline"]) == (0, 0)
+
+
+# T2-7: the decided cuts at their edges, and the scope of round 1's rules.
+
+def test_two_places_of_a_name_are_ambiguous_from_10_km_apart():
+    """place_point: two places of the name within 15 km of where the district's shops are, 9.9 km apart: the nearer;
+    10.1 km apart: which one? none."""
+    centre = (3.0, 101.5)
+    near = north(centre, 2)
+    for gap_km, want in ((9.9, near), (10.1, None)):
+        other = north(near, gap_km)
+        assert gp.km(*other, *centre) < gp.GUESS_KM
+        places = table([("43000", "Kajang", "Selangor", *centre)],
+                       [(1, "Sungai Buah", "Selangor", *near, ""), (2, "Sungai Buah", "Selangor", *other, "")])
+        got = places.place_point("Selangor", "SUNGAI BUAH", [centre])
+        assert (got == pytest.approx(want, abs=1e-4)) if want else got is None, gap_km
+
+
+def test_a_postcodes_town_point_replaces_its_rough_point_from_10_km():
+    """A postcode of a town with one rough point keeps that point when it lies 9.9 km from the town's own point, and
+    gives the town's point at 10.1 km."""
+    for gap_km, kind in ((9.9, "postcode"), (10.1, "town")):
+        rough = north(PUTATAN, gap_km)
+        places = table([(f"8820{i}", "Putatan", "Sabah", *rough) for i in range(5)], PLACES)
+        a = anchor("Sabah", "Putatan", "LOT 1, 88200 PUTATAN", places, districts({"Sabah|Putatan": PUTATAN_CENTRE}, places))
+        assert a["kind"] == kind, gap_km
+
+
+def test_old_rows_are_judged_by_the_towns_own_point_from_10_km():
+    """An old town row 9.9 km from the town's own point (no found shops) stands, 10.1 km is wrong; so for an old postcode
+    row and its town's point, when today's anchor gives the town's point instead of the postcode's rough one."""
+    places = table()
+    d = districts({"Perak|Kerian": KERIAN_CENTRE, "Sabah|Putatan": PUTATAN_CENTRE}, places)
+    shop = {"premise_code": "1", "premise": "KEDAI", "state": "Perak", "district": "Kerian", "address": "NO 1, BAGAN SERAI"}
+    putatan = {"premise_code": "3", "premise": "KEDAI", "state": "Sabah", "district": "Putatan", "address": "LOT 3, 88200 PUTATAN"}
+    for gap_km, why in ((9.9, None), (10.1, "place")):
+        row = cache_row(1, north(BAGAN_SERAI, gap_km), "town", "Kerian", "Perak", "Bagan Serai")
+        assert gp.wrong_by(row, shop, places, d) == why, gap_km
+        row = cache_row(3, north(PUTATAN, -gap_km), "postcode", "Putatan", "Sabah", "88200")
+        assert gp.wrong_by(row, putatan, places, d) == why, gap_km
+
+
+def test_the_retry_rule_takes_a_town_whose_rows_spread_5_to_10_km(tmp_path):
+    """The retry rule's one rough point is the new anchors' (rows within 10 km), not the old rows' (5 km): Jerteh's rows
+    7 km apart; an old 'Jerteh' town row stays when a retry's anchor is 22020's own point (3 km from the town)."""
+    p22020, p22000 = north(JERTIH, 3), north(JERTIH, -4)
+    postal = [("22020", "Jerteh", "Terengganu", *p22020), ("22000", "Jerteh", "Terengganu", *p22000)]
+    places = table(postal, [(1736405, "Jertih", "Terengganu", *JERTIH, "Jerteh")])
+    assert ("terengganu", "JERTEH") in places.one_point and ("terengganu", "JERTEH") not in places.one_point_rows
+    shops = {("Terengganu", "Besut"): [(1, "KEDAI", "LOT 1, 22020 JERTEH")]}
+    a = anchor("Terengganu", "Besut", "LOT 1, 22020 JERTEH", places, districts({"Terengganu|Besut": JERTIH}, places))
+    assert (a["kind"], a["label"], a["via"]) == ("postcode", "22020", "rows")
+    rows, st = retry_run(tmp_path, "spread", shops,
+                         [cache_row(1, JERTIH, "town", "Besut", "Terengganu", "Jerteh", last="2026-10-01")],
+                         {"Terengganu|Besut": JERTIH}, postal, [(1736405, "Jertih", "Terengganu", *JERTIH, "Jerteh")])
+    assert (rows["1"]["precision"], rows["1"]["query"], st["retried"]) == ("town", "Jerteh", 1)
+
+
+def test_the_districts_own_town_counts_up_to_80_km():
+    """The district's own town, the only place of its name: 79 km out counts, 81 km does not."""
+    for gap_km, ok in ((79.0, True), (81.0, False)):
+        own = north(KUDAT_CENTRE, -gap_km)
+        kudat = table([("89050", "Kudat", "Sabah", *north(KUDAT_CENTRE, 40))], [(1, "Kudat", "Sabah", *own, "")])
+        got = kudat.place_point("Sabah", "KUDAT", [KUDAT_CENTRE], True, True)
+        assert (got is not None) == ok, gap_km
+
+
+def test_a_place_is_found_by_its_ascii_name_too():
+    """GeoNames' Changloon has the ascii name Changlun, as the postcode table names the town."""
+    rows = place_rows([(1, "Changloon", "Kedah", 6.4290, 100.4290, "")])
+    rows[0]["asciiname"] = "Changlun"
+    places = gp.Places(postal_rows([("06010", "Changlun", "Kedah", 6.40, 100.43)]), rows)
+    assert places.place_point("Kedah", "CHANGLUN", [(6.42, 100.43)]) == pytest.approx((6.4290, 100.4290))
+    a = anchor("Kedah", "Kubang Pasu", "NO 1, CHANGLUN", places, districts({"Kedah|Kubang Pasu": (6.42, 100.43)}, places))
+    assert (a["label"], a["via"]) == ("Changlun", "place")
+
+
+def test_a_kl_shops_town_row_at_a_selangor_only_place_stays_only_for_strong_evidence():
+    """at_only_place takes the NEIGHBOURS' places only with strong evidence, as place_point does: a W.P. Kuala Lumpur
+    shop's old row at the only 'Sungai Jauh', in Selangor, 42 km out (the KL table's point 17 km out, 25 km from it)
+    is judged by its distance (wrong) for a weak town; for the district's own town it may stay."""
+    r = (3.15, 101.70)
+    postal, place = north(r, 17), north(r, 42)
+    places = table([("52990", "Sungai Jauh", "Wilayah Persekutuan Kuala Lumpur", *postal)],
+                   [(1, "Sungai Jauh", "Selangor", *place, "")])
+    assert places.at_only_place(KL, "SUNGAI JAUH", place, [r], strong=True)
+    assert not places.at_only_place(KL, "SUNGAI JAUH", place, [r])
+    shop = {"premise_code": "1", "premise": "KEDAI", "state": KL, "district": "Kepong", "address": "NO 1, SUNGAI JAUH"}
+    d = districts({f"{KL}|Kepong": r}, places)
+    assert gp.wrong_by(cache_row(1, place, "town", "Kepong", KL, "Sungai Jauh"), shop, places, d) == "district"
+    own = {**shop, "district": "Sungai Jauh"}
+    d = districts({f"{KL}|Sungai Jauh": r}, places)
+    assert gp.wrong_by(cache_row(1, place, "town", "Sungai Jauh", KL, "Sungai Jauh"), own, places, d) is None
+
+
+# ---------- round 2 fix-ups: the veto at found shops' points and for the district's own town, and the edges ----------
+
+TANAH_MERAH_CENTRE = (5.7663, 102.0341)
+
+
+def test_a_smaller_place_vetoes_a_town_that_found_shops_place():
+    """20826 ('LOT PT 4408, KAMPUNG GUAL IPOH,TANAH MERAH,'): two found shops that name TANAH MERAH agree on its point
+    F, so the town's anchor is F ('found'). Kampung Gual Ipoh lies 12.7 km from F and within 35 km of where the
+    district's shops are: no town anchor, and an old town row at F is wrong ('place': the veto comes before the found
+    shops' own check, which the row passes). With the place 9.9 km from F the town stays, and so does the row."""
+    found = north(TANAH_MERAH_CENTRE, 5)
+    address = "LOT PT 4408, KAMPUNG GUAL IPOH,TANAH MERAH,"
+    shop = {"premise_code": "20826", "premise": "KEDAI", "state": "Kelantan", "district": "Tanah Merah", "address": address}
+    for gap_km, kind, why in ((12.7, "district", "place"), (9.9, "town", None)):
+        places = table([("17500", "Tanah Merah", "Kelantan", *north(TANAH_MERAH_CENTRE, 20))],
+                       [(1, "Tanah Merah", "Kelantan", *north(TANAH_MERAH_CENTRE, 8), ""),
+                        (2, "Kampung Gual Ipoh", "Kelantan", *north(found, -gap_km), "")])
+        places.learn(found_shops("Kelantan", "Tanah Merah", "NO 1, TANAH MERAH", [north(found, -0.2), north(found, 0.2)]))
+        d = districts({"Kelantan|Tanah Merah": TANAH_MERAH_CENTRE}, places)
+        assert anchor("Kelantan", "Tanah Merah", "NO 1, TANAH MERAH", places, d)["via"] == "found"
+        assert anchor("Kelantan", "Tanah Merah", address, places, d)["kind"] == kind, gap_km
+        assert gp.wrong_by(cache_row(20826, found, "town", "Tanah Merah", "Kelantan", "Tanah Merah"), shop, places, d) == why
+
+
+PEKAN_SHOPS, PEKAN = (3.3782, 103.2096), (3.4000, 103.2100)
+NENASI_ADDRESS = "NO 63 & 64 ,JALAN BESAR NENASI,PEKAN, PAHANG"
+
+
+def pekan_table(nenasi_km):
+    """Pekan (the town and its postcode) by where Pekan's shops are, and Nenasi nenasi_km south of them."""
+    return table([("26600", "Pekan", "Pahang", *PEKAN)],
+                 [(1, "Pekan", "Pahang", *PEKAN, ""), (2, "Nenasi", "Pahang", *north(PEKAN_SHOPS, -nenasi_km), "Kampong Nenasi")])
+
+
+def test_a_smaller_place_rules_out_the_districts_own_town_from_further_out():
+    """5316 ('NO 63 & 64 ,JALAN BESAR NENASI,PEKAN, PAHANG'): Nenasi lies 37.4 km from where Pekan's shops are. PEKAN,
+    the district's own town, may name only the district (a large one): a smaller place up to 45 km out rules it out,
+    so the shop gets its district and an old row at Pekan is wrong. For a town not named after the district the place
+    must lie within 35 km, as before; and beyond 45 km nothing is ruled out."""
+    assert gp.CHECK_KM < 37.4 < gp.OWN_VETO_KM
+    places = pekan_table(37.4)
+    d = districts({"Pahang|Pekan": PEKAN_SHOPS}, places)
+    assert anchor("Pahang", "Pekan", "NO 63 & 64, PEKAN, PAHANG", places, d)["label"] == "Pekan"
+    assert anchor("Pahang", "Pekan", NENASI_ADDRESS, places, d)["kind"] == "district"
+    shop = {"premise_code": "5316", "premise": "KEDAI", "state": "Pahang", "district": "Pekan", "address": NENASI_ADDRESS}
+    assert gp.wrong_by(cache_row(5316, PEKAN, "town", "Pekan", "Pahang", "Pekan"), shop, places, d) == "place"
+    other = districts({"Pahang|Rompin": PEKAN_SHOPS}, places)     # Pekan is not this district's own town
+    a = anchor("Pahang", "Rompin", NENASI_ADDRESS, places, other)
+    assert (a["kind"], a["label"]) == ("town", "Pekan")
+    assert gp.wrong_by(cache_row(5316, PEKAN, "town", "Rompin", "Pahang", "Pekan"), {**shop, "district": "Rompin"},
+                       places, other) is None
+    for nenasi_km, own, vetoed in ((44.9, True, True), (45.1, True, False), (34.9, False, True), (35.1, False, False)):
+        places = pekan_table(nenasi_km)
+        smaller = places.smaller_places(NENASI_ADDRESS, "Pahang", "Pekan")
+        assert [w for w, _ in smaller] == ["NENASI"]
+        assert places.vetoes(PEKAN, smaller, [PEKAN_SHOPS], "Pahang", own) is vetoed, (nenasi_km, own)
+    far = pekan_table(45.1)
+    assert anchor("Pahang", "Pekan", NENASI_ADDRESS, far, districts({"Pahang|Pekan": PEKAN_SHOPS}, far))["label"] == "Pekan"
+
+
+def test_a_smaller_place_rules_out_the_districts_own_town_that_its_postcode_gives():
+    """The same for the town a postcode gives (one rough point, see Places.postcode_town): '26600 PEKAN', with 26600's
+    rough point 15 km from Pekan, gives Pekan's own point, and NENASI (37.4 km out) rules it out. An old 26600 row at
+    the rough point is then judged by its distance from the district, not by Pekan's point (as for any veto). In a
+    district whose own town Pekan is not (Rompin, with its shops where Pekan's are), the place must lie within 35 km:
+    37.4 km out it rules nothing out, so the shop gets Pekan's own point and the old row is judged by it (wrong)."""
+    rough = north(PEKAN, 15)
+    places = table([("26600", "Pekan", "Pahang", *rough)],
+                   [(1, "Pekan", "Pahang", *PEKAN, ""), (2, "Nenasi", "Pahang", *north(PEKAN_SHOPS, -37.4), "")])
+    d = districts({"Pahang|Pekan": PEKAN_SHOPS}, places)
+    a = anchor("Pahang", "Pekan", "NO 63 & 64, 26600 PEKAN", places, d)
+    assert (a["kind"], a["label"], a["via"]) == ("town", "Pekan", "postcode town")
+    address = "NO 63 & 64 ,JALAN BESAR NENASI,26600 PEKAN, PAHANG"
+    assert anchor("Pahang", "Pekan", address, places, d)["kind"] == "district"
+    shop = {"premise_code": "5316", "premise": "KEDAI", "state": "Pahang", "district": "Pekan", "address": address}
+    row = cache_row(5316, rough, "postcode", "Pekan", "Pahang", "26600")
+    assert gp.wrong_by(row, {**shop, "address": "NO 63 & 64, 26600 PEKAN"}, places, d) == "place"
+    assert gp.wrong_by(row, shop, places, d) is None
+    other = districts({"Pahang|Rompin": PEKAN_SHOPS}, places)
+    a = anchor("Pahang", "Rompin", address, places, other)
+    assert (a["kind"], a["label"], a["via"]) == ("town", "Pekan", "postcode town") and a["point"] == pytest.approx(PEKAN)
+    rompin = {**shop, "district": "Rompin"}
+    assert gp.wrong_by(cache_row(5316, rough, "postcode", "Rompin", "Pahang", "26600"), rompin, places, other) == "place"
+
+
+def test_a_vetoed_own_town_row_becomes_a_district_row_before_any_search(tmp_path):
+    """A run with no time for searches: 5316's old row at Pekan is wrong (Nenasi), and nothing else is written: a
+    district row, counted in place_corrected; a second such run changes nothing."""
+    plist = [(1, "Pekan", "Pahang", *PEKAN, ""), (2, "Nenasi", "Pahang", *north(PEKAN_SHOPS, -37.4), "")]
+    shops = {("Pahang", "Pekan"): [(5316, "KEDAI", NENASI_ADDRESS)]}
+    postal = [("26600", "Pekan", "Pahang", *PEKAN)]
+    rows, st = retry_run(tmp_path, "one", shops, [cache_row(5316, PEKAN, "town", "Pekan", "Pahang", "Pekan", tries=0, last="")],
+                         {"Pahang|Pekan": PEKAN_SHOPS}, postal, plist, minutes=0)
+    assert (rows["5316"]["precision"], rows["5316"]["query"]) == ("district", "Pekan, Pahang")
+    assert (st["corrected_offline"], st["place_corrected"]) == (1, 1)
+    rows2, st2 = retry_run(tmp_path, "two", shops, list(rows.values()), {"Pahang|Pekan": PEKAN_SHOPS}, postal, plist, minutes=0)
+    assert rows2 == rows and (st2["corrected_offline"], st2["upgraded_offline"]) == (0, 0)
+
+
+def test_the_vetoes_references():
+    """The town's own point counts as a reference for the veto only when it lies further than 35 km out (as the
+    district's own town may): a smaller place 12 km beyond a town 34 km out lies 46 km from the district's shops (no
+    veto), beyond one 36 km out it rules the town out; so for the district's own town 40 km out, with a place 52 km
+    from the district's shops. With no references there is nothing to check a place against."""
+    r = (5.0, 102.0)
+    for town_km, own, vetoed in ((34.0, False, False), (36.0, False, True), (40.0, True, True)):
+        town = north(r, town_km)
+        places = table([("16000", "Kota Bharu", "Kelantan", *r)], [(1, "Kampung Telok Rengas", "Kelantan", *north(town, 12), "")])
+        smaller = places.smaller_places("NO 1, KG TELOK RENGAS, KOTA BHARU", "Kelantan", "Kota Bharu")
+        assert [w for w, _ in smaller] == ["KAMPUNG TELOK RENGAS"]
+        assert places.vetoes(town, smaller, [r], "Kelantan", own) is vetoed, town_km
+        assert places.vetoes(town, smaller, [], "Kelantan", own) is False
+
+
+def test_the_veto_needs_a_place_of_the_written_name_near_the_district():
+    """'KG BERANGAN': the list's only 'Kampung Berangan' lies 50 km out (another place of that name). A 'Berangan' 20 km
+    out (a place it may also be, see test_a_kampung_name_and_its_core_are_one_place_for_the_veto) does not make the
+    written name this district's: no veto."""
+    tumpat, centre = (6.1978, 102.171), (6.15, 102.17)
+    places = table([("16200", "Tumpat", "Kelantan", *tumpat)],
+                   [(1, "Tumpat", "Kelantan", *tumpat, ""), (2, "Kampung Berangan", "Kelantan", *north(centre, -50), ""),
+                    (3, "Berangan", "Kelantan", *north(centre, -20), "")])
+    a = anchor("Kelantan", "Tumpat", "417-B, KEDAI KAMPUNG BERANGAN,TUMPAT,", places, districts({"Kelantan|Tumpat": centre}, places))
+    assert (a["kind"], a["label"]) == ("town", "Tumpat")
+
+
+def test_a_far_towns_table_point_with_two_far_places_of_the_name():
+    """Two places called Bukit Pasir, both further than 35 km from where Batu Pahat's shops are: the table's point,
+    13.7 km from one of them, is that far town's, whatever the other and whichever the list writes first; 20.5 km
+    from the nearer, it is used."""
+    r = BATU_PAHAT_SHOPS
+    postal = north(r, 33)
+    for gap_km, far in ((13.7, True), (20.5, False)):
+        two = [(1, "Bukit Pasir", "Johor", *north(postal, gap_km), ""), (2, "Bukit Pasir", "Johor", *north(r, -60), "")]
+        for place_list in (two, two[::-1]):
+            places = table([("84300", "Bukit Pasir", "Johor", *postal)], place_list)
+            assert places.place_point("Johor", "BUKIT PASIR", [r]) is None
+            assert places.far_town("Johor", "BUKIT PASIR", [r], postal) is far, (gap_km, place_list[0][0])
+            d = districts({"Johor|Batu Pahat": r}, places)
+            kind = "district" if far else "town"
+            assert anchor("Johor", "Batu Pahat", "TAMAN BUKIT PASIR", places, d)["kind"] == kind, (gap_km, place_list[0][0])
+
+
+def test_found_shops_place_a_town_before_the_far_town_rule():
+    """Found shops first, also for a far town's name: should 2 shops OpenStreetMap found that write TAMAN BUKIT PASIR
+    agree on a point 8 km from where Batu Pahat's shops are, that point is the town's, though the list's only Bukit
+    Pasir is far (dropped) and the table's point 13.7 km from it; an old row there is not wrong. Without them, the
+    district (test_a_far_towns_table_point_is_not_used_either)."""
+    places, d, postal = bukit_pasir(13.7)
+    assert places.far_town("Johor", "BUKIT PASIR", [BATU_PAHAT_SHOPS], postal)
+    assert anchor("Johor", "Batu Pahat", "NO 9, TAMAN BUKIT PASIR", places, d)["kind"] == "district"
+    spot = north(BATU_PAHAT_SHOPS, 8)
+    places.learn(found_shops("Johor", "Batu Pahat", "NO 1, TAMAN BUKIT PASIR", [north(spot, -0.2), north(spot, 0.2)]))
+    a = anchor("Johor", "Batu Pahat", "NO 9, TAMAN BUKIT PASIR", places, d)
+    assert (a["kind"], a["label"], a["via"]) == ("town", "Bukit Pasir", "found") and a["point"] == pytest.approx(spot)
+    shop = {"premise_code": "21036", "premise": "KEDAI", "state": "Johor", "district": "Batu Pahat",
+            "address": "NO 9, TAMAN BUKIT PASIR"}
+    assert gp.wrong_by(cache_row(21036, spot, "town", "Batu Pahat", "Johor", "Bukit Pasir"), shop, places, d) is None
+
+
+def test_an_old_row_within_10_km_of_a_far_towns_table_point_is_wrong():
+    """An old Bukit Pasir row 9.9 km from the far town's table point is at that point (wrong); 10.1 km from it, and
+    23 km from where the district's shops are, it is judged by its distance, as before (it stays)."""
+    r = BATU_PAHAT_SHOPS
+    postal = north(r, 33)
+    places = table([("84300", "Bukit Pasir", "Johor", *postal)], [(1, "Bukit Pasir", "Johor", *north(r, 43.5), "")])
+    d = districts({"Johor|Batu Pahat": r}, places)
+    shop = {"premise_code": "21036", "premise": "KEDAI", "state": "Johor", "district": "Batu Pahat",
+            "address": "NO 246 JALAN KLUANG,,TAMAN BUKIT PASIR,"}
+    for gap_km, why in ((9.9, "place"), (10.1, None)):
+        row = cache_row(21036, north(postal, -gap_km), "town", "Batu Pahat", "Johor", "Bukit Pasir")
+        assert gp.wrong_by(row, shop, places, d) == why, gap_km
+
+
+def test_far_town_uses_the_evidence_place_point_was_asked_with():
+    """The district's own town whose only place lies 85 km out (beyond even its 80 km), with the table's point 15 km
+    from that place: a far town for the own town's evidence (strong, own), as place_point dropped it then. A W.P. Kuala
+    Lumpur shop's own town whose only place is Selangor's (a NEIGHBOURS place: strong evidence only): an old row at the
+    table's point is at that far town's (wrong), though it lies within the own town's 80 km of the district's shops."""
+    place = north(KUDAT_CENTRE, -85)
+    kudat = table([("89050", "Kudat", "Sabah", *north(place, 15))], [(1, "Kudat", "Sabah", *place, "")])
+    assert kudat.place_point("Sabah", "KUDAT", [KUDAT_CENTRE], True, True) is None
+    assert kudat.far_town("Sabah", "KUDAT", [KUDAT_CENTRE], north(place, 15), True, True)
+    r = (3.15, 101.70)
+    place = north(r, 85)
+    postal = north(place, -15)
+    places = table([("52990", "Sungai Jauh", "Wilayah Persekutuan Kuala Lumpur", *postal)], [(1, "Sungai Jauh", "Selangor", *place, "")])
+    d = districts({f"{KL}|Sungai Jauh": r}, places)
+    shop = {"premise_code": "1", "premise": "KEDAI", "state": KL, "district": "Sungai Jauh", "address": "NO 1, SUNGAI JAUH"}
+    assert gp.km(*postal, *r) < gp.STRONG_KM
+    assert gp.wrong_by(cache_row(1, postal, "town", "Sungai Jauh", KL, "Sungai Jauh"), shop, places, d) == "place"
+
+
+def test_how_names_of_a_smaller_place_are_read():
+    """A name that names a smaller place hides the shorter names in it (ARA DAMANSARA, near the town, is not also the
+    far DAMANSARA), and so does one left out (the estate TAMAN SRI KEMAYAN is not KEMAYAN); a district name of more
+    words than any postal town's is no smaller place, nor a part of it; a postal town of the NEIGHBOURS states (BATU
+    CAVES, Selangor, in a W.P. Kuala Lumpur address) is none either. Estates written TMN, subdistricts after DAERAH
+    and roads (JLN. X) name none; a comma after JALAN ends the road, but not one after MUKIM: 21772 ('KAMPUNG JAYA
+    MUKIM,CHUKAI') writes Mukim Chukai. A word of the address is part of one postal town at most, as the written town is
+    read (the longest name first, then the first written): of two names that overlap where written (made up: TANAH
+    RATA and RATA BEREMBUN in 'TANAH RATA BEREMBUN') the first is the town's, and BEREMBUN may still name a smaller
+    place (at worst a veto too many: 'location unknown')."""
+    pj = (3.10, 101.60)
+    places = table([("47300", "Petaling Jaya", "Selangor", *pj), ("28000", "Tasek", "Pahang", 3.5, 102.4)],
+                   [(1, "Petaling Jaya", "Selangor", *pj, ""), (2, "Ara Damansara", "Selangor", *north(pj, 3), ""),
+                    (3, "Damansara", "Selangor", *north(pj, 20), ""), (4, "Sri Kemayan", "Pahang", 3.6, 102.4, ""),
+                    (5, "Kemayan", "Pahang", 3.7, 102.4, "")])
+    assert [w for w, _ in places.smaller_places("NO 1, ARA DAMANSARA, PETALING JAYA", "Selangor", "Petaling")] == ["ARA DAMANSARA"]
+    a = anchor("Selangor", "Petaling", "NO 1, ARA DAMANSARA, PETALING JAYA", places, districts({"Selangor|Petaling": pj}, places))
+    assert (a["kind"], a["label"]) == ("town", "Petaling Jaya")
+    assert places.smaller_places("NO 1, TAMAN SRI KEMAYAN, TASEK", "Pahang", "Temerloh") == []
+    assert [w for w, _ in places.smaller_places("NO 1, KEMAYAN, TASEK", "Pahang", "Temerloh")] == ["KEMAYAN"]
+    for address in ("NO 1, TMN KEMAYAN, TASEK", "NO 1, TMN. KEMAYAN", "DAERAH KEMAYAN", "NO 1, JLN. KEMAYAN",
+                    "KAMPUNG JAYA MUKIM,KEMAYAN", "NO 1, DAERAH, KEMAYAN"):
+        assert places.smaller_places(address, "Pahang", "Temerloh") == [], address
+    assert [w for w, _ in places.smaller_places("NO 1, JALAN, KEMAYAN", "Pahang", "Temerloh")] == ["KEMAYAN"]
+    rata = gp.Places(postal_rows([("39000", "Tanah Rata", "Pahang", 4.47, 101.38), ("39010", "Rata Berembun", "Pahang", 4.50, 101.40)]),
+                     place_rows([(1, "Berembun", "Pahang", 4.60, 101.40, "")]))
+    assert [w for w, _ in rata.smaller_places("NO 1, TANAH RATA BEREMBUN", "Pahang", "Cameron Highlands")] == ["BEREMBUN"]
+    assert rata.smaller_places("NO 1, RATA BEREMBUN, TANAH RATA", "Pahang", "Cameron Highlands") == []
+    penang = gp.Places(postal_rows([("14000", "Bukit Mertajam", "Pulau Pinang", 5.36, 100.46)]),
+                       place_rows([(1, "Seberang Perai", "Pulau Pinang", 5.40, 100.40, "")]))
+    assert penang.smaller_places("NO 1, SEBERANG PERAI TENGAH", "Pulau Pinang", "Seberang Perai Tengah") == []
+    assert [w for w, _ in penang.smaller_places("NO 1, SEBERANG PERAI", "Pulau Pinang", "Timur Laut")] == ["SEBERANG PERAI"]
+    kl = gp.Places(postal_rows([("68100", "Batu Caves", "Selangor", 3.24, 101.68), ("52100", "Kepong", KL, 3.21, 101.64)]),
+                   place_rows([(1, "Batu Caves", "Kuala Lumpur", 3.24, 101.68, "")]))
+    assert kl.smaller_places("NO 1, BATU CAVES, KEPONG", KL, "Kepong") == []
+
+
+# Every decided generic address word (KG and KAMPONG are read as KAMPUNG before any name is matched), the street words
+# (JALAN, LORONG, PERSIARAN and the others of STREET_WORDS) included.
+DECIDED_GENERIC = ("TAMAN", "KAMPUNG", "PEKAN", "BANDAR", "KOTA", "LOT", "NO", "BATU", "BUKIT", "SUNGAI", "SG", "SIMPANG",
+                   "CHABANG", "CABANG", "JAYA", "BARU", "UTAMA", "INDAH", "PERDANA", "SATU", "DUA", "TIGA", "EMPAT", "LIMA",
+                   "ENAM", "TUJUH", "LAPAN", "SEMBILAN", "SEPULUH", "KEDAI", "BALAI", "KILANG", "PEJABAT", "BANGUNAN",
+                   "MEDAN", "GERAI", "MASJID", "SURAU", "SEKOLAH", "STESEN", "BAWAH", "ATAS", "DALAM", "LUAR", "HILIR",
+                   "LAMA", "PANTAI", "LEMBAH", "KOLAM", "MELAYU", "BAHAGIA", "MAWAR",
+                   "JALAN", "JLN", "LORONG", "LRG", "PERSIARAN", "LEBUH", "LEBUHRAYA")
+
+
+def test_names_made_of_generic_address_words_name_no_smaller_place():
+    """A place of the list named only with generic address words ('Bukit Lot', 'Kedai': GeoNames has a 'Kedai' in
+    Sarawak, a 'Pantai' in Negeri Sembilan) is no smaller place: 'KEDAI NO 5' or 'TINGKAT BAWAH' names no village. One
+    word that is not generic makes it one. The street words count too: 9 places of the 2026 list are named only with
+    them and other generic or common words ('Kampong Lorong' in Kedah, 'Kampung Lebuh' in Pahang, 'Kampung Jalan
+    Baharu' in Perak, Pulau Pinang and Terengganu)."""
+    for word in DECIDED_GENERIC:
+        other = "SUNGAI" if word == "BUKIT" else "BUKIT"
+        names = [f"{other} {word}".title()] + ([word.title()] if len(word) >= 4 else [])
+        places = gp.Places(postal_rows([("06000", "Jitra", "Kedah", 6.0, 100.4)]),
+                           place_rows([(i, n, "Kedah", 6.1, 100.4, "") for i, n in enumerate(names)]))
+        address = ", ".join(n.upper() for n in names) + ", JITRA"
+        assert places.smaller_places(address, "Kedah", "Kubang Pasu") == [], word
+    places = gp.Places(postal_rows([("06000", "Jitra", "Kedah", 6.0, 100.4)]), place_rows([(1, "Bukit Tenang", "Kedah", 6.1, 100.4, "")]))
+    assert [w for w, _ in places.smaller_places("NO 1, BUKIT TENANG, JITRA", "Kedah", "Kubang Pasu")] == ["BUKIT TENANG"]
+    assert set(DECIDED_GENERIC) <= gp.GENERIC_WORDS
+
+
+def test_a_postcodes_place_written_as_one_word_is_written():
+    """'83000 BATUPAHAT' writes 83000's place, Batu Pahat (a name of 2 words written as one): the place is written, so a
+    written town does not beat it. '83000 PARIT RAJA' writes another postal town and not Batu Pahat."""
+    places = table([("83000", "Batu Pahat", "Johor", 1.85, 102.93), ("86400", "Parit Raja", "Johor", 1.87, 103.10)], None)
+    assert not places.place_unwritten("83000", "LOT 1, 83000 BATUPAHAT, JOHOR", "Johor", "Batu Pahat")
+    assert places.place_unwritten("83000", "LOT 1, 83000 PARIT RAJA, JOHOR", "Johor", "Batu Pahat")
+
+
+def test_before_any_search_a_written_towns_wrong_row_never_becomes_an_unwritten_postcode_places_row(tmp_path):
+    """12352 ('..., 34100 IPOH') with an old Ipoh row 15 km from Ipoh's own point (wrong): before any search it takes
+    the written town's anchor (Ipoh's point), not 34100's point at Selama, though that lies within 35 km of where
+    Kinta's shops are and a postcode is more precise than a town."""
+    selama = north(KINTA_SHOPS, 34)
+    postal = [("30000", "Ipoh", "Perak", *IPOH), ("34100", "Selama", "Perak", *selama)]
+    place_list = [(1, "Ipoh", "Perak", *IPOH, ""), (2, "Selama", "Perak", *selama, "")]
+    rows, st = retry_run(tmp_path, "run", {("Perak", "Kinta"): [(12352, "KEDAI", "NO 1, OFF JALAN KG BERCHAM, 34100 IPOH")]},
+                         [cache_row(12352, north(IPOH, 15), "town", "Kinta", "Perak", "Ipoh", tries=0, last="")],
+                         {"Perak|Kinta": KINTA_SHOPS}, postal, place_list, minutes=0)
+    r = rows["12352"]
+    assert (r["precision"], r["query"], st["corrected_offline"]) == ("town", "Ipoh", 1)
+    assert (float(r["lat"]), float(r["lon"])) == pytest.approx(IPOH, abs=1e-5)
+
+
+def test_a_row_judged_wrong_by_the_distance_check_with_no_anchor_becomes_a_district_row(tmp_path):
+    """A wrong point is never kept, whatever judged it: an old postcode row 200 km from where Kerian's shops are (a lot
+    number read as another state's postcode: the distance check) whose address writes no postcode or town becomes a
+    district row before any search."""
+    rows, st = retry_run(tmp_path, "run", {("Perak", "Kerian"): [(7, "KEDAI 7", "NO 7, KAMPUNG TELUK")]},
+                         [cache_row(7, (3.21, 101.64), "postcode", "Kerian", "Perak", "52100", tries=0, last="")],
+                         {"Perak|Kerian": KERIAN_CENTRE}, POSTAL, PLACES, minutes=0)
+    assert (rows["7"]["precision"], rows["7"]["query"], st["corrected_offline"]) == ("district", "Kerian, Perak", 1)
+
+
+# Round 2 rules both ways and at each place they are used: several smaller places, homonyms, no references, the written
+# town's row, the district's name.
+
+def test_any_smaller_place_that_rules_a_town_out_is_enough():
+    """An address that names two smaller places (smaller_places gives the longer name first, wherever it is written):
+    the town is ruled out when either rules it out. Kampung Benoni (made up) 6 km from Papar rules nothing out, while
+    Kinarut, 16 km away, rules Papar out: no Papar, in both orders; nor with Kampung Benoni 16 km out and a Kinarut 6
+    km from Papar. With both within 10 km of Papar, Papar."""
+    for benoni_km, kinarut, kind in ((6, KINARUT, "district"), (-16, north(PAPAR, 6), "district"), (6, north(PAPAR, -6), "town")):
+        places = table(PAPAR_POSTAL, [(1, "Papar", "Sabah", *PAPAR, ""), (2, "Kinarut", "Sabah", *kinarut, ""),
+                                      (3, "Kampung Benoni", "Sabah", *north(PAPAR, benoni_km), "")])
+        d = districts({"Sabah|Papar": PAPAR_SHOPS}, places)
+        for address in ("LOT 1, KG BENONI, KINARUT, PAPAR", "LOT 1, KINARUT, KG BENONI, PAPAR"):
+            assert [w for w, _ in places.smaller_places(address, "Sabah", "Papar")] == ["KAMPUNG BENONI", "KINARUT"]
+            assert anchor("Sabah", "Papar", address, places, d)["kind"] == kind, (benoni_km, address)
+
+
+def test_a_near_place_of_the_written_name_rules_a_town_out_whatever_its_homonyms():
+    """21246 ('...KINARUT,PAPAR') with a second Kinarut 60 km out (another village of that name): the Kinarut 16 km from
+    Papar, within 35 km of where Papar's shops are, still rules Papar out, whichever the list writes first, and an old
+    row at Papar is wrong."""
+    address = "TINGKAT 1-2, LOT 72,,THE PALM SQUARE COMMERCIAL CENTRE KINARUT,PAPAR"
+    shop = {"premise_code": "21246", "premise": "KEDAI", "state": "Sabah", "district": "Papar", "address": address}
+    two = [(2, "Kinarut", "Sabah", *KINARUT, ""), (3, "Kinarut", "Sabah", *north(PAPAR_SHOPS, -60), "")]
+    for kinaruts in (two, two[::-1]):
+        places = table(PAPAR_POSTAL, [(1, "Papar", "Sabah", *PAPAR, "")] + kinaruts)
+        d = districts({"Sabah|Papar": PAPAR_SHOPS}, places)
+        assert anchor("Sabah", "Papar", address, places, d)["kind"] == "district", kinaruts[0][-3:-1]
+        assert gp.wrong_by(cache_row(21246, PAPAR, "town", "Papar", "Sabah", "Papar"), shop, places, d) == "place"
+
+
+def test_no_veto_where_nothing_says_where_the_districts_shops_are():
+    """A district whose centre is shared with another district's (a fallback answer: not trusted) and that has no found
+    shops has no references: nothing to check a smaller place against, so '...KINARUT,PAPAR' keeps Papar (the postcode
+    table's point, as before the place list); its untrusted centre does not rule it out."""
+    places = table(PAPAR_POSTAL, [(1, "Papar", "Sabah", *PAPAR, ""), (2, "Kinarut", "Sabah", *KINARUT, "")])
+    d = districts({"Sabah|Papar": PAPAR_SHOPS, "Sabah|Kinabatangan": PAPAR_SHOPS}, places)
+    assert d.references("Sabah", "Papar") == [] and d.centre("Sabah", "Papar") == pytest.approx(PAPAR_SHOPS)
+    a = anchor("Sabah", "Papar", "LOT 72, KINARUT, PAPAR", places, d)
+    assert (a["kind"], a["label"], a["via"]) == ("town", "Papar", "rows") and a["point"] == pytest.approx(PAPAR_POSTAL[0][3:])
+
+
+def test_before_any_search_a_district_row_gets_its_postcode_though_the_address_writes_another_town(tmp_path):
+    """A written town beats an unwritten postcode place, for a row, only when that row is the written town's: a shop
+    whose row is a district row ('..., 34100 IPOH', 34100 being Selama's, with a point of its own 26 km from where
+    Kinta's shops are) gets the postcode's point before any search, as a new shop does (1148, '06660 ALOR STAR' where
+    the table names 06660 Alor Setar, in a run from the older file)."""
+    selama = north(KINTA_SHOPS, 20)
+    postal = [("30000", "Ipoh", "Perak", *IPOH), ("34100", "Selama", "Perak", *selama), ("34100", "Selama", "Perak", *north(selama, 12))]
+    place_list = [(1, "Ipoh", "Perak", *IPOH, ""), (2, "Selama", "Perak", *north(selama, 30), "")]
+    rows, st = retry_run(tmp_path, "run", {("Perak", "Kinta"): [(12352, "KEDAI", "NO 1, OFF JALAN KG BERCHAM, 34100 IPOH")]},
+                         [cache_row(12352, KINTA_SHOPS, "district", "Kinta", "Perak", "Kinta, Perak", tries=0, last="")],
+                         {"Perak|Kinta": KINTA_SHOPS}, postal, place_list, minutes=0)
+    assert (rows["12352"]["precision"], rows["12352"]["query"], st["upgraded_offline"]) == ("postcode", "34100", 1)
+
+
+def test_a_town_written_after_the_districts_own_town_is_no_written_towns_row():
+    """4169 ('NO. 48-49,MAIN BAZAAR,97100 SEBAUH,BINTULU,SARAWAK,') in district Sebauh writes Sebauh; Bintulu after it is
+    the division, the wider area, as the written town is read: a 'Bintulu' town row is no written town's row (a retry
+    may replace it), a 'Sebauh' row is one."""
+    sebauh, bintulu = (3.11667, 113.26667), (3.16667, 113.03333)   # the 2026 list's points
+    places = table([("97100", "Sebauh", "Sarawak", 2.7811, 112.6702), ("97000", "Bintulu", "Sarawak", 3.1906, 113.0901)],
+                   [(1, "Sebauh", "Sarawak", *sebauh, ""), (2, "Bintulu", "Sarawak", *bintulu, "")])
+    shop = {"premise_code": "4169", "premise": "LAU LIONG KEE", "state": "Sarawak", "district": "Sebauh",
+            "address": "NO. 48-49,MAIN BAZAAR,97100 SEBAUH,BINTULU,SARAWAK,"}
+    assert places.written_towns(shop["address"], "Sarawak", "Sebauh") == {"SEBAUH"}
+    assert not gp.written_town_row(cache_row(4169, bintulu, "town", "Sebauh", "Sarawak", "Bintulu"), shop, places)
+    assert gp.written_town_row(cache_row(4169, sebauh, "town", "Sebauh", "Sarawak", "Sebauh"), shop, places)
+
+
+KOTA_PADAWAN_SHOPS, SIBURAN, PADAWAN = (1.4277, 110.3256), (1.36667, 110.4), (1.16428, 110.25876)   # 2026 points
+
+
+def test_the_districts_name_rules_out_no_town_where_anchors_and_old_rows_are_judged():
+    """21654 ('...,Jalan Penrissen & Pekan Batu 10,,Kota Padawan,  Siburan, Sarawak') in district Kota Padawan: the
+    list's Padawan, 27 km from Siburan and 30 km from where the district's shops are, is part of the district's name
+    written there, so it rules nothing out: the shop gets Siburan's own point, an old row there is not wrong, and an
+    old postcode row at a rough point of Siburan's (made up: 15 km from the town) is judged by Siburan's point."""
+    address = "Lot 1682,Block 71,121, KCLD,,Jalan Penrissen & Pekan Batu 10,,Kota Padawan,  Siburan, Sarawak"
+    rough = north(SIBURAN, -15)
+    places = table([("94200", "Siburan", "Sarawak", *rough)],
+                   [(1, "Siburan", "Sarawak", *SIBURAN, ""), (2, "Padawan", "Sarawak", *PADAWAN, "Kampung Padawan|Pedawan")])
+    d = districts({"Sarawak|Kota Padawan": KOTA_PADAWAN_SHOPS}, places)
+    assert gp.km(*PADAWAN, *SIBURAN) > gp.ANCHOR_KM and gp.km(*PADAWAN, *KOTA_PADAWAN_SHOPS) < gp.CHECK_KM
+    assert places.smaller_places(address, "Sarawak", "Kota Padawan") == []
+    a = anchor("Sarawak", "Kota Padawan", address, places, d)
+    assert (a["kind"], a["label"], a["via"]) == ("town", "Siburan", "place")
+    shop = {"premise_code": "21654", "premise": "KEDAI", "state": "Sarawak", "district": "Kota Padawan", "address": address}
+    assert gp.wrong_by(cache_row(21654, SIBURAN, "town", "Kota Padawan", "Sarawak", "Siburan"), shop, places, d) is None
+    postcode_row = cache_row(21654, rough, "postcode", "Kota Padawan", "Sarawak", "94200")
+    assert gp.wrong_by(postcode_row, {**shop, "address": "LOT 1, KOTA PADAWAN, 94200 SIBURAN"}, places, d) == "place"
