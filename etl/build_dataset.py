@@ -17,6 +17,9 @@ Steps:
   5. Per premise, item and month: median price (all prices, for history).
   6. Monthly medians per item for each district and for Malaysia.
   6b. Per shop, the monthly median for the last 3 months with data (for "cheapest on average").
+     The pack-size check applies here too: any monthly price below 0.4x or above 2.5x that
+     month's median across all shops is left out, and so is the month of a latest price set
+     aside in step 4 (that shop's other months stay if they pass).
   7. Month-on-month change, like-for-like: only shops priced in both months count.
      The change is the median of their newest-month prices over the median of their
      previous-month prices, so the % matches the RM figures shown.
@@ -24,14 +27,16 @@ Steps:
      cheapest shop and at a typical shop, per district.
   9. Shop locations from etl/geo/ (made by geocode_premises.py): each shop's map point,
      a centre and radius per district, and a postcode -> location table for "near me".
+     A district point shared with another district of the state is never a centre.
  10. Write web/data/meta.json plus one web/data/d/<state>--<district>.json per
      district. Each JSON also gets a .js twin so the app works from file://.
 
 Run:
   python etl/build_dataset.py                        # real data in data/raw
-  python etl/build_dataset.py --raw data/sample      # synthetic sample
+  python etl/build_dataset.py --raw data/sample      # synthetic sample (etl/geo/ files not used)
   python etl/build_dataset.py --state Selangor       # one state only (other district files are kept)
   python etl/build_dataset.py --top-items 300        # keep most-covered items
+  python etl/build_dataset.py --months 12            # months of history (at least 3)
 """
 from __future__ import annotations
 
@@ -55,7 +60,8 @@ LICENCE = "CC BY 4.0"
 LICENCE_URL = "https://creativecommons.org/licenses/by/4.0/"
 OUTLIER_FACTOR = 4.0
 MAX_PRICE_AGE_DAYS = 30          # older latest prices are not shown
-PACK_LOW, PACK_HIGH = 0.4, 2.5   # latest price vs the item's median across all shops
+MIN_MONTHS = 3                   # a price up to 30 days old can be in any of the 3 newest month files
+PACK_LOW, PACK_HIGH = 0.4, 2.5   # a price vs the item's median across all shops
 MIN_MONTH_SHARE = 0.05           # share of a usual month's rows for a month to count
 MONTH_RE = re.compile(r"^pricecatcher_(\d{4}-\d{2})$")
 
@@ -189,6 +195,16 @@ def fresh_only(latest: pd.DataFrame, data_date, max_days: int = MAX_PRICE_AGE_DA
     return latest.assign(days_old=days)[days <= max_days].reset_index(drop=True)
 
 
+def pack_ok(price, median, low: float = PACK_LOW, high: float = PACK_HIGH):
+    """True where price is from low x to high x the median, both limits included.
+
+    The tiny tolerance keeps prices that are exactly on a limit: in floating point
+    1.20 / 3.00 is 0.39999999999999997 and 2.35 / 0.94 is 2.5000000000000004.
+    """
+    ratio = price / median
+    return (ratio >= low - 1e-9) & (ratio <= high + 1e-9)
+
+
 def set_aside_pack_errors(latest: pd.DataFrame, low: float = PACK_LOW,
                           high: float = PACK_HIGH) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Split latest prices into (kept, set aside).
@@ -196,9 +212,26 @@ def set_aside_pack_errors(latest: pd.DataFrame, low: float = PACK_LOW,
     A price below low x or above high x the item's median across all shops is usually
     a different pack size reported under the item, so it is not compared.
     """
-    ratio = latest["price"] / latest.groupby("item_code")["price"].transform("median")
-    ok = (ratio >= low) & (ratio <= high)
+    ok = pack_ok(latest["price"], latest.groupby("item_code")["price"].transform("median"), low, high)
     return latest[ok].reset_index(drop=True), latest[~ok].reset_index(drop=True)
+
+
+def same_pack_months(pm: pd.DataFrame, aside: pd.DataFrame, months: list[str]) -> pd.DataFrame:
+    """The monthly shop prices that "cheapest on average" may compare, for the given months.
+
+    pm: month, premise_code, item_code, price; aside: premise_code, item_code, date of the
+    latest prices set aside. Leaves out any monthly price outside PACK_LOW..PACK_HIGH x that
+    month's median for the item across all shops, and the monthly price of the month that
+    holds a set-aside latest price (it may mix in that other pack). The shop's other months
+    for the item stay when they pass the first check.
+    """
+    p = pm[pm["month"].isin(months)]
+    keep = pack_ok(p["price"], p.groupby(["month", "item_code"])["price"].transform("median"))
+    if len(aside):
+        bad = pd.MultiIndex.from_arrays([aside["date"].dt.strftime("%Y-%m"), aside["premise_code"],
+                                         aside["item_code"]])
+        keep = keep & ~pd.MultiIndex.from_frame(p[["month", "premise_code", "item_code"]]).isin(bad)
+    return p[keep]
 
 
 def mom_changes(pm: pd.DataFrame, cur: str, prev: str, min_n: int = 3) -> pd.DataFrame:
@@ -327,9 +360,20 @@ def proof_figure(latest_d: pd.DataFrame, items: pd.DataFrame, shops: pd.Series) 
 GEO_DEFAULT = HERE / "geo" / "premise_geo.csv"
 DISTRICT_GEO_DEFAULT = HERE / "geo" / "district_geo.csv"
 POSTCODES_DEFAULT = HERE / "geo" / "postcodes_my.csv"
+# A location path the caller did not give: the etl/geo/ file, except for a synthetic sample,
+# whose made-up shops share codes with real shops in premise_geo.csv.
+DEFAULT = "default"
 LOCATED = ("name", "address", "postcode", "town")   # a real map point: exact or approximate
 PRECISIONS = LOCATED + ("district",)               # district: location unknown
 SHARED_KM = 0.5   # district points this close in one state are a fallback guess, not a centre
+
+
+def location_file(given, default: Path, synthetic: bool) -> Path | str | None:
+    """The location file to read: `given` (a path, or None for none), or for DEFAULT the
+    etl/geo/ file, which a synthetic sample does not use."""
+    if given == DEFAULT:
+        return None if synthetic else default
+    return given
 
 
 def _point(lat, lon) -> tuple[float, float] | None:
@@ -385,20 +429,28 @@ def district_key(state: str, district: str) -> str:
 
 
 def load_district_points(path: Path | None) -> dict[str, tuple[float, float]]:
-    """district_key -> (lat, lon) from district_geo.csv (key 'State|District', lat, lon).
+    """district_key -> (lat, lon) from district_geo.csv (key 'State|District', lat, lon, shared).
 
-    A point shared with another district of the same state (within 0.5 km) is left out:
-    the geocoder falls back to the state centre when it cannot find a district.
+    A point shared with another district of the same state is left out: the geocoder falls
+    back to the state centre when it cannot find a district. Shared means marked in the
+    'shared' column (any value but blank or 0, as the geocoder reads it; the mark stays on a
+    district left alone on an old shared point) or within 0.5 km of another district's point
+    in the same state (the only test for older files without the column; the geocoder marks
+    these too). Extra columns (tries, ...) are ignored.
     """
-    pts = {}
+    pts, marked = {}, set()
     for r in _rows(path):
         key, pt = r.get("key") or "", _point(r.get("lat"), r.get("lon"))
         if "|" in key and pt:
-            pts[district_key(*key.split("|", 1))] = pt
+            k = district_key(*key.split("|", 1))
+            pts[k] = pt
+            if str(r.get("shared") or "").strip() not in ("", "0"):
+                marked.add(k)
     out = {}
     for k, p in pts.items():
         st = k.split("|", 1)[0]
-        if not any(o != k and o.split("|", 1)[0] == st and km(*p, *q) <= SHARED_KM for o, q in pts.items()):
+        if k not in marked and not any(o != k and o.split("|", 1)[0] == st and km(*p, *q) <= SHARED_KM
+                                       for o, q in pts.items()):
             out[k] = p
     return out
 
@@ -420,21 +472,18 @@ def km(a_lat: float, a_lon: float, b_lat: float, b_lon: float) -> float:
     return 2 * 6371.0 * math.asin(math.sqrt(h))
 
 
-def district_centre(located: list, fallback: tuple | None = None, others: list = ()) -> tuple | None:
+def district_centre(located: list, fallback: tuple | None = None) -> tuple | None:
     """(lat, lon) for a district, or None.
 
-    located: points of shops with a real location; fallback: the district_geo.csv point;
-    others: any other shop points. Median of 2+ located shops, else the fallback,
-    else the mean of all the shop points.
+    located: points of shops with a real location (precision name, address, postcode or town);
+    fallback: the district's district_geo.csv point when it is not shared (load_district_points).
+    The median of 2+ located shops, else the fallback, else the one located shop, else None.
+    Points of shops at district precision are never used: they are the geocoder's own fallback,
+    often a state centre shared by several districts.
     """
-    if len(located) >= 2:
+    if len(located) >= 2 or (located and not fallback):
         return statistics.median(p[0] for p in located), statistics.median(p[1] for p in located)
-    if fallback:
-        return fallback
-    pts = list(located) + list(others)
-    if pts:
-        return sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts)
-    return None
+    return fallback or None
 
 
 def district_radius(centre, located: list) -> float:
@@ -495,10 +544,26 @@ def write_json(path: Path, key: str, obj) -> int:
 def build(raw: Path, out: Path, months_keep: int = 12, state: str | None = None,
           district: str | None = None, top_items: int | None = None,
           feed_top: int = 25, min_n_national: int = 3, min_n_district: int = 2,
-          geo_path: Path | None = GEO_DEFAULT, postcodes_path: Path | None = POSTCODES_DEFAULT,
-          district_geo_path: Path | None = DISTRICT_GEO_DEFAULT) -> dict:
-    geo = load_geo(geo_path)
-    dpoints = load_district_points(district_geo_path)
+          geo_path: Path | str | None = DEFAULT, postcodes_path: Path | str | None = DEFAULT,
+          district_geo_path: Path | str | None = DEFAULT) -> dict:
+    """Build the web data from the raw files. Returns sizes, stats and a short summary.
+
+    months_keep: months of history, at least MIN_MONTHS. geo_path, postcodes_path and
+    district_geo_path: a location file, None for none, or DEFAULT for the etl/geo/ file.
+    A synthetic sample (raw/SYNTHETIC.txt) does not read the DEFAULT files.
+    """
+    # Fresh prices are read from the 3 newest month files, so fewer months would miss some.
+    if months_keep < MIN_MONTHS:
+        raise SystemExit(f"--months must be at least {MIN_MONTHS} (got {months_keep}): a price up to "
+                         f"{MAX_PRICE_AGE_DAYS} days old can be in any of the {MIN_MONTHS} newest month files.")
+    synthetic = (raw / "SYNTHETIC.txt").exists()
+    if synthetic and DEFAULT in (geo_path, postcodes_path, district_geo_path):
+        print("Note: synthetic sample, so the shop location files in etl/geo/ are not used (their real "
+              "shops share codes with the made-up ones). Name them with --geo, --postcodes or "
+              "--district-geo to use them.")
+    geo = load_geo(location_file(geo_path, GEO_DEFAULT, synthetic))
+    dpoints = load_district_points(location_file(district_geo_path, DISTRICT_GEO_DEFAULT, synthetic))
+    postcodes_path = location_file(postcodes_path, POSTCODES_DEFAULT, synthetic)
     items = clean_items(load_table(raw, "lookup_item"))
     prem = clean_premises(load_table(raw, "lookup_premise"))
     if state:
@@ -558,13 +623,15 @@ def build(raw: Path, out: Path, months_keep: int = 12, state: str | None = None,
     cur = with_data[-1]
     prev = with_data[-2] if len(with_data) > 1 else None
     avg_months = with_data[-3:]
-    synthetic = (raw / "SYNTHETIC.txt").exists()
 
     # National (or filtered area) history and feed.
     nat_hist = history_table(pm, months)
     nat_feed = feed_rows(mom_changes(pm, cur, prev, min_n_national), feed_top) if prev else None
 
     pm_d = pm.merge(prem[["premise_code", "state", "district"]], on="premise_code")
+    # "Cheapest on average" must not compare another pack size either; history and feed use every price.
+    pm_avg = same_pack_months(pm, aside, avg_months).merge(prem[["premise_code", "state", "district"]],
+                                                           on="premise_code")
     latest_d = latest.merge(prem, on="premise_code")
     pinfo = prem.set_index("premise_code")
     precision = dict.fromkeys(PRECISIONS, 0)
@@ -574,13 +641,15 @@ def build(raw: Path, out: Path, months_keep: int = 12, state: str | None = None,
         pcodes = sorted(int(c) for c in lp["premise_code"].unique())
         pidx = {c: i for i, c in enumerate(pcodes)}
         located = {c: geo[c] for c in pcodes if c in geo and geo[c][2] in LOCATED}
-        centre = district_centre([g[:2] for g in located.values()], dpoints.get(district_key(st, dist)),
-                                 [geo[c][:2] for c in pcodes if c in geo and c not in located])
+        # dpoints has no shared points, so a shared point never becomes a centre.
+        centre = district_centre([g[:2] for g in located.values()], dpoints.get(district_key(st, dist)))
         centre = [round(centre[0], 5), round(centre[1], 5)] if centre else None
         premises = []
         for c in pcodes:
             r = pinfo.loc[c]
-            # No real location: the district centre stands in, and the app says "location unknown".
+            # No real location (precision "district", or no usable row in premise_geo.csv): as the data
+            # contract says, lat/lon is the district centre, and the app says "location unknown".
+            # Without a centre the point stays empty, never the shop's own district-level guess.
             lat, lon, prec = located[c][:3] if c in located else (*(centre or (None, None)), "district")
             precision[prec] += 1
             premises.append([c, r["premise"], r["premise_type"], r["address"], lat, lon, prec])
@@ -589,6 +658,7 @@ def build(raw: Path, out: Path, months_keep: int = 12, state: str | None = None,
             prices[int(code)] = sorted([pidx[int(r.premise_code)], round(float(r.price), 2), int(r.days_old)]
                                        for r in g.itertuples())
         sub = pm_d[(pm_d["state"] == st) & (pm_d["district"] == dist)]
+        sub_avg = pm_avg[(pm_avg["state"] == st) & (pm_avg["district"] == dist)]
         dfile = {
             "state": st, "district": dist, "months": months,
             "data_date": data_date.strftime("%Y-%m-%d"), "synthetic": synthetic,
@@ -599,7 +669,7 @@ def build(raw: Path, out: Path, months_keep: int = 12, state: str | None = None,
             "prices": prices,
             "history": history_table(sub, months),
             "avg_months": avg_months,
-            "shop_months": shop_months_table(sub, pidx, avg_months),
+            "shop_months": shop_months_table(sub_avg, pidx, avg_months),
             "feed": feed_rows(mom_changes(sub, cur, prev, min_n_district), feed_top) if prev else None,
         }
         sizes[slug] = write_json(out / "d" / f"{slug}.json", f"d/{slug}", dfile)
@@ -647,25 +717,27 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--raw", default=str(ROOT / "data" / "raw"))
     ap.add_argument("--out", default=str(ROOT / "web" / "data"))
-    ap.add_argument("--months", type=int, default=12, help="months of history to keep")
+    ap.add_argument("--months", type=int, default=12, help=f"months of history to keep (at least {MIN_MONTHS})")
     ap.add_argument("--state", help="only this state, e.g. Selangor")
     ap.add_argument("--district", help="only this district, e.g. Petaling")
     ap.add_argument("--top-items", type=int, help="keep only the N most widely priced items")
     ap.add_argument("--feed-top", type=int, default=25)
     ap.add_argument("--max-kb", type=int, default=1500, help="warn if a district file is bigger")
-    ap.add_argument("--geo", default=str(GEO_DEFAULT), help="shop locations from geocode_premises.py ('' for none)")
-    ap.add_argument("--postcodes", default=str(POSTCODES_DEFAULT),
-                    help="postcode places from GeoNames ('' for none: use shop addresses)")
-    ap.add_argument("--district-geo", default=str(DISTRICT_GEO_DEFAULT), help="district centres ('' for none)")
+    # Location files: not given means the etl/geo/ file (not used for a synthetic sample); '' means none.
+    ap.add_argument("--geo", help="shop locations from geocode_premises.py (default etl/geo/premise_geo.csv; "
+                                  "'' for none)")
+    ap.add_argument("--postcodes", help="postcode places from GeoNames (default etl/geo/postcodes_my.csv; "
+                                        "'' for none: use shop addresses)")
+    ap.add_argument("--district-geo", help="district centres (default etl/geo/district_geo.csv; '' for none)")
     args = ap.parse_args(argv)
 
-    def path_or_none(p: str) -> Path | None:
-        return Path(p) if p else None
+    def location_arg(p: str | None) -> Path | str | None:
+        return DEFAULT if p is None else Path(p) if p else None
 
     res = build(Path(args.raw), Path(args.out), months_keep=args.months, state=args.state,
                 district=args.district, top_items=args.top_items, feed_top=args.feed_top,
-                geo_path=path_or_none(args.geo), postcodes_path=path_or_none(args.postcodes),
-                district_geo_path=path_or_none(args.district_geo))
+                geo_path=location_arg(args.geo), postcodes_path=location_arg(args.postcodes),
+                district_geo_path=location_arg(args.district_geo))
     s = res["stats"]
     print(f"{'SYNTHETIC' if res['synthetic'] else 'REAL'} data, months {res['months'][0]}..{res['months'][-1]} "
           f"({len(res['months_with_data'])} with data), data date {res['data_date']}")

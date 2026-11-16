@@ -1,6 +1,7 @@
 """Tests for the ETL. Run from the repo root:  python -m pytest etl/tests -q"""
 import csv
 import json
+import shutil
 import statistics
 import sys
 from datetime import date
@@ -180,6 +181,19 @@ def test_set_aside_pack_errors_against_the_item_median():
     assert len(kept) == 7 and kept["price"].max() == 75.0
 
 
+def test_pack_check_keeps_prices_exactly_on_the_limits():
+    # In floating point 1.20 / 3.00 is 0.39999999999999997 and 2.35 / 0.94 is 2.5000000000000004,
+    # but both prices are exactly on a limit, so they stay. One sen further out is set aside.
+    for median, on_limit, outside in ((3.0, 1.2, 1.19), (0.94, 2.35, 2.36)):
+        latest = pd.DataFrame({"premise_code": range(1, 7), "item_code": [7] * 6,
+                               "price": [median] * 4 + [on_limit, outside]})
+        kept, aside = bd.set_aside_pack_errors(latest)
+        assert aside["price"].tolist() == [outside]
+        assert sorted(kept["price"]) == sorted([median] * 4 + [on_limit])
+    assert bd.pack_ok(1.2, 3.0) and bd.pack_ok(2.35, 0.94) and bd.pack_ok(2.8, 7.0)
+    assert not bd.pack_ok(1.19, 3.0) and not bd.pack_ok(2.36, 0.94)
+
+
 def test_history_table_aligns_months_and_fills_gaps():
     pm = pd.DataFrame({"month": ["2026-08", "2026-10"], "premise_code": [1, 1],
                        "item_code": [5, 5], "price": [2.0, 2.5]})
@@ -256,9 +270,11 @@ def test_proof_figure_per_district():
 def test_district_centre_and_radius_rules():
     a, b, c = (3.0, 101.5), (3.02, 101.52), (3.04, 101.5)
     assert bd.district_centre([a, b, c], fallback=(9.0, 9.0)) == (3.02, 101.5)       # median of shops
-    assert bd.district_centre([a], fallback=(3.1, 101.6), others=[(5.0, 100.0)]) == (3.1, 101.6)
-    assert bd.district_centre([a], others=[(3.02, 101.5)]) == pytest.approx((3.01, 101.5))
-    assert bd.district_centre([], others=[]) is None
+    assert bd.district_centre([a, b]) == pytest.approx((3.01, 101.51))
+    assert bd.district_centre([a], fallback=(3.1, 101.6)) == (3.1, 101.6)            # the district's point
+    assert bd.district_centre([], fallback=(3.1, 101.6)) == (3.1, 101.6)
+    assert bd.district_centre([a]) == a                    # no usable district point: the one located shop
+    assert bd.district_centre([]) is None and bd.district_centre([], fallback=None) is None
     assert bd.district_radius((3.0, 101.5), []) == 3.0
     assert bd.district_radius((3.0, 101.5), [(3.0, 101.5)]) == 1.0
     assert bd.district_radius((3.0, 101.5), [(3.1, 101.5)]) == pytest.approx(11.6)    # 11.1 km + 0.5
@@ -275,6 +291,25 @@ def test_load_district_points_drops_points_shared_in_a_state(tmp_path):
     assert bd.load_district_points(p) == {"selangor|petaling": (3.1, 101.6), "johor|segamat": (3.1, 101.6)}
     assert bd.load_district_points(tmp_path / "missing.csv") == {}
     assert bd.load_district_points(None) == {}
+
+
+def test_load_district_points_reads_the_shared_column(tmp_path):
+    p = tmp_path / "district_geo.csv"
+    p.write_text("key,lat,lon,tries,shared\n"
+                 "W.P. Kuala Lumpur|Cheras,3.1456,101.6974,1,1\n"   # left alone on the old shared point
+                 "W.P. Kuala Lumpur|Kepong,3.2100,101.6400,1,\n"    # moved to its own point: mark cleared
+                 "W.P. Kuala Lumpur|Batu,3.1900,101.6800,1,0\n"
+                 "Selangor|Petaling,3.1,101.6,0,\n"
+                 "Selangor|Klang,3.04,101.45,0,\n"
+                 "Selangor|Sepang,3.0401,101.4501,0,\n"             # 15 m from Klang, not marked: still shared
+                 "Johor|Muar,3.0,102.5,1, 1 \n"
+                 "Johor|Segamat,,,1,1\n", encoding="utf-8")
+    assert bd.load_district_points(p) == {"w.p. kuala lumpur|kepong": (3.21, 101.64),
+                                          "w.p. kuala lumpur|batu": (3.19, 101.68),
+                                          "selangor|petaling": (3.1, 101.6)}
+    # Without the column (an older file) Cheras, alone on its point, would be used.
+    p.write_text("key,lat,lon\nW.P. Kuala Lumpur|Cheras,3.1456,101.6974\n", encoding="utf-8")
+    assert bd.load_district_points(p) == {"w.p. kuala lumpur|cheras": (3.1456, 101.6974)}
 
 
 def test_load_postcodes_averages_places_and_keeps_leading_zero(tmp_path):
@@ -412,6 +447,41 @@ def test_shop_months_table_shape():
     assert out[2] == [[1, None, 3.0, None]]
 
 
+def test_same_pack_months_leaves_out_other_pack_sizes():
+    pm = pd.DataFrame([
+        ("2026-09", 1, 7, 30.0), ("2026-09", 2, 7, 30.0), ("2026-09", 3, 7, 11.0), ("2026-09", 4, 7, 29.0),
+        ("2026-10", 1, 7, 30.0), ("2026-10", 2, 7, 12.0), ("2026-10", 3, 7, 30.0), ("2026-10", 4, 7, 80.0),
+        ("2026-10", 1, 8, 3.0), ("2026-10", 2, 8, 3.0), ("2026-10", 3, 8, 1.2),      # 1.2: exactly 0.4x
+        ("2026-09", 1, 9, 1.0), ("2026-09", 2, 9, 1.0), ("2026-09", 3, 9, 1.0),
+        ("2026-10", 1, 9, 3.0), ("2026-10", 2, 9, 3.0), ("2026-10", 3, 9, 3.0), ("2026-10", 4, 9, 3.0),  # x3
+        ("2026-09", 1, 10, 5.0), ("2026-09", 2, 10, 5.0), ("2026-09", 4, 10, 5.0),
+        ("2026-10", 1, 10, 5.0), ("2026-10", 2, 10, 5.0), ("2026-10", 4, 10, 3.45),  # RM5.00, then RM1.90
+        ("2026-08", 1, 7, 30.0),                                                     # not a month asked for
+    ], columns=["month", "premise_code", "item_code", "price"])
+    # Latest prices set aside: shop 4's item 7 and item 10 in October, shop 1's item 9 in November.
+    aside = pd.DataFrame({"premise_code": [4, 4, 1], "item_code": [7, 10, 9], "price": [80.0, 1.9, 9.9],
+                          "date": pd.to_datetime(["2026-10-20", "2026-10-25", "2026-11-02"])})
+    out = bd.same_pack_months(pm, aside, ["2026-09", "2026-10"])
+    got = sorted(map(tuple, out[["item_code", "month", "premise_code", "price"]].values.tolist()))
+    # Item 7: shop 3's September price is below 0.4x that month's median and shop 4's October price is
+    # above 2.5x; shop 2's RM12 is exactly 0.4x the October median. Shop 4's latest price was set aside,
+    # but only its October is left out: its September price is the right pack.
+    # Item 9: each month has its own median, so a price that triples for everyone is kept; shop 1's
+    # set-aside price is from November, which is not asked for, so its months stay.
+    # Item 10: shop 4's October median (RM3.45) is within the limits but holds the set-aside RM1.90.
+    assert got == [(7, "2026-09", 1, 30.0), (7, "2026-09", 2, 30.0), (7, "2026-09", 4, 29.0),
+                   (7, "2026-10", 1, 30.0), (7, "2026-10", 2, 12.0), (7, "2026-10", 3, 30.0),
+                   (8, "2026-10", 1, 3.0), (8, "2026-10", 2, 3.0), (8, "2026-10", 3, 1.2),
+                   (9, "2026-09", 1, 1.0), (9, "2026-09", 2, 1.0), (9, "2026-09", 3, 1.0),
+                   (9, "2026-10", 1, 3.0), (9, "2026-10", 2, 3.0), (9, "2026-10", 3, 3.0), (9, "2026-10", 4, 3.0),
+                   (10, "2026-09", 1, 5.0), (10, "2026-09", 2, 5.0), (10, "2026-09", 4, 5.0),
+                   (10, "2026-10", 1, 5.0), (10, "2026-10", 2, 5.0)]
+    # Nothing set aside: only the limits apply, so shop 4's October price for item 10 comes back.
+    out = bd.same_pack_months(pm, aside.iloc[:0], ["2026-09", "2026-10"])
+    assert sorted(map(tuple, out[["item_code", "month", "premise_code", "price"]].values.tolist())) == \
+        sorted(got + [(10, "2026-10", 4, 3.45)])
+
+
 def test_build_writes_shop_months(built):
     _, out, _ = built
     meta = json.loads((out / "meta.json").read_text(encoding="utf-8"))
@@ -447,6 +517,26 @@ def test_build_lists_only_shops_with_fresh_prices(tmp_path):
     assert d["shop_months"]["1"] == [[0, 10.2, 10.4], [1, None, 10.6]]
 
 
+def test_build_needs_at_least_3_months(tmp_path):
+    # Data date 2027-03-01: shop 1's price from 2027-01-30 is 30 days old, so the January file is needed.
+    raw = write_raw(tmp_path / "raw", [(1, "GULA CONTOH", "1kg")], [(c, "Kedah", "Sik") for c in (1, 2, 3)],
+                    {"2027-01": [("2027-01-30", 1, 1, 3.0), ("2027-01-29", 2, 1, 3.0)],
+                     "2027-02": [("2027-02-10", 3, 1, 3.1)],
+                     "2027-03": [("2027-03-01", 3, 1, 3.2)]})
+    bd.build(raw, tmp_path / "out", months_keep=3, **NO_GEO)
+    d = district_file(tmp_path / "out", "kedah--sik")
+    assert d["data_date"] == "2027-03-01" and [p[0] for p in d["premises"]] == [1, 3]
+    assert d["prices"] == {"1": [[0, 3.0, 30], [1, 3.2, 0]]}
+    # Fewer months would never read the January file: refused with a clear message, nothing written.
+    for n in (2, 1, 0):
+        with pytest.raises(SystemExit, match=f"at least 3 \\(got {n}\\)"):
+            bd.build(raw, tmp_path / f"out{n}", months_keep=n, **NO_GEO)
+        assert not (tmp_path / f"out{n}").exists()
+    with pytest.raises(SystemExit, match="--months must be at least 3"):
+        bd.main(["--raw", str(raw), "--out", str(tmp_path / "cli"), "--months", "2", "--geo", ""])
+    assert not (tmp_path / "cli").exists()
+
+
 def test_build_sets_aside_pack_size_errors(tmp_path):
     shops = list(range(21, 30))
     oil = [30.0, 30.5, 29.5, 31.0, 30.0, 75.0, 12.0, 80.0, 11.0]   # 80 and 11: another pack size
@@ -463,9 +553,69 @@ def test_build_sets_aside_pack_size_errors(tmp_path):
     assert set(shown) == set(shops) - {28, 29}
     assert shown[26] == 75.0 and shown[27] == 12.0
     assert {r[0]: r[5] for r in meta["items"]} == {1: 7, 2: 9}
-    # History and the 3-month averages are not affected.
+    # History still uses every price; "cheapest on average" leaves out the two set-aside prices.
     assert meta["national_history"]["1"] == [30.0]
-    assert [r[1] for r in d["shop_months"]["1"]] == oil
+    assert [(codes[r[0]], r[1]) for r in d["shop_months"]["1"]] == list(zip(shops, oil))[:7]
+
+
+def test_cheapest_on_average_compares_the_same_pack_only(tmp_path):
+    shops = list(range(21, 30))
+    oil = {s: [p] * 3 for s, p in zip(shops, [30.0, 30.5, 29.5, 31.0, 30.0, 30.2])}
+    oil[27] = [29.8, 29.8, 11.0]   # now a 1 kg pack under the 5 kg code: its latest price is set aside
+    oil[28] = [11.0, 30.4, 30.4]   # the 1 kg pack in August only
+    oil[29] = [11.0, None, None]   # the 1 kg pack, and no fresh price, so the latest-price check never sees it
+    sugar = {s: [3.0, 3.0, 3.0] for s in shops}
+    sugar[25] = [3.0, 1.2, 1.2]    # exactly 0.4x: kept
+    months = {}
+    for k, ym in enumerate(["2026-08", "2026-09", "2026-10"]):
+        months[ym] = ([(f"{ym}-10", s, 1, v[k]) for s, v in oil.items() if v[k] is not None]
+                      + [(f"{ym}-10", s, 2, v[k]) for s, v in sugar.items()])
+    raw = write_raw(tmp_path / "raw", [(1, "MINYAK CONTOH", "5kg"), (2, "GULA CONTOH", "1kg")],
+                    [(c, "Johor", "Muar") for c in shops], months)
+    bd.build(raw, tmp_path / "out", **NO_GEO)
+    meta = read_json(tmp_path / "out" / "meta.json")
+    d = district_file(tmp_path / "out", "johor--muar")
+    assert meta["stats"]["prices_set_aside"] == 1
+    codes = [p[0] for p in d["premises"]]
+    assert codes == shops
+    assert {codes[i] for i, _, _ in d["prices"]["1"]} == set(shops) - {27, 29}
+    assert {codes[i]: p for i, p, _ in d["prices"]["2"]}[25] == 1.2
+    avg = {code: {codes[r[0]]: r[1:] for r in rows} for code, rows in d["shop_months"].items()}
+    assert d["avg_months"] == ["2026-08", "2026-09", "2026-10"]
+    # Shop 27 keeps August and September but not October, the month of its set-aside latest price;
+    # shop 28's August price is another pack, and shop 29 has only another pack's price. Without
+    # these checks, these three would look cheapest on average.
+    assert avg["1"] == {s: v for s, v in oil.items() if s < 27} | {27: [29.8, 29.8, None], 28: [None, 30.4, 30.4]}
+    assert avg["2"] == sugar
+    # History still uses every price, the other pack sizes included.
+    assert d["history"]["1"] == meta["national_history"]["1"] == [30.0, 30.1, 30.1]
+
+
+def test_cheapest_on_average_keeps_right_pack_months_of_a_set_aside_shop(tmp_path):
+    # 20 shops sell 5 kg oil at RM30.00-31.00 from July to October. November has one row only, so it
+    # is not a month with data: the averages use August to October.
+    shops = list(range(1, 21))
+    oil = {s: [30.0 + (s % 3) * 0.5] * 4 for s in shops}
+    oil[18] = [11.0, 11.0, 11.0, 30.0]   # a 1 kg pack under the 5 kg code until September
+    oil[19] = [11.0] * 4                 # always the 1 kg pack: its October latest price is set aside
+    months = {ym: [(f"{ym}-12", s, 1, v[k]) for s, v in oil.items()] + [(f"{ym}-12", s, 2, 3.0) for s in shops]
+              for k, ym in enumerate(["2026-07", "2026-08", "2026-09", "2026-10"])}
+    months["2026-11"] = [("2026-11-01", 20, 1, 11.0)]   # shop 20's latest oil price: the 1 kg pack
+    raw = write_raw(tmp_path / "raw", [(1, "MINYAK CONTOH", "5kg"), (2, "GULA CONTOH", "1kg")],
+                    [(c, "Johor", "Muar") for c in shops], months)
+    bd.build(raw, tmp_path / "out", **NO_GEO)
+    meta = read_json(tmp_path / "out" / "meta.json")
+    d = district_file(tmp_path / "out", "johor--muar")
+    assert meta["months_with_data"] == ["2026-07", "2026-08", "2026-09", "2026-10"]
+    assert d["data_date"] == "2026-11-01" and d["avg_months"] == ["2026-08", "2026-09", "2026-10"]
+    assert meta["stats"]["prices_set_aside"] == 2
+    codes = [p[0] for p in d["premises"]]
+    assert codes == shops and {codes[i] for i, _, _ in d["prices"]["1"]} == set(shops) - {19, 20}
+    avg = {codes[r[0]]: r[1:] for r in d["shop_months"]["1"]}
+    # Shop 20's latest price is another pack, but its August-October prices are the right pack: kept.
+    assert avg[20] == [31.0, 31.0, 31.0]
+    # Months of another pack are still left out by the monthly limits, latest price set aside or not.
+    assert avg == {s: v[1:] for s, v in oil.items() if s not in (18, 19)} | {18: [None, None, 30.0]}
 
 
 def test_build_ignores_a_nearly_empty_new_month(tmp_path):
@@ -659,6 +809,60 @@ def test_build_adds_locations(tmp_path, built):
     assert g["postcode_source"] == "shop addresses" and "postcode_source_url" not in g
 
 
+def test_build_never_uses_a_shared_district_point(tmp_path):
+    kl, old = "W.P. Kuala Lumpur", (3.1456, 101.6974)   # one point for several KL districts: a fallback guess
+    shops = {"Cheras": [1, 2, 3, 4], "Kepong": [11, 12], "Batu": [21, 22], "Titiwangsa": [31],
+             "Setiawangsa": [41]}
+    raw = write_raw(tmp_path / "raw", [(1, "GULA CONTOH", "1kg")],
+                    [(c, kl, dist) for dist, cs in shops.items() for c in cs],
+                    {"2026-10": [("2026-10-10", c, 1, 3.0) for cs in shops.values() for c in cs]})
+    geo = tmp_path / "premise_geo.csv"
+    geo.write_text("premise_code,lat,lon,precision,query,district,state,postcode,tries,last_tried\n"
+                   "1,3.10,101.70,name,q,Cheras,KL,,1,\n2,3.12,101.72,address,q,Cheras,KL,,1,\n"
+                   "3,3.14,101.71,town,q,Cheras,KL,,1,\n11,3.21,101.64,postcode,q,Kepong,KL,52100,1,\n"
+                   + "".join(f"{c},{old[0]},{old[1]},district,q,D,KL,,1,\n" for c in (4, 12, 21, 22)),
+                   encoding="utf-8")
+    # The geocoder marks shared points shared=1, and the mark stays on a district left alone on an
+    # old shared point (Titiwangsa); Setiawangsa moved to its own point.
+    new_dgeo, old_dgeo = tmp_path / "district_geo.csv", tmp_path / "district_geo_old.csv"
+    rows = [(d, *old, "1") for d in ("Cheras", "Kepong", "Batu")] + [("Titiwangsa", 3.17, 101.70, "1"),
+                                                                      ("Setiawangsa", 3.20, 101.73, "")]
+    new_dgeo.write_text("key,lat,lon,tries,shared\n" + "".join(f"{kl}|{d},{la},{lo},1,{s}\n" for d, la, lo, s in rows),
+                        encoding="utf-8")
+    old_dgeo.write_text("key,lat,lon\n" + "".join(f"{kl}|{d},{la},{lo}\n" for d, la, lo, _ in rows), encoding="utf-8")
+
+    def build_with(dgeo):
+        out = tmp_path / dgeo.stem
+        bd.build(raw, out, geo_path=geo, postcodes_path=None, district_geo_path=dgeo)
+        areas = {a["district"]: a for a in read_json(out / "meta.json")["areas"][kl]}
+        files = {dist: district_file(out, a["slug"]) for dist, a in areas.items()}
+        for dist, d in files.items():   # the area's geo always matches the file's centre
+            assert areas[dist].get("geo", [None, None])[:2] == (d["centre"] or [None, None])
+        return areas, files
+
+    cheras = [(3.10, 101.70), (3.12, 101.72), (3.14, 101.71)]
+    r_cheras = round(max(bd.km(3.12, 101.71, *p) for p in cheras) + 0.5, 1)
+    for dgeo in (new_dgeo, old_dgeo):
+        areas, files = build_with(dgeo)
+        rows_of = {dist: {p[0]: p[4:] for p in d["premises"]} for dist, d in files.items()}
+        # 3 located shops: their median; the unlocated shop 4 gets that centre, not the shared point.
+        assert files["Cheras"]["centre"] == [3.12, 101.71] and areas["Cheras"]["geo"] == [3.12, 101.71, r_cheras]
+        assert rows_of["Cheras"][4] == [3.12, 101.71, "district"]
+        # 1 located shop: that shop, not a mix with the shared point that shop 12 carries.
+        assert files["Kepong"]["centre"] == [3.21, 101.64] and areas["Kepong"]["geo"] == [3.21, 101.64, 1.0]
+        assert rows_of["Kepong"] == {11: [3.21, 101.64, "postcode"], 12: [3.21, 101.64, "district"]}
+        # No located shop: no centre and no area geo, although both shops carry the shared point.
+        assert files["Batu"]["centre"] is None and "geo" not in areas["Batu"]
+        assert rows_of["Batu"] == {21: [None, None, "district"], 22: [None, None, "district"]}
+        assert files["Setiawangsa"]["centre"] == [3.2, 101.73] and areas["Setiawangsa"]["geo"] == [3.2, 101.73, 3.0]
+    # Titiwangsa's point is shared by its mark; an older file without the column cannot tell, so it is used.
+    areas, files = build_with(new_dgeo)
+    assert files["Titiwangsa"]["centre"] is None and "geo" not in areas["Titiwangsa"]
+    assert files["Titiwangsa"]["premises"][0][4:] == [None, None, "district"]
+    areas, files = build_with(old_dgeo)
+    assert files["Titiwangsa"]["centre"] == [3.17, 101.7] and areas["Titiwangsa"]["geo"] == [3.17, 101.7, 3.0]
+
+
 def test_main_runs_with_location_files_switched_off(tmp_path, capsys):
     raw = tmp_path / "raw"
     ms.make(raw, months=2, fmt="csv")
@@ -669,3 +873,47 @@ def test_main_runs_with_location_files_switched_off(tmp_path, capsys):
     assert all(a.get("geo") is None for areas in meta["areas"].values() for a in areas)
     text = capsys.readouterr().out
     assert "prices set aside" in text and "proof figure: none" in text
+
+
+def test_synthetic_build_skips_the_default_location_files(tmp_path, monkeypatch, capsys):
+    raw = tmp_path / "raw"
+    ms.make(raw, months=2, fmt="csv")
+    prem = pd.read_csv(raw / "lookup_premise.csv").dropna()
+    pet = [int(c) for c in prem.loc[prem["district"] == "Petaling", "premise_code"].head(3)]
+    # These stand in for etl/geo/: real shops whose codes are the same as made-up shops.
+    geo, dgeo, pcs = tmp_path / "premise_geo.csv", tmp_path / "district_geo.csv", tmp_path / "postcodes_my.csv"
+    geo.write_text("premise_code,lat,lon,precision,query,district,state,postcode\n" + "".join(
+        f"{c},3.0{i},101.5,address,x,Petaling,Selangor,40100\n" for i, c in enumerate(pet)), encoding="utf-8")
+    dgeo.write_text("key,lat,lon\nSelangor|Petaling,3.1,101.6\nSelangor|Klang,3.04,101.45\n", encoding="utf-8")
+    pcs.write_text("postcode,place,state,lat,lon,accuracy\n40100,Shah Alam,Selangor,3.07,101.52,4\n",
+                   encoding="utf-8")
+    monkeypatch.setattr(bd, "GEO_DEFAULT", geo)
+    monkeypatch.setattr(bd, "DISTRICT_GEO_DEFAULT", dgeo)
+    monkeypatch.setattr(bd, "POSTCODES_DEFAULT", pcs)
+
+    def geo_of(out):
+        meta = read_json(out / "meta.json")
+        return meta["geo"], [a.get("geo") for areas in meta["areas"].values() for a in areas]
+
+    # No paths given: the default files are not read, and a note says so.
+    bd.build(raw, tmp_path / "a")
+    g, areas = geo_of(tmp_path / "a")
+    assert g is None and areas == [None] * 7
+    assert "synthetic sample" in capsys.readouterr().out
+    # Paths given (even the default ones) are used.
+    bd.build(raw, tmp_path / "b", geo_path=bd.GEO_DEFAULT, postcodes_path=pcs, district_geo_path=dgeo)
+    g, areas = geo_of(tmp_path / "b")
+    assert g["shops_located"] == 3 and g["postcode_source"] == "GeoNames (CC BY 4.0)"
+    assert sum(a is not None for a in areas) == 2      # Petaling (its shops) and Klang (district point)
+    assert "synthetic sample" not in capsys.readouterr().out
+    assert bd.main(["--raw", str(raw), "--out", str(tmp_path / "c"), "--geo", str(geo)]) == 0
+    g, areas = geo_of(tmp_path / "c")
+    assert g["shops_located"] == 3 and g["postcode_source"] == "shop addresses"   # no --postcodes
+    assert sum(a is not None for a in areas) == 1      # no --district-geo: Petaling only
+    assert "synthetic sample" in capsys.readouterr().out
+    # Real data (no SYNTHETIC.txt) reads the default files as before.
+    real = tmp_path / "real"
+    shutil.copytree(raw, real, ignore=shutil.ignore_patterns("SYNTHETIC.txt"))
+    bd.build(real, tmp_path / "d")
+    assert geo_of(tmp_path / "d") == geo_of(tmp_path / "b")
+    assert "synthetic sample" not in capsys.readouterr().out
