@@ -19,12 +19,14 @@ Steps:
   6b. Per shop, the monthly median for the last 3 months with data (for "cheapest on average").
      The pack-size check applies here too: any monthly price below 0.4x or above 2.5x that
      month's median across all shops is left out, and so is the month of a latest price set
-     aside in step 4 (that shop's other months stay if they pass).
+     aside in step 4. That shop's other months for the item stay only within 0.8x-1.25x of
+     the month's median.
   7. Month-on-month change, like-for-like: only shops priced in both months count.
      The change is the median of their newest-month prices over the median of their
      previous-month prices, so the % matches the RM figures shown.
   8. Proof figure for the home screen: what a typical weekly list costs at the
-     cheapest shop and at a typical shop, per district.
+     cheapest shop and at a typical shop, per district. Added up in whole sen as the app
+     adds up a list, so the figures match the app's for the same list.
   9. Shop locations from etl/geo/ (made by geocode_premises.py): each shop's map point,
      a centre and radius per district, and a postcode -> location table for "near me".
      A district point shared with another district of the state is never a centre.
@@ -62,6 +64,7 @@ OUTLIER_FACTOR = 4.0
 MAX_PRICE_AGE_DAYS = 30          # older latest prices are not shown
 MIN_MONTHS = 3                   # a price up to 30 days old can be in any of the 3 newest month files
 PACK_LOW, PACK_HIGH = 0.4, 2.5   # a price vs the item's median across all shops
+ASIDE_LOW, ASIDE_HIGH = 0.8, 1.25  # other months of a shop and item whose latest price was set aside
 MIN_MONTH_SHARE = 0.05           # share of a usual month's rows for a month to count
 MONTH_RE = re.compile(r"^pricecatcher_(\d{4}-\d{2})$")
 
@@ -220,17 +223,23 @@ def same_pack_months(pm: pd.DataFrame, aside: pd.DataFrame, months: list[str]) -
     """The monthly shop prices that "cheapest on average" may compare, for the given months.
 
     pm: month, premise_code, item_code, price; aside: premise_code, item_code, date of the
-    latest prices set aside. Leaves out any monthly price outside PACK_LOW..PACK_HIGH x that
-    month's median for the item across all shops, and the monthly price of the month that
-    holds a set-aside latest price (it may mix in that other pack). The shop's other months
-    for the item stay when they pass the first check.
+    latest prices set aside. Each monthly price is compared with that month's median for the
+    item across all shops, and must be within PACK_LOW..PACK_HIGH x that median. For a shop and
+    item whose latest price was set aside, the month that holds that price is left out (it may
+    mix in the other pack), and its other months stay only within ASIDE_LOW..ASIDE_HIGH x the
+    median: a shop that reported another pack once often did so in other months too, at a price
+    the wide limits still let through.
     """
     p = pm[pm["month"].isin(months)]
-    keep = pack_ok(p["price"], p.groupby(["month", "item_code"])["price"].transform("median"))
+    med = p.groupby(["month", "item_code"])["price"].transform("median")
+    keep = pack_ok(p["price"], med)
     if len(aside):
         bad = pd.MultiIndex.from_arrays([aside["date"].dt.strftime("%Y-%m"), aside["premise_code"],
                                          aside["item_code"]])
         keep = keep & ~pd.MultiIndex.from_frame(p[["month", "premise_code", "item_code"]]).isin(bad)
+        was_aside = pd.MultiIndex.from_frame(p[["premise_code", "item_code"]]).isin(
+            pd.MultiIndex.from_frame(aside[["premise_code", "item_code"]]))
+        keep = keep & (~was_aside | pack_ok(p["price"], med, ASIDE_LOW, ASIDE_HIGH))
     return p[keep]
 
 
@@ -330,27 +339,44 @@ def proof_items(items: pd.DataFrame, shops: pd.Series) -> tuple[list[int], list[
     return codes, labels
 
 
+def to_sen(price: float) -> int:
+    """RM to whole sen, half up, as the app rounds (Math.round(price * 100))."""
+    return math.floor(price * 100 + 0.5)
+
+
+def median_sen(totals: list[int]) -> int:
+    """Median of totals in whole sen, as the app gives it: with an even count, the mean of the two
+    middle totals, rounded half up to the sen."""
+    s = sorted(totals)
+    h = len(s) // 2
+    return s[h] if len(s) % 2 else (s[h - 1] + s[h] + 1) // 2
+
+
 def proof_figure(latest_d: pd.DataFrame, items: pd.DataFrame, shops: pd.Series) -> dict | None:
     """What a typical weekly list costs per district: [cheapest, typical (median), shops].
 
     Only shops that price every item on the list count, and a district needs
     PROOF_MIN_SHOPS of them. None when fewer than PROOF_MIN_GROUPS items are found.
+    Totals are in whole sen, each price to the sen, as the app adds up the same list, so the
+    home screen shows the same figures as the app's results for that list.
     """
     codes, labels = proof_items(items, shops)
     if len(codes) < PROOF_MIN_GROUPS:
         return None
     sub = latest_d[latest_d["item_code"].isin(codes)]
-    by_district = {}
+    sub = sub.assign(sen=[to_sen(float(p)) for p in sub["price"]])
+    by_district, saving = {}, {}
     for (st, dist), g in sub.groupby(["state", "district"]):
-        per_shop = g.groupby("premise_code").agg(n=("item_code", "nunique"), total=("price", "sum"))
-        full = per_shop.loc[per_shop["n"] == len(codes), "total"]
+        per_shop = g.groupby("premise_code").agg(n=("item_code", "nunique"), total=("sen", "sum"))
+        full = [int(t) for t in per_shop.loc[per_shop["n"] == len(codes), "total"]]
         if len(full) >= PROOF_MIN_SHOPS:
-            by_district[slugify(st, dist)] = [round(float(full.min()), 2), round(float(full.median()), 2),
-                                              int(len(full))]
+            slug, cheapest, typical = slugify(st, dist), min(full), median_sen(full)
+            by_district[slug] = [cheapest / 100, typical / 100, len(full)]
+            saving[slug] = typical - cheapest
     if not by_district:
         return None
-    # Example district: the most shops with the whole list; ties: the larger saving.
-    example = min(by_district, key=lambda s: (-by_district[s][2], -(by_district[s][1] - by_district[s][0]), s))
+    # Example district: the most shops with the whole list; ties: the larger saving (in whole sen).
+    example = min(by_district, key=lambda s: (-by_district[s][2], -saving[s], s))
     return {"items": codes, "labels": labels, "by_district": dict(sorted(by_district.items())),
             "example": example}
 

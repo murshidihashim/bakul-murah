@@ -1,8 +1,8 @@
 """Tests for the ETL. Run from the repo root:  python -m pytest etl/tests -q"""
 import csv
 import json
+import math
 import shutil
-import statistics
 import sys
 from datetime import date
 from pathlib import Path
@@ -265,6 +265,47 @@ def test_proof_figure_per_district():
     assert bd.proof_figure(latest_d[latest_d["state"] == "Johor"], REAL_ITEMS, shops) is None
 
 
+def test_median_sen_rounds_half_up_like_the_app():
+    assert bd.median_sen([3250, 3251]) == 3251            # (3250 + 3251) / 2 = 3250.5 sen: half up
+    assert bd.median_sen([3500, 3000, 3251]) == 3251      # an odd count: the middle total
+    assert bd.median_sen([3250, 3252]) == 3251 and bd.median_sen([100, 301, 150, 201]) == 176
+    assert bd.to_sen(0.1 + 0.2) == 30 and bd.to_sen(0.29) == 29 and bd.to_sen(32.51) == 3251
+
+
+def _proof_shops(state, district, shop_prices, start):
+    """latest_d rows: one shop per entry of shop_prices, each the prices of the 10 proof items."""
+    return [(start + k, code, p, state, district) for k, ps in enumerate(shop_prices)
+            for code, p in zip(PROOF_CODES, ps)]
+
+
+def proof_of(rows):
+    latest_d = pd.DataFrame(rows, columns=["premise_code", "item_code", "price", "state", "district"])
+    return bd.proof_figure(latest_d, REAL_ITEMS, latest_d.groupby("item_code")["premise_code"].nunique())
+
+
+def test_proof_figure_adds_up_in_whole_sen_like_the_app():
+    # The app adds up a list in whole sen (each price to the sen) and gives the typical total of an even
+    # count as the mean of the two middle totals, rounded half up. The home screen must show the same.
+    proof = proof_of(
+        _proof_shops("Johor", "Muar", [[3.0] * 10, [3.25] * 10, [3.25] * 9 + [3.26], [3.5] * 10], 100)
+        + _proof_shops("Kedah", "Sik", [[3.0] * 10, [3.25] * 9 + [3.26], [3.5] * 10], 200)
+        + _proof_shops("Perlis", "Kangar", [[0.1] * 10, [0.1, 0.2] * 5, [0.1, 0.2, 0.3] * 3 + [0.21],
+                                            [0.3] * 9 + [0.31]], 300))
+    # Muar: RM30.00, 32.50, 32.51 and 35.00, so (32.50 + 32.51) / 2 = 32.505, shown as 32.51 (rounding
+    # 32.505 in floating point gives 32.50). Sik: the middle shop. Kangar: prices like 0.1 and 0.2 are not
+    # exact in floating point (0.1 + 0.2 is 0.30000000000000004), but in whole sen the totals are exactly
+    # 1.00, 1.50, 2.01 and 3.01, and (150 + 201) / 2 = 175.5 sen is shown as 1.76.
+    assert proof["by_district"] == {"johor--muar": [30.0, 32.51, 4], "kedah--sik": [30.0, 32.51, 3],
+                                    "perlis--kangar": [1.0, 1.76, 4]}
+    assert proof["example"] == "johor--muar"
+    # The example district's tie on shops goes to the larger saving, also in whole sen: both save 251 sen
+    # (in floating point 32.51 - 30.00 is 2.509999999999998 and 12.51 - 10.00 is 2.51), so the first by name.
+    proof = proof_of(_proof_shops("Kedah", "Sik", [[1.0] * 10, [1.25] * 9 + [1.26], [1.5] * 10], 200)
+                     + _proof_shops("Johor", "Muar", [[3.0] * 10, [3.25] * 9 + [3.26], [3.5] * 10], 100))
+    assert proof["by_district"] == {"johor--muar": [30.0, 32.51, 3], "kedah--sik": [10.0, 12.51, 3]}
+    assert proof["example"] == "johor--muar"
+
+
 # ---------- shop locations ----------
 
 def test_district_centre_and_radius_rules():
@@ -310,6 +351,17 @@ def test_load_district_points_reads_the_shared_column(tmp_path):
     # Without the column (an older file) Cheras, alone on its point, would be used.
     p.write_text("key,lat,lon\nW.P. Kuala Lumpur|Cheras,3.1456,101.6974\n", encoding="utf-8")
     assert bd.load_district_points(p) == {"w.p. kuala lumpur|cheras": (3.1456, 101.6974)}
+
+
+def test_load_district_points_reads_shared_cells_with_spaces(tmp_path):
+    # A hand-edited or spreadsheet-saved file can pad the cell. Each district has its own point, so
+    # only the mark decides: ' 1 ' is marked, ' 0 ' and a cell of spaces are not.
+    p = tmp_path / "district_geo.csv"
+    p.write_text("key,lat,lon,tries,shared\n"
+                 "Kedah|Sik,5.92,100.82,0, 1 \n"
+                 "Kedah|Yan,5.85,100.42,0, 0 \n"
+                 "Kedah|Baling,5.68,100.92,0,  \n", encoding="utf-8")
+    assert bd.load_district_points(p) == {"kedah|yan": (5.85, 100.42), "kedah|baling": (5.68, 100.92)}
 
 
 def test_load_postcodes_averages_places_and_keeps_leading_zero(tmp_path):
@@ -455,8 +507,8 @@ def test_same_pack_months_leaves_out_other_pack_sizes():
         ("2026-09", 1, 9, 1.0), ("2026-09", 2, 9, 1.0), ("2026-09", 3, 9, 1.0),
         ("2026-10", 1, 9, 3.0), ("2026-10", 2, 9, 3.0), ("2026-10", 3, 9, 3.0), ("2026-10", 4, 9, 3.0),  # x3
         ("2026-09", 1, 10, 5.0), ("2026-09", 2, 10, 5.0), ("2026-09", 4, 10, 5.0),
-        ("2026-10", 1, 10, 5.0), ("2026-10", 2, 10, 5.0), ("2026-10", 4, 10, 3.45),  # RM5.00, then RM1.90
-        ("2026-08", 1, 7, 30.0),                                                     # not a month asked for
+        ("2026-10", 1, 10, 5.0), ("2026-10", 2, 10, 5.0), ("2026-10", 4, 10, 5.0),  # RM5.00 twice, then RM1.90
+        ("2026-08", 1, 7, 30.0),                                                    # not a month asked for
     ], columns=["month", "premise_code", "item_code", "price"])
     # Latest prices set aside: shop 4's item 7 and item 10 in October, shop 1's item 9 in November.
     aside = pd.DataFrame({"premise_code": [4, 4, 1], "item_code": [7, 10, 9], "price": [80.0, 1.9, 9.9],
@@ -468,7 +520,8 @@ def test_same_pack_months_leaves_out_other_pack_sizes():
     # but only its October is left out: its September price is the right pack.
     # Item 9: each month has its own median, so a price that triples for everyone is kept; shop 1's
     # set-aside price is from November, which is not asked for, so its months stay.
-    # Item 10: shop 4's October median (RM3.45) is within the limits but holds the set-aside RM1.90.
+    # Item 10: shop 4's October median (RM5.00) is right on the month's median, but that month
+    # holds the set-aside RM1.90, so it may mix in the other pack: left out.
     assert got == [(7, "2026-09", 1, 30.0), (7, "2026-09", 2, 30.0), (7, "2026-09", 4, 29.0),
                    (7, "2026-10", 1, 30.0), (7, "2026-10", 2, 12.0), (7, "2026-10", 3, 30.0),
                    (8, "2026-10", 1, 3.0), (8, "2026-10", 2, 3.0), (8, "2026-10", 3, 1.2),
@@ -479,7 +532,30 @@ def test_same_pack_months_leaves_out_other_pack_sizes():
     # Nothing set aside: only the limits apply, so shop 4's October price for item 10 comes back.
     out = bd.same_pack_months(pm, aside.iloc[:0], ["2026-09", "2026-10"])
     assert sorted(map(tuple, out[["item_code", "month", "premise_code", "price"]].values.tolist())) == \
-        sorted(got + [(10, "2026-10", 4, 3.45)])
+        sorted(got + [(10, "2026-10", 4, 5.0)])
+
+
+def test_same_pack_months_holds_a_set_aside_shop_to_0_8x_1_25x():
+    # Shops 1-7 set each month's median: RM0.40 for item 11 in September, RM1.88 for item 12 in October.
+    pm = pd.DataFrame([("2026-09", s, 11, 0.40) for s in range(1, 8)] + [
+        ("2026-09", 8, 11, 0.32), ("2026-09", 9, 11, 0.31), ("2026-09", 10, 11, 0.31)] + [
+        ("2026-10", s, 12, 1.88) for s in range(1, 8)] + [
+        ("2026-10", 8, 12, 2.35), ("2026-10", 9, 12, 2.36), ("2026-10", 10, 12, 2.36),
+    ], columns=["month", "premise_code", "item_code", "price"])
+    # Latest prices from November (not a month asked for) set aside: shops 8 and 9 for both items,
+    # shop 10 for item 11 only.
+    aside = pd.DataFrame({"premise_code": [8, 9, 10, 8, 9], "item_code": [11, 11, 11, 12, 12],
+                          "price": [0.1] * 3 + [9.9] * 2, "date": pd.to_datetime(["2026-11-02"] * 5)})
+    out = bd.same_pack_months(pm, aside, ["2026-09", "2026-10"])
+    got = {(r.item_code, r.premise_code): r.price for r in out.itertuples()}
+    # Their other months must be within 0.8x-1.25x of the month's median, limits included (in floating
+    # point 0.32 / 0.40 is 0.7999999999999999 and 2.35 / 1.88 is 1.2500000000000002): shop 8 stays at
+    # 0.32 and 2.35, shop 9's 0.31 and 2.36 and shop 10's 0.31 go. Shop 10's item 12 was not set aside,
+    # so its 2.36 (1.26x) only needs the usual 0.4x-2.5x.
+    assert got == {**{(11, s): 0.40 for s in range(1, 8)}, (11, 8): 0.32,
+                   **{(12, s): 1.88 for s in range(1, 8)}, (12, 8): 2.35, (12, 10): 2.36}
+    # Nothing set aside: every price is within 0.4x-2.5x, so all come back.
+    assert len(bd.same_pack_months(pm, aside.iloc[:0], ["2026-09", "2026-10"])) == len(pm)
 
 
 def test_build_writes_shop_months(built):
@@ -618,6 +694,46 @@ def test_cheapest_on_average_keeps_right_pack_months_of_a_set_aside_shop(tmp_pat
     assert avg == {s: v[1:] for s, v in oil.items() if s not in (18, 19)} | {18: [None, None, 30.0]}
 
 
+def cheapest_on_average(d, codes):
+    """Shops as the app ranks them for "cheapest on average" (Basket.averageRank), one of each item:
+    each item at the mean of the months the shop priced it; most items first, then the lowest total.
+    Returns [(premise_code, total, items)]."""
+    rows = {}
+    for code in codes:
+        for r in d["shop_months"].get(str(code), []):
+            vals = [v for v in r[1:] if v is not None]
+            if vals:
+                total, have = rows.get(r[0], (0, 0))
+                rows[r[0]] = (total + math.floor(sum(vals) / len(vals) * 100 + 0.5), have + 1)
+    ranked = sorted(rows.items(), key=lambda kv: (-kv[1][1], kv[1][0], kv[0]))
+    return [(d["premises"][i][0], total / 100, have) for i, (total, have) in ranked]
+
+
+def test_cheapest_on_average_holds_a_set_aside_shop_to_its_usual_price(tmp_path):
+    # 20 shops sell 5 kg oil at RM30 and sugar at RM3 from July to October. Shop 20 sells a 2 kg pack
+    # under the 5 kg code: RM12.50 (0.417x, within the usual 0.4x-2.5x) until September, and RM11.80
+    # (0.393x) in October, its latest price, which is set aside.
+    shops = list(range(1, 21))
+    months = {ym: [(f"{ym}-05", s, 1, 30.0) for s in shops[:-1]] + [(f"{ym}-05", 20, 1, p20)]
+              + [(f"{ym}-05", s, 2, 3.0) for s in shops]
+              for ym, p20 in zip(["2026-07", "2026-08", "2026-09", "2026-10"], [12.5, 12.5, 12.5, 11.8])}
+    raw = write_raw(tmp_path / "raw", [(1, "MINYAK CONTOH", "5kg"), (2, "GULA CONTOH", "1kg")],
+                    [(c, "Johor", "Muar") for c in shops], months)
+    bd.build(raw, tmp_path / "out", **NO_GEO)
+    meta = read_json(tmp_path / "out" / "meta.json")
+    d = district_file(tmp_path / "out", "johor--muar")
+    assert meta["stats"]["prices_set_aside"] == 1 and d["avg_months"] == ["2026-08", "2026-09", "2026-10"]
+    codes = [p[0] for p in d["premises"]]
+    assert codes == shops and {codes[i] for i, _, _ in d["prices"]["1"]} == set(shops) - {20}
+    # A shop whose latest price was set aside keeps its other months only within 0.8x-1.25x of the
+    # month's median, so shop 20's RM12.50 months are left out too.
+    assert {codes[r[0]]: r[1:] for r in d["shop_months"]["1"]} == {s: [30.0] * 3 for s in shops[:-1]}
+    # So "cheapest on average" names shop 1 at RM33.00 (the tie goes to the first shop), not shop 20
+    # at RM15.50 (RM12.50 oil and RM3.00 sugar); shop 20 has sugar only.
+    ranked = cheapest_on_average(d, [1, 2])
+    assert ranked[0] == (1, 33.0, 2) and ranked[-1] == (20, 3.0, 1)
+
+
 def test_build_ignores_a_nearly_empty_new_month(tmp_path):
     raw = tmp_path / "raw"
     ms.make(raw, months=4, end="2026-10", last_day=27, fmt="csv")
@@ -725,16 +841,18 @@ def test_build_proof_figure(proof_build):
             totals = {}
             for code in proof["items"]:
                 for idx, price, _ in d["prices"].get(str(code), []):
-                    totals.setdefault(idx, []).append(price)
-            full = [sum(v) for v in totals.values() if len(v) == len(proof["items"])]
+                    totals.setdefault(idx, []).append(round(price * 100))
+            # As the app adds up the list: whole sen; the median of an even count rounded half up.
+            full = sorted(sum(v) for v in totals.values() if len(v) == len(proof["items"]))
             if len(full) < 3:
                 assert a["slug"] not in proof["by_district"]
                 continue
             seen += 1
             cheapest, typical, n = proof["by_district"][a["slug"]]
+            h = len(full) // 2
             assert n == len(full)
-            assert cheapest == pytest.approx(min(full), abs=0.001)
-            assert typical == pytest.approx(statistics.median(full), abs=0.006)
+            assert cheapest == full[0] / 100
+            assert typical == (full[h] if n % 2 else math.floor((full[h - 1] + full[h]) / 2 + 0.5)) / 100
     assert seen == len(proof["by_district"]) and seen <= n_areas
     best = max(v[2] for v in proof["by_district"].values())
     assert proof["by_district"][proof["example"]][2] == best
